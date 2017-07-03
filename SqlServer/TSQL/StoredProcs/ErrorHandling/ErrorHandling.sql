@@ -36,6 +36,7 @@ RAISERROR('This is raise error demonstration, severity 20',20,1) WITH LOG;
 
 
 DECLARE @ErrorMsg VARCHAR(100)='This is raise error demonstration, severity 11';
+--maximum error mesage length should be 2047 characters
 RAISERROR(@ErrorMsg,11,1);
 
 -- character substituion
