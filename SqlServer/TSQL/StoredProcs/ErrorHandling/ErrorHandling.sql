@@ -38,6 +38,13 @@ RAISERROR('This is raise error demonstration, severity 20',20,1) WITH LOG;
 DECLARE @ErrorMsg VARCHAR(100)='This is raise error demonstration, severity 11';
 RAISERROR(@ErrorMsg,11,1);
 
+-- character substituion
+-- d or i for signed integer
+-- o for unsighed octal
+-- s for string
+-- u for unsigned integer
+-- x or X for unsigned hexa decimal
+
 RAISERROR('Could not find object "%s"',13,1,'dbo.SETExactAbortTest');
 
 
