@@ -1,0 +1,24 @@
+#Auto Provisioing HDInsight Cluster
+$Cred = Get-Credential -Name 'azurecreds'
+ #Using Azure Service Management   
+ Add-AzureAccount –Credential $Cred  
+ #Using Azure Resource Manager  
+ Login-AzureRmAccount –Credential $Cred
+$SubscriptionId = Get-AutomationVariable -Name 'SubscriptionId'
+Select-AzureRmSubscription -SubscriptionId $subscriptionID
+$ResourceGroupName = Get-AutomationVariable -Name 'resourcegroupname'
+$StorageAccountName = Get-AutomationVariable -Name 'storageaccountname'
+$ContainerName = Get-AutomationVariable -Name 'containername'
+$StorageAccountKey = Get-AzureRmStorageAccountKey -Name $StorageAccountName -ResourceGroupName $ResourceGroupName | %{ $_.Key1 }
+$ClusterName = Get-AutomationVariable -Name 'clusterName'
+$ClusterCredential = Get-AutomationPSCredential -Name 'clustercreds'
+$SshCredential = Get-AutomationPSCredential -Name 'clustersshuser'
+$ClusterType = Get-AutomationVariable -Name 'clusterType'
+$ClusterOS = Get-AutomationVariable -Name 'clusteros'
+$ClusterNodes = Get-AutomationVariable -Name 'clusternodes'
+$ClusterdataNodes = Get-AutomationVariable -Name 'clusterdatanodes'
+$ClusterNodeSize = Get-AutomationVariable -Name 'clusternodesize'
+$Location = "Southeast Asia"
+
+# Create a new HDInsight cluster
+New-AzureRmHDInsightCluster -ClusterName $ClusterName -ResourceGroupName $ResourceGroupName -HttpCredential $ClusterCredential -Location $Location -DefaultStorageAccountName "$StorageAccountName.blob.core.windows.net" -DefaultStorageAccountKey $StorageAccountKey -DefaultStorageContainer $ContainerName  -ClusterSizeInNodes $ClusterNodes -ClusterType $ClusterType -OSType $ClusterOS -Version "3.5" -SshCredential $SshCredential -HeadNodeSize $ClusterNodeSize -WorkerNodeSize $ClusterdataNodes
