@@ -1,0 +1,3 @@
+sudo visudo
+newuser    ALL=(ALL:ALL) ALL
+ex: sshuser ALL=(ALL:ALL) ALL
