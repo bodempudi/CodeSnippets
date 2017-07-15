@@ -1,24 +1,40 @@
-#Auto Provisioing HDInsight Cluster
-$Cred = Get-Credential -Name 'azurecreds'
- #Using Azure Service Management   
- Add-AzureAccount –Credential $Cred  
- #Using Azure Resource Manager  
- Login-AzureRmAccount –Credential $Cred
-$SubscriptionId = Get-AutomationVariable -Name 'SubscriptionId'
+#Auto Spinning UP HDInsight Cluster
+$Conn = Get-AutomationConnection -Name 'azureconnection'
+$Day1 =  get-date -UFormat %d
+$Month1 = get-date -UFormat %m
+$Year1 = get-date -UFormat %Y
+$datestring = $Day1.ToString()+$Month1.ToString()+$Year1.ToString()
+$azureCredential = Get-AutomationPSCredential -Name 'azurelogin' #Automation credential for Azure login
+Login-AzureRmAccount -Credential $azureCredential
+$subscriptionID =$Conn.SubscriptionID #"e1b879d8-6ff2-49cf-8adc-eb5cfa74813d"
 Select-AzureRmSubscription -SubscriptionId $subscriptionID
-$ResourceGroupName = Get-AutomationVariable -Name 'resourcegroupname'
-$StorageAccountName = Get-AutomationVariable -Name 'storageaccountname'
-$ContainerName = Get-AutomationVariable -Name 'containername'
-$StorageAccountKey = Get-AzureRmStorageAccountKey -Name $StorageAccountName -ResourceGroupName $ResourceGroupName | %{ $_.Key1 }
-$ClusterName = Get-AutomationVariable -Name 'clusterName'
-$ClusterCredential = Get-AutomationPSCredential -Name 'clustercreds'
-$SshCredential = Get-AutomationPSCredential -Name 'clustersshuser'
-$ClusterType = Get-AutomationVariable -Name 'clusterType'
-$ClusterOS = Get-AutomationVariable -Name 'clusteros'
-$ClusterNodes = Get-AutomationVariable -Name 'clusternodes'
-$ClusterdataNodes = Get-AutomationVariable -Name 'clusterdatanodes'
-$ClusterNodeSize = Get-AutomationVariable -Name 'clusternodesize'
-$Location = "Southeast Asia"
+$resourceGroupName = "vijayarg" #Provide Resource Group Name
+$storageAccountName = "venkatauto" #Provide Storage Account Name
+$containerName = "venkatautocon" #Provide Blob Container
+$storageAccountKey = "PV1DOTcVSSCSoXNXC3pXV6ILYlT33E1d/zdqXSu2B5SUhV57Y7ZhVT5VOnZ/ce8ft9TipnqD7QkKfF8oMeHqIA=="
+Write-Output $storageAccountKey
+$clusterName = "CTSMSFTCluster"+$datestring
+$clusterCredential = Get-AutomationPSCredential -Name 'cred-clusteruser' #Automation credential for cluster user
+$sshCredential = Get-AutomationPSCredential -Name 'cred-sshuser' #Automation credential for ssh user
+$clusterType = "Hadoop"
+$clusterOS = "Linux"
+$clusterNodes = 2  
+$clusterNodeSize = 2
+$clusterdataNodeSize = 2
+$location = "eastus2"
+New-AzureRmHDInsightCluster -ClusterName $clusterName -ResourceGroupName $resourceGroupName -HttpCredential $clusterCredential -Location $location -DefaultStorageAccountName "$storageAccountName.blob.core.windows.net" -DefaultStorageAccountKey $storageAccountKey -DefaultStorageContainer $containerName  -ClusterSizeInNodes $clusterNodes -ClusterType $clusterType -OSType $clusterOS -Version "3.5" -SshCredential $sshCredential #-HeadNodeSize $clusterNodeSize -WorkerNodeSize $clusterdataNodeSize
 
-# Create a new HDInsight cluster
-New-AzureRmHDInsightCluster -ClusterName $ClusterName -ResourceGroupName $ResourceGroupName -HttpCredential $ClusterCredential -Location $Location -DefaultStorageAccountName "$StorageAccountName.blob.core.windows.net" -DefaultStorageAccountKey $StorageAccountKey -DefaultStorageContainer $ContainerName  -ClusterSizeInNodes $ClusterNodes -ClusterType $ClusterType -OSType $ClusterOS -Version "3.5" -SshCredential $SshCredential -HeadNodeSize $ClusterNodeSize -WorkerNodeSize $ClusterdataNodes
+--Auto Spinning Down HDInsight Cluster
+$Conn = Get-AutomationConnection -Name 'azureconnection'
+$subscriptionID =$Conn.SubscriptionID #"e1b879d8-6ff2-49cf-8adc-eb5cfa74813d"
+$azureCredential = Get-AutomationPSCredential -Name 'azurelogin' #Automation credential for Azure login
+Login-AzureRmAccount -Credential $azureCredential
+Select-AzureRmSubscription -SubscriptionId $subscriptionID
+$Day1 =  get-date -UFormat %d
+$Month1 = get-date -UFormat %m
+$Year1 = get-date -UFormat %Y
+$datestring = $Day1.ToString()+$Month1.ToString()+$Year1.ToString()
+$clusterName = "CTSMSFTCluster"+$datestring
+Remove-AzureRmHDInsightCluster -ClusterName $clusterName # Provide Cluster Name
+
+#Remaining Commands Follows
