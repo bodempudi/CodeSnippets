@@ -1,3 +1,11 @@
+//please ignore these
 sudo visudo
 newuser    ALL=(ALL:ALL) ALL
 ex: sshuser ALL=(ALL:ALL) ALL
+groups #for listing the groups
+
+//the following are the only the reference ones
+//https://www.youtube.com/watch?v=zRw0SKaXSfI this video helps for user management in linux
+
+sudo hadoop fs -get /example/jars/hadoop-mapreduce-examples.jar /
+//use the above command when you have error in copying jar file from HDFS to local
