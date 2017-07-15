@@ -1,0 +1,2 @@
+//execute word count program
+ hadoop jar /venkat/hadoop-mapreduce-examples.jar wordcount  /example/data/gutenberg/davinci.txt /venkat/output/ //output foder should be new one always
