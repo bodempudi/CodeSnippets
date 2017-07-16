@@ -57,12 +57,11 @@ foreach($file in $files)
 Write-Host "All files in $localfolder copied to $containerName"
 
 #run mapreduce job from power shell
-
 Login-AzureRmAccount
 Select-AzureSubscription -SubScriptionName "Developer Program Benefit"
 $clustername = "venkatjuly16"
-$jobDef = New-AzureRmHDInsightMapReduceJobDefinition -JarFile "wasb:///example/jars/hadoop-mapreduce-examples.jar" -ClassName "wordcount" -Arguments "wasb:///files","wasb:///files/output"
-#$wordCountJob = Start-AzureRmHDInsightJob -Cluster $clustername -JobDefinition $jobDef
-#Write-Host "MR Job Submitted..."
-#Wait-AzureHDInsightJob -Job $wordCountJob -WaitTimeoutInSeconds 3600
-#Get-AzureHDInsightJobOutput -Cluster $clustername -JobId $wordCountJob.JobId -StandardError
+$clusterCreds = Get-Credential
+$jobDef = New-AzureRmHDInsightMapReduceJobDefinition -JarFile "wasb:///example/jars/hadoop-mapreduce-examples.jar" -ClassName "wordcount" -Arguments "wasb:///files","wasb:///files/output" #-ClusterCredential $clusterCreds
+$wordCountJob = Start-AzureRmHDInsightJob -ClusterName $clustername -JobDefinition $jobDef
+Write-Host "MR Job Submitted..."
+
