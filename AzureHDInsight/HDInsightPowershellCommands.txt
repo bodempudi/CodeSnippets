@@ -29,3 +29,29 @@ $storageAccountName ="venkataccnew"
 $containerName = "venkatjuly16"
 $key1 = (Get-AzureRmStorageAccountKey -ResourceGroupName $resourceGroupName -AccountName $storageAccountName).Value[0]
 Write-Host "the key is--$key1"
+
+
+#copying files from local file system to azure storage
+
+Login-AzureRmAccount
+Select-AzureSubscription -SubScriptionName "Developer Program Benefit"
+
+$localfolder = "D:\Personal\CIS\ADLandHSInsight\SamplePowershell"
+$destfolder = "files"
+
+$resourceGroupName = "venkatjuly16new11"
+$location = "Southeast Asia"
+$storageAccountName ="venkataccnew"
+$containerName = "venkatjuly16"
+#$key1 = (Get-AzureStorageKey -StorageAccountName $storageAccountName).Primary
+$key1 = (Get-AzureRmStorageAccountKey -ResourceGroupName $resourceGroupName -AccountName $storageAccountName).Value[0]
+$dstcontext = New-AzureStorageContext -StorageAccountName $storageAccountName -StorageAccountKey $key1
+$files = Get-ChildItem $localfolder
+foreach($file in $files)
+{
+    $filename = "$localfolder\$file"
+    $blobname = "$destfolder/$file"
+    write-host "copying $filename to $blobname"
+    Set-AzureStorageBlobContent -File $filename -Container $containerName -Blob $blobname -Context $dstcontext
+}
+Write-Host "All files in $localfolder copied to $containerName"
