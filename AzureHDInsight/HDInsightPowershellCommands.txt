@@ -20,6 +20,7 @@ New-AzureRmResourceGroup -Name $resourceGroupName -Location $location
 New-AzurermStorageAccount -Name $storageAccountName -Location $location -ResourceGroupName $resourceGroupName -Type Standard_LRS
 
 #getting access keys for storage account
+#https://docs.microsoft.com/en-us/powershell/module/azurerm.storage/get-azurermstorageaccountkey?view=azurermps-3.8.0
 Login-AzureRmAccount
 Select-AzureSubscription -SubscriptionName "Developer Program Benefit"
 $resourceGroupName = "venkatjuly16new11"
