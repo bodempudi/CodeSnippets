@@ -10,3 +10,21 @@ Get-AzureSubscription -SubscriptionName "Visual Studio Enterprise" #Get Subscrip
 
 (Get-AzureSubscription -Default).SubscriptionName #Get the default subscription
 
+#creating new resource group and new storage account in that resource group
+Login-AzureRmAccount
+Select-AzureSubscription -SubscriptionName "Developer Program Benefit"
+$resourceGroupName = "venkatjuly16new11"
+$location = "Southeast Asia"
+$storageAccountName ="venkataccnew"
+New-AzureRmResourceGroup -Name $resourceGroupName -Location $location
+New-AzurermStorageAccount -Name $storageAccountName -Location $location -ResourceGroupName $resourceGroupName -Type Standard_LRS
+
+#getting access keys for storage account
+Login-AzureRmAccount
+Select-AzureSubscription -SubscriptionName "Developer Program Benefit"
+$resourceGroupName = "venkatjuly16new11"
+$location = "Southeast Asia"
+$storageAccountName ="venkataccnew"
+$containerName = "venkatjuly16"
+$key1 = (Get-AzureRmStorageAccountKey -ResourceGroupName $resourceGroupName -AccountName $storageAccountName).Value[0]
+Write-Host "the key is--$key1"
