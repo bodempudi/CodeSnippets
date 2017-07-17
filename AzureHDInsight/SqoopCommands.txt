@@ -1,8 +1,8 @@
 //list databases
 sqoop list-databases --connect jdbc:sqlserver://venkatjuly18.database.windows.net:1433 --username venkatjuly18 --password July@201718
 
-//import from sql server to hdfs
+//import from sql azure to hdfs
 sqoop import --connect 'jdbc:sqlserver://venkatjuly18.database.windows.net:1433;database=venkatjuly18' --username venkatjuly18 --password July@201718 --table 'emp' --target-dir 'wasbs:///tutorials/usesqoop/importeddata' --fields-terminated-by ',' --lines-terminated-by '\n' -m 1
 
-//export
+//export from hdfs to sql server azure
 sqoop export --connect 'jdbc:sqlserver://venkatjuly18.database.windows.net:1433;database=venkatjuly18' --username venkatjuly18 --password July@201718 --table 'emp' --export-dir 'wasbs:///tutorials/usesqoop/importeddata' --fields-terminated-by ',' -m 1
