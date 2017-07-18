@@ -25,3 +25,6 @@ sqoop export --connect 'jdbc:sqlserver://49.206.169.202;database=DemoNew' --user
 
 //import from SQL Server to HDFS
 sqoop import --connect 'jdbc:sqlserver://49.206.169.202;database=DemoNew' --username venkatadmin --password July@201718 --table 'emp' --target-dir 'wasbs:///tutorials/usesqoop/importeddata1' --fields-terminated-by ',' --lines-terminated-by '\n' -m 1
+
+//importing only specific columns
+sqoop import --connect 'jdbc:sqlserver://49.206.169.202;database=DemoNew' --username venkatadmin --password July@201718 --table 'emp' --columns "id,name' --target-dir 'wasbs:///tutorials/usesqoop/importeddata2' --fields-terminated-by ',' --lines-terminated-by '\n' -m 1
