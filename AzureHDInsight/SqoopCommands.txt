@@ -1,3 +1,10 @@
+SELECT CONNECTIONPROPERTY('net_transport')
+,CONNECTIONPROPERTY('protocol_type')
+,CONNECTIONPROPERTY('auth_scheme')
+,CONNECTIONPROPERTY('local_net_address')
+,CONNECTIONPROPERTY('local_tcp_port')
+,CONNECTIONPROPERTY('client_net_address')
+
 //hdp/apps/2.5.5.0-157/sqoop
 we must place sqljdbc42.jar file in the above path
 
@@ -9,3 +16,6 @@ sqoop import --connect 'jdbc:sqlserver://venkatjuly18.database.windows.net:1433;
 
 //export from hdfs to sql server azure
 sqoop export --connect 'jdbc:sqlserver://venkatjuly18.database.windows.net:1433;database=venkatjuly18' --username venkatjuly18 --password July@201718 --table 'emp' --export-dir 'wasbs:///tutorials/usesqoop/importeddata' --fields-terminated-by ',' -m 1
+
+//working with on prem sql server to hdfs
+sqoop list-databases --connect jdbc:sqlserver://49.206.169.202 --username venkatadmin --password July@201718
