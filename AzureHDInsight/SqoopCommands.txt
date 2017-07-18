@@ -19,3 +19,9 @@ sqoop export --connect 'jdbc:sqlserver://venkatjuly18.database.windows.net:1433;
 
 //working with on prem sql server to hdfs
 sqoop list-databases --connect jdbc:sqlserver://49.206.169.202 --username venkatadmin --password July@201718
+
+//export from HDFS to SQL Server
+sqoop export --connect 'jdbc:sqlserver://49.206.169.202;database=DemoNew' --username venkatadmin --password July@201718 --table 'emp' --export-dir 'wasbs:///tutorials/usesqoop/importeddata' --fields-terminated-by ',' -m 1
+
+//import from SQL Server to HDFS
+sqoop import --connect 'jdbc:sqlserver://49.206.169.202;database=DemoNew' --username venkatadmin --password July@201718 --table 'emp' --target-dir 'wasbs:///tutorials/usesqoop/importeddata1' --fields-terminated-by ',' --lines-terminated-by '\n' -m 1
