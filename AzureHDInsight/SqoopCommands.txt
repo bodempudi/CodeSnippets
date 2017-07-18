@@ -1,3 +1,6 @@
+//hdp/apps/2.5.5.0-157/sqoop
+we must place sqljdbc42.jar file in the above path
+
 //list databases
 sqoop list-databases --connect jdbc:sqlserver://venkatjuly18.database.windows.net:1433 --username venkatjuly18 --password July@201718
 
