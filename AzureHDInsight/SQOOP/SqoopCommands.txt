@@ -39,3 +39,11 @@ sqoop import-all-tables --connect 'jdbc:sqlserver://49.206.169.202;database=Adve
 
 //excluding specific tables while importing total DB - what if my table in another schema - not default schema
 sqoop import-all-tables --connect 'jdbc:sqlserver://49.206.169.202;database=sqooptest' --username venkatadmin --password July@201718 --warehouse-dir 'wasbs:///sqooptest' --exclude-tables table1
+
+//incremental load
+
+//incremental updates
+
+//merge
+
+//job creation
