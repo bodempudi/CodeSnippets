@@ -4,6 +4,8 @@ SELECT CONNECTIONPROPERTY('net_transport')
 ,CONNECTIONPROPERTY('local_net_address')
 ,CONNECTIONPROPERTY('local_tcp_port')
 ,CONNECTIONPROPERTY('client_net_address')
+//sqoop youtube video
+https://www.youtube.com/watch?v=mPOfZo-F4bk
 
 //hdp/apps/2.5.5.0-157/sqoop
 we must place sqljdbc42.jar file in the above path
@@ -28,3 +30,7 @@ sqoop import --connect 'jdbc:sqlserver://49.206.169.202;database=DemoNew' --user
 
 //importing only specific columns
 sqoop import --connect 'jdbc:sqlserver://49.206.169.202;database=DemoNew' --username venkatadmin --password July@201718 --table 'emp' --columns "id,name' --target-dir 'wasbs:///tutorials/usesqoop/importeddata2' --fields-terminated-by ',' --lines-terminated-by '\n' -m 1
+
+//importing total database
+sqoop import-all-tables --connect 'jdbc:sqlserver://49.206.169.202;database=AdventureWorksDW2012' --username venkatadmin --password July@201718 --warehouse-dir 'wasbs:///adventureworkds'
+
