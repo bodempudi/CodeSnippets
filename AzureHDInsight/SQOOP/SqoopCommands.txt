@@ -47,3 +47,8 @@ sqoop import-all-tables --connect 'jdbc:sqlserver://49.206.169.202;database=sqoo
 //merge
 
 //job creation
+
+
+//loading into hive table
+
+//lpading into hbase table
