@@ -6,6 +6,9 @@ SELECT CONNECTIONPROPERTY('net_transport')
 ,CONNECTIONPROPERTY('client_net_address')
 //sqoop youtube video
 https://www.youtube.com/watch?v=mPOfZo-F4bk
+https://www.youtube.com/watch?v=72M5lMP8dMg
+https://www.youtube.com/watch?v=swpYAUVjYIE
+https://www.youtube.com/watch?v=YHQXQKcyO3s
 
 //hdp/apps/2.5.5.0-157/sqoop
 we must place sqljdbc42.jar file in the above path
