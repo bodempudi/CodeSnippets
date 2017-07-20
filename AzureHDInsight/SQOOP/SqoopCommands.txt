@@ -1,3 +1,9 @@
+//azure db server details
+venkatjuly20.database.windows.net - dbserver name
+venkatjuly20 -- dbname
+venkatjuly20 --username
+July@201711 --password
+
 //sqoop documentation
 //https://sqoop.apache.org/docs/1.4.6/SqoopUserGuide.html
 
