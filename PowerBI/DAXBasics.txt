@@ -1,1 +1,12 @@
-dfa
+//string functions
+
+//MID(TEXT,STRATINGPOSITION,NUMOFCHARS)
+Desc = MID(DimEmployee[Title],11,5)
+
+//Find - CASE Sensitive
+//retruns starting position of the characters.
+Find Function = FIND("Gu",DimEmployee[FirstName],1,0)
+
+//Search CASE NOT CAST CASE Sensitive
+//retruns starting position of the characters.
+Search Function = SEARCH("Gu",DimEmployee[FirstName],1,0)
