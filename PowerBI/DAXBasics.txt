@@ -47,3 +47,21 @@ SWITCH(COL,value1,result1,value2,result2)
 //we can use switch instead of nested ifs
 SWITCH(TRUE(),COND1,RESULT1,COND2,RESULT2,COND3,RESULT3,UNKNOWNVAL)
 
+equivalent if statement is
+if(condition1<val1,result1,
+if(condition2<val2,result2,
+if(condition3<val3,result3,
+if(condition4<val4,result4,
+Uknownval
+)
+)
+)
+)
+
+
+
+
+
+
+
+
