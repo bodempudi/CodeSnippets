@@ -10,3 +10,12 @@ Find Function = FIND("Gu",DimEmployee[FirstName],1,0)
 //Search CASE NOT CAST CASE Sensitive
 //retruns starting position of the characters.
 Search Function = SEARCH("Gu",DimEmployee[FirstName],1,0)
+
+//CONCATENATE Function
+//using &
+Full name = DimEmployee[FirstName]&" "&DimEmployee[MiddleName]&" "&DimEmployee[LastName]
+//using CONCATENATE Function
+FullName Fun = CONCATENATE(CONCATENATE(DimEmployee[FirstName],DimEmployee[MiddleName]),DimEmployee[LastName])
+
+//use of right function
+Month Number Of Year With Zero = RIGHT("0"&DimDate[MonthNumberOfYear],2)
