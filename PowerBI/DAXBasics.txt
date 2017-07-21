@@ -73,4 +73,5 @@ Total Product Cost = SUM(FactInternetSales[TotalProductCost])
 Total Sales = SUM(FactInternetSales[SalesAmount])
 Total Profit = [Total Sales] - [Total Product Cost]
 Total Profit Per = DIVIDE([Total Profit],[Total Sales],0)
+Number Of Sales = COUNTROWS(FactInternetSales)
 
