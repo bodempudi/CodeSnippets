@@ -32,3 +32,11 @@ Custom Date Format EX = FORMAT(DimDate[FullDateAlternateKey],"MMMM")
 Custom Date Format EX = FORMAT(DimDate[FullDateAlternateKey],"MMM")
 Custom Date Format EX = FORMAT(DimDate[FullDateAlternateKey],"MM")
 Custom Date Format EX = FORMAT(DimDate[FullDateAlternateKey],"M")
+
+//Age Calculation
+Age = DATEDIFF(DimEmployee[BirthDate],TODAY(),YEAR)
+//AGE WITH Logical Functions
+IF(DimEmployee[BirthDateMonth] <= DimEmployee[TodayMonth] , DATEDIFF(DimEmployee[BirthDate],TODAY(),YEAR),DATEDIFF(DimEmployee[BirthDate],TODAY(),YEAR)-1)
+
+//conditional and logical functions
+IFERROR FUNCTION
