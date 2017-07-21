@@ -61,7 +61,7 @@ Uknownval
 
 
 
-
-
+//isnumber function
+IsNumber = 1+2+ IF(ISNUMBER("a"),"a","0")
 
 
