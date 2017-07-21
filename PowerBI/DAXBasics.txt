@@ -65,3 +65,8 @@ Uknownval
 IsNumber = 1+2+ IF(ISNUMBER("a"),"a","0")
 
 
+//Measues
+//Implicit Measures
+//default aggregation when you bring in to visualization
+
+
