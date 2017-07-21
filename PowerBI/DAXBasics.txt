@@ -19,3 +19,16 @@ FullName Fun = CONCATENATE(CONCATENATE(DimEmployee[FirstName],DimEmployee[Middle
 
 //use of right function
 Month Number Of Year With Zero = RIGHT("0"&DimDate[MonthNumberOfYear],2)
+
+//pre defined date formats
+https://msdn.microsoft.com/en-us/library/ee634813.aspx
+//We can use any one of them.
+Custom Date Format EX = FORMAT(DimDate[FullDateAlternateKey],"YYYY-YY/MMMM-MMM-MM-M")
+ex:
+//try out all these examples
+Custom Date Format EX = FORMAT(DimDate[FullDateAlternateKey],"YYYY")
+Custom Date Format EX = FORMAT(DimDate[FullDateAlternateKey],"YY")
+Custom Date Format EX = FORMAT(DimDate[FullDateAlternateKey],"MMMM")
+Custom Date Format EX = FORMAT(DimDate[FullDateAlternateKey],"MMM")
+Custom Date Format EX = FORMAT(DimDate[FullDateAlternateKey],"MM")
+Custom Date Format EX = FORMAT(DimDate[FullDateAlternateKey],"M")
