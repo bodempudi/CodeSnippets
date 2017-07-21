@@ -40,3 +40,10 @@ IF(DimEmployee[BirthDateMonth] <= DimEmployee[TodayMonth] , DATEDIFF(DimEmployee
 
 //conditional and logical functions
 IFERROR FUNCTION
+
+//Switch Function
+SWITCH(COL,value1,result1,value2,result2)
+
+//we can use switch instead of nested ifs
+SWITCH(TRUE(),COND1,RESULT1,COND2,RESULT2,COND3,RESULT3,UNKNOWNVAL)
+
