@@ -14,3 +14,7 @@ ssh sshuser@wn1-july23.2u5z2wlgjybuzhjb5jzvqj35xc.bx.internal.cloudapp.net
 ssh sshuser@wn0-july23.2u5z2wlgjybuzhjb5jzvqj35xc.bx.internal.cloudapp.net
 
 //execute sqoop import command
+sqoop import --connect 'jdbc:sqlserver://49.206.169.202;database=DemoNew' --username venkatadmin --password July@201718 --table 'emp' --target-dir '/tutorials/usesqoop/importeddata1' --fields-terminated-by ',' --lines-terminated-by '\n' -m 1
+
+//see results
+hadoop fs -cat /tutorials/usesqoop/importeddata1/part-m-00000
