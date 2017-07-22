@@ -1,2 +1,16 @@
 //execute word count program
  hadoop jar /venkat/hadoop-mapreduce-examples.jar wordcount  /example/data/gutenberg/davinci.txt /venkat/output/ //output foder should be new one always
+ 
+ 
+//to findout the host names of the worker nodes use the following URLs.
+https://july23cluster.azurehdinsight.net/#/main/hosts
+
+//how to connect to worker nodes
+//1. connect to headnode
+//2. connet to worker nodes using following commands
+ssh <<sshusername>>@<<hostname>>
+ex:
+ssh sshuser@wn1-july23.2u5z2wlgjybuzhjb5jzvqj35xc.bx.internal.cloudapp.net
+ssh sshuser@wn0-july23.2u5z2wlgjybuzhjb5jzvqj35xc.bx.internal.cloudapp.net
+
+//execute sqoop import command
