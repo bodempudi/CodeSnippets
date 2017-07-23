@@ -1,1 +1,14 @@
-o
+//from here you can find oozie server URLs
+https://venkatjuly23.azurehdinsight.net/#/main/services/OOZIE/summary
+
+//check oozie head node status
+oozie admin -oozie http://hn0-venkat.warqpawcaxtenh5m53sfb0kvmf.bx.internal.cloudapp.net:11000/oozie -status
+
+//we must have minimum three files for oozie
+1. workflow file
+2. script file
+3. properties file
+//oozie conf files
+cd /usr/hdp/2.5.5.3-2/
+
+%OOZIE_ROOT%\oozie-win-distro\bin\oozie job -oozie http://hn0-venkat.warqpawcaxtenh5m53sfb0kvmf.bx.internal.cloudapp.net:11000/oozie -config 'wasb://vijayargdiag342.blob.core.windows.net/venkatjuly23-2017-07-23t17-06-47-830z/osam/Job.properties' -run
