@@ -1,0 +1,6 @@
+//core-site.xml location
+cat /etc/hadoop/conf/core-site.xml
+https://blogs.msdn.microsoft.com/avkashchauhan/2013/04/02/hadoop-configuration-files-in-hdinsight/
+
+
+/hadoop/hdfs/namenode/current/ -- fsimage and editlog location
