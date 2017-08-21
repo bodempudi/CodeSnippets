@@ -113,4 +113,8 @@ Prev YTD Sales =
 	CALCULATE([YTD Sales],--SUM(FactInternetSales[SalesAmount]), 
 		PARALLELPERIOD(DimDate[FullDateAlternateKey],-12,MONTH)
 		,ALL(DimDate))
-
+//Fore Cast YTD Sales
+Fore Cast YTD Sales = IF(HASONEVALUE(DimDate[Year])
+						,IF(SUM(FactInternetSales[SalesAmount]) = 0, BLANK(),
+							IF([Prev YTD Sales] = 0, [YTD Sales],[Prev YTD Sales] * 2))
+						,BLANK())
