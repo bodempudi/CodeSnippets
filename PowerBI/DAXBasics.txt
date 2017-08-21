@@ -108,6 +108,9 @@ MTD Sales =
 		 ) 
 	)
 	
-//Row Context to Filter Context
-//Context Transition
+//Previous Year YTD Sales
+Prev YTD Sales = 
+	CALCULATE([YTD Sales],--SUM(FactInternetSales[SalesAmount]), 
+		PARALLELPERIOD(DimDate[FullDateAlternateKey],-12,MONTH)
+		,ALL(DimDate))
 
