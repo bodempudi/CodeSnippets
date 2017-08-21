@@ -107,3 +107,7 @@ MTD Sales =
 		 DimDate[MonthNumberOfYear] = MAX(DimDate[MonthNumberOfYear])
 		 ) 
 	)
+	
+//Row Context to Filter Context
+//Context Transition
+
