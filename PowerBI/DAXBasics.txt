@@ -75,10 +75,35 @@ Total Profit = [Total Sales] - [Total Product Cost]
 Total Profit Per = DIVIDE([Total Profit],[Total Sales],0)
 Number Of Sales = COUNTROWS(FactInternetSales)
 
-//YTD Sales
-YTD Sales = 
+//MTD Sales 
+MTD Sales = 
 	CALCULATE(
 		SUM(FactInternetSales[SalesAmount]),
-		FILTER(DimDate,
-		DimDate[DateKey] <= MAX(DimDate[DateKey]) && DimDate[CalendarYear] = MAX(DimDate[CalendarYear])) 
+		FILTER(ALL(DimDate),
+		DimDate[DateKey] <= MAX(DimDate[DateKey]) &&
+		 DimDate[CalendarYear] = MAX(DimDate[CalendarYear]) && 
+		 DimDate[MonthNumberOfYear] = MAX(DimDate[MonthNumberOfYear])
+		 ) 
+	)
+
+//QTD Sales
+QTD Sales = 
+	CALCULATE(
+		SUM(FactInternetSales[SalesAmount]),
+		FILTER(ALL(DimDate),
+		DimDate[DateKey] <= MAX(DimDate[DateKey]) &&
+		 DimDate[CalendarYear] = MAX(DimDate[CalendarYear]) && 
+		 DimDate[CalendarQuarter] = MAX(DimDate[CalendarQuarter])
+		 ) 
+	)
+
+//MTD Sales
+MTD Sales = 
+	CALCULATE(
+		SUM(FactInternetSales[SalesAmount]),
+		FILTER(ALL(DimDate),
+		DimDate[DateKey] <= MAX(DimDate[DateKey]) &&
+		 DimDate[CalendarYear] = MAX(DimDate[CalendarYear]) && 
+		 DimDate[MonthNumberOfYear] = MAX(DimDate[MonthNumberOfYear])
+		 ) 
 	)
