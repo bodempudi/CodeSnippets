@@ -1,0 +1,198 @@
+DAX is a language specifically designed to compute business formulas over a data model. 
+A data model is a set of tables, linked by relationships.
+
+if you need to operate on aggregate values instead of on a row-by-row basis, you must create measures.
+
+calculated columns and measues:
+-----------------------------------------
+calculated column stored in RAM(so be carefull and do not add many) and it is calculated at query time.
+it is static, no filters applied on this unlike measures.
+
+measure is calculated when it is being displayed, will be changed based on context.
+
+
+now what is the diff:
+----------------------------
+always calculated column works against row context(means current row) and it does not 
+depend on user activity, a measure aggregations value defines its context.
+
+use calculated column in the following scenarios:
+---------------------------------------------------------------------
+-->You can use calculated columns in filtering purposes.
+-->Defining an expression that bounds to current row
+-->Column Categorization
+
+use measures in the following scenarios:
+-----------------------------------------------------------
+--> Profits and different values in different context
+
+COUNT - ONLY ON NUMERIC AND DATE COLUMNS
+COUNTA- OPERATES ON ANY COLUMNS
+COUNTBLANK - NUMBER OF EMPTY CELLS IN A COLUMN
+COUNTROWS-NUMBER OF ROWS IN  A COLUMN
+DISTINCTCOUNT - RETURNS THE NUMBER DISTINCT VALUES OF A COLUMN
+
+COUNTROWS(TABLE) = counta(table[column])+countblank(table[column])
+distinctcount - counts distinct values and blank also as one value
+
+RELATED AND RELATED FUNCTIONS:
+-------------------------------------------------
+RELATED - ACCESSES ONE SIDE VALUE FROM MANY SIDE
+	ex: RELATED_Category = RELATED(DimProductCategory[EnglishProductCategoryName])
+RELATEDTABLE - ACCESSES MANY SIDE VALUES FROM ONE SIDE
+	ex:RelatedTable_Column = COUNTROWS(RELATEDTABLE(DimProductSubcategory))
+  	    RelatedTable_Prod_Column = COUNTROWS(RELATEDTABLE(DimProduct))
+Demonstrating FilterContext VS RowContext
+---------------------------------------------------------
+FilterContext Sample Queries:
+-----------------------------------------
+case 1: only year
+SELECT A.CalendarYear,SUM(B.SalesAmount) [TotalSales] FROM dbo.DimDate A
+INNER JOIN dbo.FactInternetSales B ON A.DateKey=B.DueDateKey
+WHERE A.CalendarYear=2011
+GROUP BY A.CalendarYear;
+
+
+SELECT A.CalendarYear,SUM(B.SalesAmount) [TotalSales] FROM dbo.DimDate A
+INNER JOIN dbo.FactInternetSales B ON A.DateKey=B.DueDateKey
+WHERE A.CalendarYear=2012
+GROUP BY A.CalendarYear;
+
+SELECT A.CalendarYear,SUM(B.SalesAmount) [TotalSales] FROM dbo.DimDate A
+INNER JOIN dbo.FactInternetSales B ON A.DateKey=B.DueDateKey
+WHERE A.CalendarYear=2013
+GROUP BY A.CalendarYear;
+
+SELECT A.CalendarYear,SUM(B.SalesAmount) [TotalSales] FROM dbo.DimDate A
+INNER JOIN dbo.FactInternetSales B ON A.DateKey=B.DueDateKey
+WHERE A.CalendarYear=2014
+GROUP BY A.CalendarYear;
+
+case 2: only year and color
+--------------------------------------------
+SELECT A.CalendarYear,SUM(B.SalesAmount) [TotalSales] FROM dbo.DimDate A
+INNER JOIN dbo.FactInternetSales B ON A.DateKey=B.DueDateKey
+INNER JOIN dbo.DimProduct C ON B.ProductKey=C.ProductKey
+WHERE A.CalendarYear=2011 AND C.Color=N'Black'
+GROUP BY A.CalendarYear;
+
+SELECT A.CalendarYear,SUM(B.SalesAmount) [TotalSales] FROM dbo.DimDate A
+INNER JOIN dbo.FactInternetSales B ON A.DateKey=B.DueDateKey
+INNER JOIN dbo.DimProduct C ON B.ProductKey=C.ProductKey
+WHERE A.CalendarYear=2012 AND C.Color=N'Black'
+GROUP BY A.CalendarYear;
+
+SELECT A.CalendarYear,SUM(B.SalesAmount) [TotalSales] FROM dbo.DimDate A
+INNER JOIN dbo.FactInternetSales B ON A.DateKey=B.DueDateKey
+INNER JOIN dbo.DimProduct C ON B.ProductKey=C.ProductKey
+WHERE A.CalendarYear=2013 AND C.Color=N'Black'
+GROUP BY A.CalendarYear;
+
+SELECT A.CalendarYear,SUM(B.SalesAmount) [TotalSales] FROM dbo.DimDate A
+INNER JOIN dbo.FactInternetSales B ON A.DateKey=B.DueDateKey
+INNER JOIN dbo.DimProduct C ON B.ProductKey=C.ProductKey
+WHERE A.CalendarYear=2014 AND C.Color=N'Black'
+GROUP BY A.CalendarYear;
+
+CASE 3: only year and color and class
+----------------------------------------------------------
+--color, class and year
+SELECT SUM(B.SalesAmount) [TotalSales] FROM dbo.DimDate A
+INNER JOIN dbo.FactInternetSales B ON A.DateKey=B.DueDateKey
+INNER JOIN dbo.DimProduct C ON B.ProductKey=C.ProductKey
+WHERE A.CalendarYear=2011 AND C.Color=N'Black' AND C.Class='H';
+
+
+SELECT SUM(B.SalesAmount) [TotalSales] FROM dbo.DimDate A
+INNER JOIN dbo.FactInternetSales B ON A.DateKey=B.DueDateKey
+INNER JOIN dbo.DimProduct C ON B.ProductKey=C.ProductKey
+WHERE A.CalendarYear=2012 AND C.Color=N'Black' AND C.Class='H';
+
+
+SELECT SUM(B.SalesAmount) [TotalSales] FROM dbo.DimDate A
+INNER JOIN dbo.FactInternetSales B ON A.DateKey=B.DueDateKey
+INNER JOIN dbo.DimProduct C ON B.ProductKey=C.ProductKey
+WHERE A.CalendarYear=2013 AND C.Color=N'Black'  AND C.Class='H';
+
+
+SELECT SUM(B.SalesAmount) [TotalSales] FROM dbo.DimDate A
+INNER JOIN dbo.FactInternetSales B ON A.DateKey=B.DueDateKey
+INNER JOIN dbo.DimProduct C ON B.ProductKey=C.ProductKey
+WHERE A.CalendarYear=2014 AND C.Color=N'Black'  AND C.Class='H';
+
+---------------------------------------------------
+Filter Function:
+-------------------
+Filter table brings a table, applies the filter and returns table as same as original tables(same number of columns - schema wise), contains only rows which satisfies a condition applied row by row.
+
+*calculate():this is very important, please more concentrate on this.
+------------
+modifying the filter context
+
+Syntax:
+FILTER(TABLE,CONDITION)
+
+
+Filter iterates row by row, applies the filter condition on each row, the row which satisifies the condition will be returned.
+
+it executes for unique values only, it wont execute for all values of column in a table.
+
+You can do nested filtering...
+
+filter function for calculating the rows.
+
+FILTER_ROWS = COUNTROWS(FILTER(FactInternetSales,FactInternetSales[SalesAmount] >= 10))
+
+ALL(TABLENAME):
+------------------------
+
+ALL: returns all the columns of a table.
+ALLEXCEPT : returns all the columns except the which you have passed.
+
+
+RunningTotals_Sales = CALCULATE(SUM(FactInternetSales[Sales]),FILTER(ALL(DimDate),DimDate[Year]<=MAX(DimDate[Year])))
+
+Number Of Products = DISTINCTCOUNT(Sales[ProductKey])
+ 
+Total_YTD = TOTALYTD(SUM(FactInternetSales[Sales]),DimDate[FullDateAlternateKey],ALL(DimDate))
+Total_QTD = TOTALQTD(SUM(FactInternetSales[Sales]),DimDate[FullDateAlternateKey],ALL(DimDate))
+Total_MTD = TOTALMTD(SUM(FactInternetSales[Sales]),DimDate[FullDateAlternateKey],ALL(DimDate))
+
+SALES=SUMX(TABLENAME,COLUMNNAMES)
+ SALES=SUMX(InternetSales,COLUMNNAMES)
+ 
+Same Period Last Year = CALCULATE(SUM(FactInternetSales[Sales]),SAMEPERIODLASTYEAR(DimDate[FullDateAlternateKey]),ALL(DimDate))
+ 
+ 
+Product Rank By Its Sales = IF(HASONEVALUE('Product'[Product]),RANKX(ALLSELECTED('Product'[Product]),InternetSales[TotalSales],,DESC))
+ 
+ 
+Total Sales = CALCULATE(SUM(InternetSales[Sales]),ALL('Date'))
+ 
+ 
+Total Sales = CALCULATE(SUM(InternetSales[Sales]),ALL('Date'))
+ 
+ 
+Total Sales By Year = SUM(InternetSales[Sales])
+
+FOR FISCAL YEAR CHANGE:
+-----------------------
+YTD_V1 = CALCULATE(SUM(FactInternetSales[SalesAmount]),DATESYTD(DimDate[FullDateAlternateKey]),ALL(DimDate))
+ 
+ 
+YTD_V1 = CALCULATE(SUM(FactInternetSales[SalesAmount]),DATESYTD(DimDate[FullDateAlternateKey]),ALL(DimDate))
+MTD_V1 = CALCULATE(SUM(FactInternetSales[SalesAmount]),DATESMTD(DimDate[FullDateAlternateKey]),ALL(DimDate))
+QTD_V1 = CALCULATE(SUM(FactInternetSales[SalesAmount]),DATESQTD(DimDate[FullDateAlternateKey]),ALL(DimDate))
+Increase% = [Total Sales By Year]/[Total Sales]
+
+
+RunningTotals_Sales = CALCULATE(SUM(FactInternetSales[Sales]),FILTER(ALL(DimDate),DimDate[Year]<=MAX(DimDate[Year])))
+
+
+
+Filter Context = 
+CONCATENATEX ( VALUES ( DimSalesTerritory[Country] ), DimSalesTerritory[Country], " - " )
+& " - " &
+CONCATENATEX ( VALUES ( DimDate[Year] ), DimDate[Year], " - " )
+ & " - " &
+ CONCATENATEX ( VALUES ( DimProduct[Class] ), DimProduct[Class], " - " )
