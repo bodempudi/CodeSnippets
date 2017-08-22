@@ -149,3 +149,8 @@ DATESBETWEEN(DimDate[FullDateAlternateKey],
 	DATEADD(NEXTDAY(DimDate[FullDateAlternateKey]),-3,MONTH),
 	LASTDATE(DimDate[FullDateAlternateKey])),ALL(FactInternetSales)
 )
+
+//Earlier Example
+Rank = COUNTROWS(
+	FILTER(ALL(DimProduct[ListPrice])
+	,EARLIER(DimProduct[ListPrice]) < DimProduct[ListPrice])) + 1 
