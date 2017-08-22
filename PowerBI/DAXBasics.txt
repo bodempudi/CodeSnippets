@@ -154,3 +154,9 @@ DATESBETWEEN(DimDate[FullDateAlternateKey],
 Rank = COUNTROWS(
 	FILTER(ALL(DimProduct[ListPrice])
 	,EARLIER(DimProduct[ListPrice]) < DimProduct[ListPrice])) + 1 
+
+//Allexcept single column example
+SUM_AllExcept = 
+	CALCULATE(SUM(FactInternetSales[Sales]))/
+	CALCULATE(SUM(FactInternetSales[Sales]),ALLEXCEPT(DimSalesTerritory,DimSalesTerritory[Country]))
+
