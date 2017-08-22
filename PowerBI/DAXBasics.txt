@@ -117,4 +117,35 @@ Fore Cast YTD Sales = IF(HASONEVALUE(DimDate[Year])
 						,IF(SUM(FactInternetSales[SalesAmount]) = 0, BLANK(),
 							IF([Prev YTD Sales] = 0, [YTD Sales],[Prev YTD Sales] * 2))
 						,BLANK())
-//
+//12 Month Rolling Sales
+12 Month Rolling Sales = 
+CALCULATE(
+SUM(FactInternetSales[Sales]),DATESBETWEEN(DimDate[FullDateAlternateKey],
+NEXTDAY(SAMEPERIODLASTYEAR(LASTDATE(DimDate[FullDateAlternateKey]))),
+LASTDATE(DimDate[FullDateAlternateKey])
+),ALL(FactInternetSales))
+
+//3 Month Rolling Sales
+3 Month Rolling Sales = CALCULATE(
+SUM(FactInternetSales[Sales]),	
+	DATESBETWEEN(DimDate[FullDateAlternateKey],
+		NEXTDAY(DATEADD(DimDate[FullDateAlternateKey],-3,MONTH)),
+		LASTDATE(DimDate[FullDateAlternateKey])	
+),ALL(FactInternetSales))
+
+//Number Of Months(12)
+Number Of Months = 
+CALCULATE(
+CALCULATE(COUNTROWS(VALUES(DimDate[MonthNumberOfYear])),FactInternetSales),
+DATESBETWEEN(DimDate[FullDateAlternateKey],
+	NEXTDAY(SAMEPERIODLASTYEAR(LASTDATE(DimDate[FullDateAlternateKey]))),
+	LASTDATE(DimDate[FullDateAlternateKey])),ALL(FactInternetSales)
+)
+
+//Number Of Months (3) = 
+CALCULATE(
+CALCULATE(COUNTROWS(VALUES(DimDate[MonthNumberOfYear])),FactInternetSales),
+DATESBETWEEN(DimDate[FullDateAlternateKey],
+	DATEADD(NEXTDAY(DimDate[FullDateAlternateKey]),-3,MONTH),
+	LASTDATE(DimDate[FullDateAlternateKey])),ALL(FactInternetSales)
+)
