@@ -75,14 +75,13 @@ Total Profit = [Total Sales] - [Total Product Cost]
 Total Profit Per = DIVIDE([Total Profit],[Total Sales],0)
 Number Of Sales = COUNTROWS(FactInternetSales)
 
-//MTD Sales 
-MTD Sales = 
+//YTD Sales 
+YTD Sales = 
 	CALCULATE(
 		SUM(FactInternetSales[SalesAmount]),
 		FILTER(ALL(DimDate),
 		DimDate[DateKey] <= MAX(DimDate[DateKey]) &&
-		 DimDate[CalendarYear] = MAX(DimDate[CalendarYear]) && 
-		 DimDate[MonthNumberOfYear] = MAX(DimDate[MonthNumberOfYear])
+		 DimDate[CalendarYear] = MAX(DimDate[CalendarYear]) 
 		 ) 
 	)
 
@@ -118,3 +117,4 @@ Fore Cast YTD Sales = IF(HASONEVALUE(DimDate[Year])
 						,IF(SUM(FactInternetSales[SalesAmount]) = 0, BLANK(),
 							IF([Prev YTD Sales] = 0, [YTD Sales],[Prev YTD Sales] * 2))
 						,BLANK())
+//
