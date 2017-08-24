@@ -6,6 +6,8 @@ Get-AzureSubscription  #For Listing out subscriptions
 
 Get-AzureSubscription -Default #for listing default subscription
 
+ Remove-AzureSubscription -SubscriptionId Subscriptionid 
+
 Get-AzureSubscription -SubscriptionName "Visual Studio Enterprise" #Get Subscription With SubscriptionName
 
 (Get-AzureSubscription -Default).SubscriptionName #Get the default subscription
