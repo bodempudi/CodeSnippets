@@ -1,3 +1,4 @@
+--mixing filters demo
 IF OBJECT_ID('dbo.MixingFiltersDemo') IS NOT NULL
 	DROP TABLE dbo.MixingFiltersDemo;
 CREATE TABLE dbo.MixingFiltersDemo(
@@ -19,3 +20,13 @@ INSERT INTO dbo.MixingFiltersDemo values(NULL,'Internet','Green','Large',50,17);
 INSERT INTO dbo.MixingFiltersDemo values(NULL,'Internet','Green','Small',60,70);
 
 SELECT * FROM dbo.MixingFiltersDemo
+
+--verification
+SELECT a.Color,sum(Qunatity*PRICE) FROM dbo.MixingFiltersDemo A 
+--WHERE A.Channel='Internet'
+group by a.Color
+
+
+SELECT sum(Qunatity*PRICE) FROM dbo.MixingFiltersDemo A WHERE A.Channel='Internet'
+
+SELECT sum(Qunatity*PRICE) FROM dbo.MixingFiltersDemo A 
