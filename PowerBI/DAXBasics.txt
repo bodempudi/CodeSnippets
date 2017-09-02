@@ -164,3 +164,13 @@ SUM_AllExcept =
 	CALCULATE(SUM(FactInternetSales[Sales]))/
 	CALCULATE(SUM(FactInternetSales[Sales]),ALLEXCEPT(DimSalesTerritory,DimSalesTerritory[Country]))
 
+//mixing filters
+Measure = 
+SUMX(
+	FILTER(
+		ALL(MixingFiltersDemo),
+		MixingFiltersDemo[Channel]="Internet"
+	),
+	MixingFiltersDemo[PRICE]*MixingFiltersDemo[Qunatity]
+)
+
