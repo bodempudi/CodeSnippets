@@ -174,3 +174,12 @@ SUMX(
 	MixingFiltersDemo[PRICE]*MixingFiltersDemo[Qunatity]
 )
 
+US Sales = CALCULATE(SUM(FactInternetSales[SalesAmount]),
+FILTER(DimSalesTerritory,DimSalesTerritory[SalesTerritoryCountry]="United States"))
+
+
+US Sales 2 = CALCULATE(SUM(FactInternetSales[SalesAmount]),
+DimSalesTerritory[SalesTerritoryCountry]="United States")
+
+CALCULATE(SUM(FactInternetSales[SalesAmount]),
+FILTER(all(DimSalesTerritory),DimSalesTerritory[SalesTerritoryCountry]="United States"))
