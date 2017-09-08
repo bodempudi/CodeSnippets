@@ -52,6 +52,13 @@ in
 
 --to access particular column value in table, make sure you add comma in previous statement and return the output the below expression
     #"Tenth ProductName" = #"Changed Type"{9}[EnglishProductName]
+    
+--only returning a particular column from a table
+ CreateList = Table.Column(#"Promoted Headers","EnglishProductName")
+in
+    CreateList
+
+
 
 --no validations here
 (x) =>
