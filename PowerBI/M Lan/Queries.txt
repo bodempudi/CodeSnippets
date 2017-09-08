@@ -7,6 +7,21 @@ M Query can result a single value, a list of values, Table
 it is case sensitive
 #shared to list all the functions.
 
+--returning a scalar function
+let
+  Name = "SequelGate "&"Training"
+in
+   Name
+   
+--space in named expressions, use # when you have space in named expression
+--make sure you return the last step
+let
+  Name = "SequelGate "&"Training",
+    #"New Name" = Name&" ,Hyderabad"
+in
+   #"New Name"
+
+
 
 --to access particular column in table, make sure you add comma in previous statement and return the output the below expression
     #"Tenth ProductName" = #"Changed Type"{9}[EnglishProductName]
