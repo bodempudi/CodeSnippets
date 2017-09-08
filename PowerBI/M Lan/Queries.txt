@@ -1,3 +1,7 @@
+
+--to access particular column in table, make sure you add comma in previous statement and return the output the below expression
+    #"Tenth ProductName" = #"Changed Type"{9}[EnglishProductName]
+
 --no validations here
 (x) =>
 let
