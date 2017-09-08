@@ -38,7 +38,7 @@ let
     Source = {"A".."J"}
 in
     Source
---accessing individual elements
+--accessing individual elements, zero based index
 let
     Source = {"A".."J"},
     JChar=Source{9}
@@ -50,8 +50,7 @@ let
 in
     Source
 
-
---to access particular column in table, make sure you add comma in previous statement and return the output the below expression
+--to access particular column value in table, make sure you add comma in previous statement and return the output the below expression
     #"Tenth ProductName" = #"Changed Type"{9}[EnglishProductName]
 
 --no validations here
