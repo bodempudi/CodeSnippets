@@ -21,6 +21,12 @@ let
 in
    #"New Name"
 
+let
+    Source = 1+1,
+    Source1 = Source*10
+in
+    Source1
+    
 
 
 --to access particular column in table, make sure you add comma in previous statement and return the output the below expression
