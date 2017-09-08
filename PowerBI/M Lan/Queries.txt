@@ -1,1 +1,13 @@
-ss
+--no validations here
+(x) =>
+let
+    Source = x+1
+in
+    Source
+
+--by defining the type of argument we can validate input arguments
+(x as number) =>
+let
+    Source = x+1
+in
+    Source
