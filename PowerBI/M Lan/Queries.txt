@@ -26,7 +26,29 @@ let
     Source1 = Source*10
 in
     Source1
-    
+ 
+ --returning lists
+ --ex 1
+ let
+    Source = {1..20}
+in
+    Source
+--ex 2
+let
+    Source = {"A".."J"}
+in
+    Source
+--accessing individual elements
+let
+    Source = {"A".."J"},
+    JChar=Source{9}
+in
+    JChar
+
+let
+    Source = {"Jagan","Venkat"}
+in
+    Source
 
 
 --to access particular column in table, make sure you add comma in previous statement and return the output the below expression
