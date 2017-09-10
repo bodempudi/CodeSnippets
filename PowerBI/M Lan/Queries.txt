@@ -1,11 +1,15 @@
 --M Query
 M Stands for Mashup
-Here Power Query is just a UI, that generates M query in bachground
+Here Power Query is just a UI, that generates M query in background
 
 M Query can result a single value, a list of values,record and a table
 
 it is case sensitive
-#shared to list all the functions.
+#shared to list all the functions(offline reference).
+//power query online reference
+https://msdn.microsoft.com/en-us/library/mt211003.aspx
+https://msdn.microsoft.com/en-us/library/mt807488.aspx
+http://office.microsoft.com/en-gb/excel-help/learn-about-power-query-formulas-HA104003958.aspx
 
 --returning a scalar function
 let
@@ -14,7 +18,7 @@ in
    Name
    
 --space in named expressions, use # when you have space in named expression
---make sure you return the last step
+--make sure you return it in the last step
 let
   Name = "SequelGate "&"Training",
     #"New Name" = Name&" ,Hyderabad"
