@@ -2,7 +2,7 @@
 M Stands for Mashup
 Here Power Query is just a UI, that generates M query in bachground
 
-M Query can result a single value, a list of values, Table
+M Query can result a single value, a list of values,record and a table
 
 it is case sensitive
 #shared to list all the functions.
