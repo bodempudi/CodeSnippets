@@ -1,10 +1,10 @@
 --M Query
 M Stands for Mashup
-Here Power Query is just a UI, that generates M query in background
+Here Power Query is just a UI, that generates M query in background for each UI operation.
 
-M Query can result a single value, a list of values,record and a table
+M Query can result a single(salar) value, a list of values, a record and a table
 
-it is case sensitive
+it is case sensitive(#Shared is different from #shared)
 #shared to list all the functions(offline reference).
 //power query online reference
 https://msdn.microsoft.com/en-us/library/mt211003.aspx
@@ -41,9 +41,7 @@ in
 let
     Source = {"A".."J"}
 in
-    Source
-    
-http://www.boxofficemojo.com/alltime/world/?pagenum=2&p=.htm
+    Source  
 
 
 --accessing individual elements, zero based index
@@ -52,11 +50,18 @@ let
     JChar=Source{9}
 in
     JChar
+// to make this dynamic  go for using PositionOf Function
 
 let
     Source = {"Jagan","Venkat"}
 in
     Source
+ //Record example
+ let
+    speakers=[speaker1="Value1",speaker2="Value2"]
+in
+    speakers
+
 
 --to access particular column value in table, make sure you add comma in previous statement and return the output the below expression
     #"Tenth ProductName" = #"Changed Type"{9}[EnglishProductName]
@@ -81,3 +86,45 @@ let
     Source = x+1
 in
     Source
+
+//retunring single value
+let AddNumbers = (x,y)=>
+    let
+        a=x+y
+    in a
+in AddNumbers
+
+//return multiple values
+let
+    Source = (x as number,y as number) => let
+        some={x+y,x-y},
+        outputtable=Table.FromRows({{some{0},some{1}}},{"ADD","SUB"})
+    in
+        outputtable
+in
+    Source
+
+//web service url for BINGMaps API
+http://dev.virtualearth.net/REST/v1/Locations?postalCode=98052&key=AvGsnVBd2hb2ZlvAmRMC4xh1CuHgQVLkmFCO7m88UgYhaoF70pxBEJyYIbge6LLf
+http://dev.virtualearth.net/REST/v1/Locations?postalCode=10013&key=AvGsnVBd2hb2ZlvAmRMC4xh1CuHgQVLkmFCO7m88UgYhaoF70pxBEJyYIbge6LLf
+http://dev.virtualearth.net/REST/v1/Locations?postalCode=10025&key=AvGsnVBd2hb2ZlvAmRMC4xh1CuHgQVLkmFCO7m88UgYhaoF70pxBEJyYIbge6LLf
+http://dev.virtualearth.net/REST/v1/Locations?postalCode=10004&key=AvGsnVBd2hb2ZlvAmRMC4xh1CuHgQVLkmFCO7m88UgYhaoF70pxBEJyYIbge6LLf
+
+
+let GetCoordinates = (postcode)=>
+	let Source = Json.Document(Web.Contents("http://dev.virtualearth.net/REST/v1/Locations?postalCode="&Text.From(postcode)&"&key=AvGsnVBd2hb2ZlvAmRMC4xh1CuHgQVLkmFCO7m88UgYhaoF70pxBEJyYIbge6LLf")),
+		resourceSets=Source[resourceSets],
+		resourceSets1=resourceSets{0},
+		resources=resourceSets1[resources],
+		resources1=resources{0},
+		geocodePoints=resources1[geocodePoints],
+		geocodePoints1=geocodePoints{0},
+                State= resources1[address][adminDistrict],
+                District= try resources1[address][adminDistrict2] otherwise "Unknown",
+                Locality= resources1[address][locality],
+                Country= resources1[address][countryRegion],
+		coordinates=geocodePoints1[coordinates],
+		Outputtable=Table.FromRows({{coordinates{0},coordinates{1},State,District,Country,Locality}},{"Latitude","Longitude","State","District","Country","Locality"})
+		in Outputtable
+in
+    GetCoordinates
