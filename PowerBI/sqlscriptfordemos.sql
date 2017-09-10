@@ -1,3 +1,28 @@
+//power query sql script
+//when you write individual queries database name is mandatory
+
+CREATE DATABASE DevDB;
+GO
+
+CREATE DATABASE ProdDB;
+GO
+
+CREATE TABLE dbo.TestTable1(
+id int primary key,
+firstname varchar(50),
+lastname varchar(50),
+sal decimal(20,2)
+);
+
+declare @a int = 1;
+while @a<= 100000//for dev it is 100
+begin
+	insert into dbo.TestTable1 values(@a,'firstname'+cast(@a as varchar(4)),'lastname'+cast(@a as varchar(4)),1000+@a);
+	set @a = @a + 1;
+end
+
+
+
 --mixing filters demo
 IF OBJECT_ID('dbo.MixingFiltersDemo') IS NOT NULL
 	DROP TABLE dbo.MixingFiltersDemo;
