@@ -1,24 +1,22 @@
 let
     StartDate = #date(2010,1,1),
     EndDate = #date(2017,12,31),
-    //use slashes to write comments, to make your code more readable to others
-    GetDaysCount = Duration.Days(EndDate-StartDate),
-    GetDateList = List.Dates(StartDate,GetDaysCount,#duration(1,0,0,0)),
-    #"Converted to Table" = Table.FromList(GetDateList, Splitter.SplitByNothing(), null, null, ExtraValues.Error),
-    #"Renamed Columns" = Table.RenameColumns(#"Converted to Table",{{"Column1", "Date"}}),
-    #"Changed Type" = Table.TransformColumnTypes(#"Renamed Columns",{{"Date", type date}}),
-    #"Duplicated Column" = Table.DuplicateColumn(#"Changed Type", "Date", "Date - Copy"),
-    #"Renamed Columns1" = Table.RenameColumns(#"Duplicated Column",{{"Date - Copy", "MonthName"}}),
-    #"Extracted Month Name" = Table.TransformColumns(#"Renamed Columns1", {{"MonthName", each Date.MonthName(_), type text}}),
-    #"Duplicated Column1" = Table.DuplicateColumn(#"Extracted Month Name", "Date", "Date - Copy"),
-    #"Extracted Month" = Table.TransformColumns(#"Duplicated Column1",{{"Date - Copy", Date.Month}}),
-    #"Renamed Columns2" = Table.RenameColumns(#"Extracted Month",{{"Date - Copy", "MonthNumberOfTheYear"}}),
-    #"Duplicated Column2" = Table.DuplicateColumn(#"Renamed Columns2", "Date", "Date - Copy"),
-    #"Renamed Columns3" = Table.RenameColumns(#"Duplicated Column2",{{"Date - Copy", "EnglishDayName"}}),
-    #"Extracted Day Name" = Table.TransformColumns(#"Renamed Columns3", {{"EnglishDayName", each Date.DayOfWeekName(_), type text}}),
-    #"Duplicated Column3" = Table.DuplicateColumn(#"Extracted Day Name", "Date", "Date - Copy"),
-    #"Renamed Columns4" = Table.RenameColumns(#"Duplicated Column3",{{"Date - Copy", "DayNumberOfWeek"}}),
-    #"Calculated Day of Week" = Table.TransformColumns(#"Renamed Columns4",{{"DayNumberOfWeek", Date.DayOfWeek}}),
-    #"Changed Type1" = Table.TransformColumnTypes(#"Calculated Day of Week",{{"DayNumberOfWeek", Int64.Type}})
+    DayCount = Duration.Days(Duration.From(EndDate - StartDate)),
+    ListDates = List.Dates(StartDate,DayCount,#duration(1,0,0,0)),//duration is just an increment value by 1
+    TableFromList = Table.FromList(ListDates, Splitter.SplitByNothing()),
+    ChangedType = Table.TransformColumnTypes(TableFromList,{{"Column1", type date}}),
+    RenamedColumns = Table.RenameColumns(ChangedType,{{"Column1", "Date"}}),
+    InsertYear = Table.AddColumn(RenamedColumns, "Year", each Date.Year([Date])),
+    InsertQuarter = Table.AddColumn(InsertYear, "QuarterOfYear", each Date.QuarterOfYear([Date])),
+    InsertMonth = Table.AddColumn(InsertQuarter, "MonthOfYear", each Date.Month([Date])),
+    InsertDay = Table.AddColumn(InsertMonth, "DayOfMonth", each Date.Day([Date])),
+    InsertDayInt = Table.AddColumn(InsertDay, "DateInt", each [Year] * 10000 + [MonthOfYear] * 100 + [DayOfMonth]),
+    InsertMonthName = Table.AddColumn(InsertDayInt, "MonthName", each Date.ToText([Date], "MMMM", "en-us"), type text),
+    InsertCalendarMonth = Table.AddColumn(InsertMonthName, "MonthInCalendar", each (try(Text.Range([MonthName],0,3)) otherwise [MonthName]) & " " & Number.ToText([Year])),
+    InsertCalendarQtr = Table.AddColumn(InsertCalendarMonth, "QuarterInCalendar", each "Q" & Number.ToText([QuarterOfYear]) & " " & Number.ToText([Year])),
+    InsertDayWeek = Table.AddColumn(InsertCalendarQtr, "DayInWeek", each Date.DayOfWeek([Date])+1),
+    InsertDayName = Table.AddColumn(InsertDayWeek, "DayOfWeekName", each Date.ToText([Date], "dddd", "en-us"), type text),
+    InsertWeekEnding = Table.AddColumn(InsertDayName, "WeekEnding", each Date.EndOfWeek([Date]), type date),
+    ChangedAllColTypes = Table.TransformColumnTypes(InsertWeekEnding,{{"MonthInCalendar", type text}, {"QuarterInCalendar", type text}, {"DayInWeek", Int64.Type}, {"Year", Int64.Type}, {"QuarterOfYear", Int64.Type}, {"MonthOfYear", Int64.Type}, {"DayOfMonth", Int64.Type}, {"DateInt", Int64.Type}})
 in
-  #"Changed Type1"
+    ChangedAllColTypes
