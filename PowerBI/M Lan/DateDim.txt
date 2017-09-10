@@ -1,6 +1,8 @@
 let
     StartDate = #date(2010,1,1),
+    //StartDate = #date(Date.Year(DateTime.LocalNow())-10,1,1),
     EndDate = #date(2017,12,31),
+    //EndDate = #date(Date.Year(DateTime.LocalNow())+1,12,31),//using Date.Year(DateTime.LocalNow()), you can make it more dynamic
     DayCount = Duration.Days(Duration.From(EndDate - StartDate)),
     ListDates = List.Dates(StartDate,DayCount,#duration(1,0,0,0)),//duration is just an increment value by 1
     TableFromList = Table.FromList(ListDates, Splitter.SplitByNothing()),
