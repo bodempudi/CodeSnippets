@@ -14,3 +14,6 @@ typings install d3=github:DefinitelyTyped/DefinitelyTyped/d3/d3.d.ts#6e2f2280ef1
 
 //add the following to tsconfig.json
 ,"typings/index.d.ts"
+
+//Add d3 reference to pbiviz.json to externalJS array
+,"node_modules/d3/d3.min.js"
