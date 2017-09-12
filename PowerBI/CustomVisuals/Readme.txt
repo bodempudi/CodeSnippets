@@ -1,4 +1,4 @@
-//http://blog.jongallant.com/2016/11/pbiviz-12-d3-35-reference/
+
 pbiviz new testVisual
 cd testVisual
 npm i -g typings
