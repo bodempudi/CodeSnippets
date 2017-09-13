@@ -86,6 +86,14 @@ let
     Source = x+1
 in
     Source
+----by defining the type of argument we can validate input arguments, use optional to make it optional
+//check null replace it with default value
+(optional x as number) =>
+let
+    Source = x+1
+in
+    Source
+
 
 //retunring single value
 let AddNumbers = (x,y)=>
