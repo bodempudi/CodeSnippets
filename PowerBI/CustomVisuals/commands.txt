@@ -1,3 +1,5 @@
+https://gist.github.com/deldersveld/2e12892c516d5b189dfdfe0067622b78
+
 pbiviz new testVisual
 cd testVisual
 npm i -g typings
