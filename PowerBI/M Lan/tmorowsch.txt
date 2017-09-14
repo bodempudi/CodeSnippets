@@ -1,0 +1,6 @@
+m optional arugments.
+m default args
+null checking
+parameters
+capatialize each work case in DirectQuery vs Import
+wrapping UP M Lang and Power Query
