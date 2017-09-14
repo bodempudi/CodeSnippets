@@ -23,6 +23,6 @@ My question: I can do the same thing from this way instead of function.
 
 My Analysis:
 -------------
-1. you selected only one customer, but what if you need to do the same for multiple customers, will write the same query for each customer?
+1. you selected only one customer, but what if you need to do the same for multiple customers, will write the same query for each customer?(your logic is specific to the query, not a generic one to all the query whereever you have similar requirement).
 2. to avoid the duplicate code and code reusability
 3. on top of all these use a function where you need to do same functionality multiple times, with some argument changes.
