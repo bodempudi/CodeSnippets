@@ -1,3 +1,5 @@
 visualization see records option custom order
 functions parameters real demo
+go thorugh dax
 passing dates in mdx
+CCA Exam
