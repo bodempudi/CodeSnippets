@@ -1,0 +1,60 @@
+CREATE DATABASE PRODDB;
+GO
+
+USE PRODDB;
+GO
+
+CREATE TABLE dbo.TestTable1(
+id int primary key,
+tablename varchar(50)
+);
+
+declare @a int = 1;
+while @a<= 100--000--//for dev it is 100
+begin
+	insert into dbo.TestTable1values(@a,'PRODDBtable1-'+cast(@a as varchar(4)));
+	set @a = @a + 1;
+end
+
+CREATE TABLE dbo.TestTable2(
+id int primary key,
+tablename varchar(50)
+);
+
+declare @a1 int = 1;
+while @a1<= 100--000--//for dev it is 100
+begin
+	insert into dbo.TestTable2 values(@a1,'PRODDBtable1-'+cast(@a1 as varchar(4)));
+	set @a1 = @a1 + 1;
+end
+
+CREATE DATABASE DevDB;
+GO
+
+USE DevDB;
+GO
+
+CREATE TABLE dbo.TestTable1(
+id int primary key,
+tablename varchar(50)
+);
+
+declare @a int = 1;
+while @a<= 100--000--//for dev it is 100
+begin
+	insert into dbo.TestTable1 values(@a,'devdbtable1-'+cast(@a as varchar(4)));
+	set @a = @a + 1;
+end
+
+CREATE TABLE dbo.TestTable2(
+id int primary key,
+tablename varchar(50)
+);
+
+declare @a1 int = 1;
+while @a1<= 100--000--//for dev it is 100
+begin
+	insert into dbo.TestTable2 values(@a1,'devdbtable1-'+cast(@a1 as varchar(4)));
+	set @a1 = @a1 + 1;
+end
+
