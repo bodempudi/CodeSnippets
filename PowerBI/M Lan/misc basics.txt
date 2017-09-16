@@ -11,3 +11,10 @@ let
     Source1 = List.Select(Source, each _ > 10)
 in
     Source1
+
+//create measure table in direct query mode
+let
+    Source = Sql.Database("DESKTOP-OM2JMTQ","AdventureWorksDW2012",[Query="SELECT 1 as column_num"])
+  
+in
+    Source
