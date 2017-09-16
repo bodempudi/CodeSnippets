@@ -5,3 +5,9 @@ if someconditon then value else if some other condition other value else other v
 //error handing
 try Number.FromText([SecondNum]) otherwise 0)
     
+//_ representing current value in the iteration
+let
+    Source = {1..20},
+    Source1 = List.Select(Source, each _ > 10)
+in
+    Source1
