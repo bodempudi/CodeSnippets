@@ -1,3 +1,4 @@
+//Changing the data source and database names and changing the model data
 CREATE DATABASE PRODDB;
 GO
 
