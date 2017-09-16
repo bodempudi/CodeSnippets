@@ -1,0 +1,7 @@
+//conditional logic
+if [FirstName] < 2 then "less than two" else "greater than 3")
+//we can write else if also
+if someconditon then value else if some other condition other value else other value
+//error handing
+try Number.FromText([SecondNum]) otherwise 0)
+    
