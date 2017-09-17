@@ -1,1 +1,79 @@
 
+DAX is a functional language for extending your data model.
+    - execution flows with calling different functions.
+        ex:
+          YTD Sales = TOTALYTD(SUM(FactInternetSales[SalesAmount]),DimDate[FullDateAlternateKey],ALL(DimDate))
+            
+  -usually used in 
+      1. SSAS Tabular Model
+      2. Power Pivot
+      
+Datatypes:
+-------------
+Integer(8 bytes)
+Decimal(floating point)(8 bytes)
+Currency
+  Currency data type allows values between -922,337,203,685,477.5808 to 922,337,203,685,477.5807 with four decimal digits of fixed               precision.
+Datetime
+    valid date after jan 1 1990
+Boolean
+string
+binary
+      
+referencing a calculated columns:
+ ------------------
+ always refers to current row
+ have current row concept
+    referencing a calculated column
+      ex: 'tablename'[columnname] --quotes can bo ommited if you do not have spaces in table name
+                  or
+           tablename[columnname]
+           
+referencing a measure:
+----------------------
+aggregation over multiple rows.
+no need to have a tablename along with column name, not specific to a table
+
+Naming Conventions You should follow for calculated columns and measures:
+--------------------------------------------------------------------------
+
+measure: [MeasureName] - table name is not required, easily can be moved to another table.
+calculated column - 
+          [tablename][columnname] - table name is required
+          
+now the difference:
+-------------------
+1. use calculated column when you need a column as part of slicer
+1. use measure for aggregations(ytd, moving sales, moving averages)
+2. calculated column requires memory(do not create it unless you really require it)
+2. measures requries CPU(for processing)
+
+AGGREGATION Functions:
+------------------------
+MIN, MAX, SUM
+  EX: SUM(FACTINTERNETSALES[SalesAmount])
+      SUM(FACTINTERNETSALES[SalesAmount] * FactInternetSales[TotalProductCost]) //not possible, we have an alternative
+      
+      //single line comments
+      /*
+        Multiline comments
+      */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                  
+            
+
