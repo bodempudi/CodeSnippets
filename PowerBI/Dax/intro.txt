@@ -54,6 +54,11 @@ MIN, MAX, SUM
   EX: SUM(FACTINTERNETSALES[SalesAmount])
       SUM(FACTINTERNETSALES[SalesAmount] * FactInternetSales[TotalProductCost]) //not possible, we have an alternative
       
+      Measure = SUM(TABLENAME[COLUMNNAME)
+      Measure = SUM(TABLENAME[COLUMNNAME1] * TABLENAME[COLUMNNAME2]) // NOT VALID
+      Measure = SUMX(TABLENAME,TABLENAME[COLUMN1]) // VALID
+      Measure = SUMX(TABLENAME,TABLENAME[COLUMN1] * TABLENAME[COLUMN2) // VALID
+      
       //single line comments
       /*
         Multiline comments
