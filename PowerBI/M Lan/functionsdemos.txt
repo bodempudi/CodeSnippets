@@ -1,0 +1,15 @@
+//we have capitalize in power query 
+//try creating smallize in power quey
+
+
+(word as text) => let
+    Source = Text.Split(word," "),
+    ConvertedtoTable = Table.FromList(Source, Splitter.SplitTextByWhitespace(), null, null, ExtraValues.Error),
+    AddedCustom = Table.AddColumn(ConvertedtoTable, "Custom", each Text.Lower(Text.Start([Column1], 1))),
+    ChangedType = Table.TransformColumnTypes(AddedCustom,{{"Custom", type text}}),
+    AddedCustom1 = Table.AddColumn(ChangedType, "Custom.1", each Text.End([Column1],Text.Length([Column1])-1)),
+    AddedCustom2 = Table.AddColumn(AddedCustom1, "Custom.2", each [Custom]&""&[Custom.1]),
+   Custom2 = AddedCustom2[Custom.2],
+    stringbval=Text.Combine(Custom2, " ")
+in
+    stringbval
