@@ -67,11 +67,17 @@ MIN, MAX, SUM
 
 
 
+logical functions
+AND
+OR
+NOT
+IF
+IFERROR
 
-
-
-
-
+Switch function
+//similar to nested if
+switch(colname,val1,result1,val2,result2,else)
+switch
 
 
 
