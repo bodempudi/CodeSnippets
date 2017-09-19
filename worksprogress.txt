@@ -1,5 +1,4 @@
-visualization see records option custom order
+sharing queries using office 365
 functions parameters real demo
 go thorugh dax
-passing dates in mdx
 CCA Exam
