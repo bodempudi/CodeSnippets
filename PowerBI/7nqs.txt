@@ -1,0 +1,2 @@
+1. what are different options we need to mind when we do modeling?
+2. use parameter in exeute import mode in power query
