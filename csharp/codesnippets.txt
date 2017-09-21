@@ -1,0 +1,9 @@
+//sending email using csharp
+MailMessage mail = new MailMessage();
+SmtpClient SmtpServer = new SmtpClient(smtpservername);
+mail.From = new MailAddress(StaticMethods.GetMailRecepients());
+mail.To.Add(StaticMethods.GetMailRecepients());
+mail.Subject = packagename + " unit testing status";
+mail.Body = message;
+mail.IsBodyHtml = true;
+SmtpServer.Send(mail);
