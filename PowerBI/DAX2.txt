@@ -1,0 +1,9 @@
+//using variables
+
+Return Sales = var q= SUM(FactInternetSales[SalesAmount]) 
+return
+if(
+	q > 1000,
+	q*5,
+	q*10
+)
