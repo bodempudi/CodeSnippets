@@ -4,3 +4,32 @@ CALCULATE(SUM(FactInternetSales[SalesAmount]),FILTER(ALL(DimSalesTerritory),DimS
 
 //ALL Function - expands the rows
 
+//ALLEXCEPT Function, more columns from same table, try using allexcept
+
+//VALUES Demo SQL Script
+
+CREATE TABLE dbo.Product(
+id int primary key,
+name varchar(50)
+);
+
+
+
+create table dbo.sales(
+id int,
+sales int
+);
+
+insert into dbo.Product values(1,'Lenovo');
+insert into dbo.Product values(2,'HP');
+insert into dbo.Product values(3,'SONY');
+
+insert into dbo.sales values(1,50);
+insert into dbo.sales values(2,50);
+insert into dbo.sales values(3,50);
+insert into dbo.sales values(4,50);
+
+insert into dbo.sales values(1,50);
+insert into dbo.sales values(2,50);
+insert into dbo.sales values(3,50);
+insert into dbo.sales values(4,50);
