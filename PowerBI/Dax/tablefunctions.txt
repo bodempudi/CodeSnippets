@@ -1,0 +1,6 @@
+//Filter function - restricts the rows
+US Sales = IF(ISBLANK(SUM(FactInternetSales[SalesAmount])),BLANK(),
+CALCULATE(SUM(FactInternetSales[SalesAmount]),FILTER(ALL(DimSalesTerritory),DimSalesTerritory[SalesTerritoryCountry]="United States")))
+
+//ALL Function - expands the rows
+
