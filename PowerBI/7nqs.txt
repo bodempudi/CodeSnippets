@@ -1,3 +1,12 @@
 1. what are different options we need to mind when we do modeling?
+
 2. use parameter in exeute import mode in power query
+let
+Source = Sql.Database("sqlserver2016bi","adventureworksdw2016",[Query="SELECT * FROM 
+dbo.Dimdate A where A.color='Red'",CreateNavigationProperties=false]),
+prmVal=YourColor,
+qry=Text.Replace("SELECT * FROM dbo.Dimdate A where A.color='Red'","Red",prmVal),
+Source1 = Sql.Database("sqlserver2016bi","adventureworksdw2016",[Query=qry,CreateNavigationProperties=false])
+in Source1
+
 3. all vs allexcep ex
