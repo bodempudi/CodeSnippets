@@ -1,0 +1,24 @@
+
+
+USE EarilerDEMO;
+Go
+
+
+create table dbo.EarilerDEMO(
+id int,
+name varchar(50),
+sal int
+);
+
+
+
+INSERT INTO dbo.EarilerDEMO VALUES(1,'Produc1',10);
+INSERT INTO dbo.EarilerDEMO VALUES(2,'Produc2',20);
+INSERT INTO dbo.EarilerDEMO VALUES(3,'Produc3',30);
+INSERT INTO dbo.EarilerDEMO VALUES(4,'Produc4',40);
+INSERT INTO dbo.EarilerDEMO VALUES(5,'Produc5',50);
+INSERT INTO dbo.EarilerDEMO VALUES(6,'Produc6',60);
+INSERT INTO dbo.EarilerDEMO VALUES(7,'Produc7',70);
+INSERT INTO dbo.EarilerDEMO VALUES(8,'Produc8',80);
+INSERT INTO dbo.EarilerDEMO VALUES(9,'Produc9',90);
+INSERT INTO dbo.EarilerDEMO VALUES(10,'Produc10',100);
