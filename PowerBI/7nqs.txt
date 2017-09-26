@@ -10,3 +10,5 @@ Source1 = Sql.Database("sqlserver2016bi","adventureworksdw2016",[Query=qry,Creat
 in Source1
 
 3. all vs allexcep ex
+
+4. sharing functions with others
