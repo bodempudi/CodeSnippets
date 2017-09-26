@@ -22,3 +22,10 @@ INSERT INTO dbo.EarilerDEMO VALUES(7,'Produc7',70);
 INSERT INTO dbo.EarilerDEMO VALUES(8,'Produc8',80);
 INSERT INTO dbo.EarilerDEMO VALUES(9,'Produc9',90);
 INSERT INTO dbo.EarilerDEMO VALUES(10,'Produc10',100);
+
+
+earlier ex = 
+ 
+countrows(
+	FILTER(ALL(EarilerDEMO),EarilerDEMO[sal] > EARLIER(EarilerDEMO[sal]))
+)+1
