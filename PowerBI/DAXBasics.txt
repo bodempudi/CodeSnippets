@@ -183,3 +183,5 @@ DimSalesTerritory[SalesTerritoryCountry]="United States")
 
 CALCULATE(SUM(FactInternetSales[SalesAmount]),
 FILTER(all(DimSalesTerritory),DimSalesTerritory[SalesTerritoryCountry]="United States"))
+
+MIN SALES = MINx(DimCustomer,[TotalSales])
