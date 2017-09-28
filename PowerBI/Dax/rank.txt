@@ -1,0 +1,22 @@
+--truncate TABLE dbo.Products
+CREATE TABLE dbo.Products(
+id int,
+name varchar(50))
+--drop table dbo.sales
+create table dbo.sales(
+id int,salesamount int
+);
+
+INSERT INTO dbo.Products values(1,'Tomoto')
+INSERT INTO dbo.Products values(2,'Apple')
+INSERT INTO dbo.Products values(3,'Coffe')
+INSERT INTO dbo.Products values(4,'Tea')
+
+insert into dbo.sales values(1,50);
+insert into dbo.sales values(1,20);
+insert into dbo.sales values(2,20);
+insert into dbo.sales values(2,20);
+insert into dbo.sales values(3,10);
+insert into dbo.sales values(3,10);
+insert into dbo.sales values(4,80);
+insert into dbo.sales values(4,50);
