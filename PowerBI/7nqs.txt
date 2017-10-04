@@ -1,4 +1,5 @@
 1. what are different options we need to mind when we do modeling?
+already discussed
 
 2. use parameter in exeute import mode in power query
 let
