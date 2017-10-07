@@ -19,6 +19,30 @@ typings install d3 --global --save
 //Add d3 reference to pbiviz.json to externalJS array
 ,"node_modules/d3/d3.min.js"
 
+//tsconfig.json
+{
+  "compilerOptions": {
+    "allowJs": true,
+    "emitDecoratorMetadata": true,
+    "experimentalDecorators": true,
+    "target": "ES5",
+    "sourceMap": true,
+    "out": "./.tmp/build/visual.js"
+  },
+  "files": [
+    ".api/v1.6.0/PowerBI-visuals.d.ts",
+    "node_modules/powerbi-visuals-utils-dataviewutils/lib/index.d.ts",
+    "src/settings.ts",
+    "typings/index.d.ts",
+    "src/visual.ts"
+  ]
+}
+
+//pbiviz.json
+ "externalJS": [
+    "node_modules/powerbi-visuals-utils-dataviewutils/lib/index.js",
+    "node_modules/d3/d3.min.js"
+  ]
 
 //visual.ts
   
