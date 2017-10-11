@@ -60,6 +60,14 @@ typings install d3 --global --save
                 .attr("r", 50)
                 .style("fill", 'green');
 ----------------------
+npm i -g powerbi-visuals-tools
+
+--install certificate
+pbiviz --install-cert 
+
+
+pbiviz new testVisual
+cd testVisual
 npm i -g typings (will install typings, Typings is the simple way to manage and install TypeScript definitions)
 
 Npm install d3@3 (add to pbiviz.json)
