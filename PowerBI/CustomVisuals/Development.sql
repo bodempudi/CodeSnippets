@@ -72,6 +72,6 @@ Npm install @types/jquery@2.0.47
 
 npm install powerbi-visuals-utils-dataviewutils 
 
-npm install powerbi-visuals-utils-svgutils –save
+npm install powerbi-visuals-utils-svgutils
 
-npm install powerbi-visuals-utils-formatutils --save 
+npm install powerbi-visuals-utils-formatutils
