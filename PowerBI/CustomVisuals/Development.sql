@@ -68,9 +68,9 @@ Npm install @types/d3@3 (add to tsconfig.json befor visual.ts)
 
 Npm install jquery
 
-Npm install @types/jquery@2.0.47 –save
+Npm install @types/jquery@2.0.47 
 
-npm install powerbi-visuals-utils-dataviewutils –save
+npm install powerbi-visuals-utils-dataviewutils 
 
 npm install powerbi-visuals-utils-svgutils –save
 
