@@ -82,4 +82,4 @@ npm install powerbi-visuals-utils-dataviewutils
 
 npm install powerbi-visuals-utils-svgutils
 
-npm install powerbi-visuals-utils-formatutils
+npm install powerbi-visuals-utils-formattingutils
