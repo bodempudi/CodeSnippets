@@ -59,3 +59,19 @@ typings install d3 --global --save
                 .attr("cy", 50)
                 .attr("r", 50)
                 .style("fill", 'green');
+----------------------
+npm i -g typings (will install typings, Typings is the simple way to manage and install TypeScript definitions)
+
+Npm install d3@3 (add to pbiviz.json)
+
+Npm install @types/d3@3 (add to tsconfig.json befor visual.ts)
+
+Npm install jquery
+
+Npm install @types/jquery –save
+
+npm install powerbi-visuals-utils-dataviewutils –save
+
+npm install powerbi-visuals-utils-svgutils –save
+
+npm install powerbi-visuals-utils-formatutils --save 
