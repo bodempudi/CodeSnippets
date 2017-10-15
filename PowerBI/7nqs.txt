@@ -16,3 +16,5 @@ in Source1
 
 5. direct query data gateway configs
 completed
+
+pbiviz package
