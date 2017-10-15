@@ -1,4 +1,2 @@
-sharing queries using office 365
-functions parameters real demo
-go thorugh dax
-CCA Exam
+R Integration in power bi
+Power BI Embedded
