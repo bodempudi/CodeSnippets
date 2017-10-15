@@ -13,7 +13,7 @@ in Source1
 3. all vs allexcep ex
 
 4. sharing functions with others
-
+office 365 enterprise E3 and E4, Must have Power BI(O365) licensing
 5. direct query data gateway configs
 completed
 
