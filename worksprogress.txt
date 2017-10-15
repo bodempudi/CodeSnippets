@@ -1,2 +1,5 @@
 R Integration in power bi
 Power BI Embedded
+
+
+Spend time in tabular Model
