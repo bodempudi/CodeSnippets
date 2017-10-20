@@ -1,5 +1,8 @@
 R Integration in power bi
 Power BI Embedded
+Power BI Demo PPT
 
+pig-latin-getting-started
+apache-pig-data-transformations
 
 Spend time in tabular Model
