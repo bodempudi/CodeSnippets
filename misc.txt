@@ -1,6 +1,8 @@
 https://technet.microsoft.com/en-us/virtuallabs/bb467605.aspx
 
-https://vlabs.holsystems.com/vlabs/technet?eng=VLabs&auth=none&src=vlabs&altadd=true&labid=34768&lod=true  
+https://vlabs.holsystems.com/vlabs/technet?eng=VLabs&auth=none&src=vlabs&altadd=true&labid=34768&lod=true  //windows machine
+
+https://vlabs.holsystems.com/vlabs/technet?eng=VLabs&auth=none&src=vlabs&altadd=true&labid=29101&lod=true //linux machine
 
 venkatbigdataking@gmail.com
 Aug@2017
