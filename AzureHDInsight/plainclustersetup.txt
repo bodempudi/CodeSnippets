@@ -9,5 +9,6 @@ tar xvzf /root/hadoop-2.7.4.tar.gz
 securebackup-cookie" http://download.oracle.com/
 otn-pub/java/jdk/8u131-b11
 /d54c1d3a095b4ff2b6607d096fa80163/jdk-8u131-linux-x64.rpm//tar.gz
+rpm -ivh jdk-8u131-linux-x64.rpm
 
 http://www.clustermonkey.net/download/Hadoop2-Quick-Start-Guide/
