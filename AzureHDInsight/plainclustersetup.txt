@@ -1,0 +1,5 @@
+cd /root
+wget http://mirrors.ibiblio.org/apache/hadoop/common/hadoop-2.7.4/hadoop-2.7.4.tar.gz
+mkdir /opt/yarn
+cd /opt/yarn
+tar xvzf /root/hadoop-2.7.4.tar.gz
