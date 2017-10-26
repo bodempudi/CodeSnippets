@@ -1,7 +1,7 @@
 to display hadoop environment setup in HDInsight use the following command
 take ssh(putty) connection to head node of the cluster.
 printenv $HADOOP_HOME 
-the above command will give you the detailes of different configurations, we do need specific to hadoop configurations files.
+the above command will give you the details of different configurations, we need specific to hadoop configurations files.
 /etc/hadoop/conf
 
 
