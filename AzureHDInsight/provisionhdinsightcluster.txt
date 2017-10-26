@@ -1,0 +1,33 @@
+$Day1 =  get-date -UFormat %d
+$resourceGroupName = "analytics"$Day1
+$location = "West Europe"
+$storageAccountName = "s$resourceGroupName"
+$containerName = "hdp$resourceGroupName"
+$clusterName = $containerName
+$clusterNodes = 2
+$httpUserName = "hduser"
+$sshUserName = "sshuser"
+$password = ConvertTo-SecureString "Oct26@2017" -AsPlainText -Force
+
+Login-AzureRmAccount
+
+# Create a resource group
+New-AzureRmResourceGroup -Name $resourceGroupName -Location $location
+
+# Create a storage account
+Write-Host "Creating storage account..."
+New-AzureRmStorageAccount -Name $storageAccountName -ResourceGroupName $resourceGroupName -Type "Standard_GRS" -Location $location
+
+# Create a Blob storage container
+Write-Host "Creating container..."
+$storageAccountKey = (Get-AzureRmStorageAccountKey -ResourceGroupName $resourceGroupName -Name $storageAccountName)[0].Value
+
+$destContext = New-AzureStorageContext -StorageAccountName $storageAccountName -StorageAccountKey $storageAccountKey
+New-AzureStorageContainer -Name $containerName -Context $destContext
+
+# Create a cluster
+Write-Host "Creating HDInsight cluster..."
+$httpCredential = New-Object System.Management.Automation.PSCredential ($httpUserName, $password)
+$sshCredential = New-Object System.Management.Automation.PSCredential ($sshUserName, $password)
+New-AzureRmHDInsightCluster -ResourceGroupName $resourceGroupName -ClusterName $clusterName -ClusterType Hadoop -Version 3.5 -Location $location -DefaultStorageAccountName "$storageAccountName.blob.core.windows.net" -DefaultStorageAccountKey $storageAccountKey -DefaultStorageContainer $containerName -ClusterSizeInNodes $clusterNodes -OSType Linux -HttpCredential $httpCredential -SshCredential $sshCredential
+Write-Host "Finished!"
