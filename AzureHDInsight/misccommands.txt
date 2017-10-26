@@ -4,3 +4,9 @@ https://blogs.msdn.microsoft.com/avkashchauhan/2013/04/02/hadoop-configuration-f
 
 
 /hadoop/hdfs/namenode/current/ -- fsimage and editlog location
+
+"hive-site.xml" = "$env:HIVE_HOME\conf\hive-site.xml";
+"core-site.xml" = "$env:HADOOP_HOME\etc\hadoop\core-site.xml";
+"hdfs-site.xml" = "$env:HADOOP_HOME\etc\hadoop\hdfs-site.xml";
+"mapred-site.xml" = "$env:HADOOP_HOME\etc\hadoop\mapred-site.xml";
+"yarn-site.xml" = "$env:HADOOP_HOME\etc\hadoop\yarn-site.xml"
