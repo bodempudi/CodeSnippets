@@ -9,4 +9,5 @@ commons-logging.properties
 log4j.properties
 task-log4j.properties
 
-venkat26oct.azurehdinsight.net
+venkat26oct-ssh.azurehdinsight.net
+Oct26@2017
