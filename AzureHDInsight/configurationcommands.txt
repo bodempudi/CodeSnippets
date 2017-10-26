@@ -3,3 +3,8 @@ take ssh(putty) connection to head node of the cluster.
 printenv $HADOOP_HOME 
 the above command will give you the detailes of different configurations, we do need specific to hadoop configurations files.
 /etc/hadoop/conf
+
+
+commons-logging.properties
+log4j.properties
+task-log4j.properties
