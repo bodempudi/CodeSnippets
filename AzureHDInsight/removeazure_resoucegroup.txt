@@ -1,0 +1,4 @@
+$Day1 =  get-date -UFormat %d
+$resourceGroupName ="analytics"$Day1
+Remove-AzureRmResourceGroup -Name $resourceGroupName -Force
+
