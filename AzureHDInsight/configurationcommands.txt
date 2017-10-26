@@ -8,3 +8,5 @@ the above command will give you the detailes of different configurations, we do 
 commons-logging.properties
 log4j.properties
 task-log4j.properties
+
+venkat26oct.azurehdinsight.net
