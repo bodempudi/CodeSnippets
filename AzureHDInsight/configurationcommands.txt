@@ -13,3 +13,5 @@ task-log4j.properties
 
 venkat26oct-ssh.azurehdinsight.net
 Oct26@2017
+
+hadoop jar  /usr/hdp/current/hadoop-mapreduce-client/hadoop-mapreduce-examples.jar wordcount /example/data/gutenberg/davinci.txt /result
