@@ -1,5 +1,5 @@
 $Day1 =  get-date -UFormat %d
-$resourceGroupName = "analytics"$Day1
+$resourceGroupName = "analytics$Day1"
 $location = "West Europe"
 $storageAccountName = "s$resourceGroupName"
 $containerName = "hdp$resourceGroupName"
