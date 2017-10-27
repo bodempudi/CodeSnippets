@@ -4,7 +4,7 @@ printenv $HADOOP_HOME
 the above command will give you the details of different configurations, we need specific to hadoop configurations files.
 /etc/hadoop/conf
 
-/usr/hdp/current/hadoop-mapreduce-client/
+/usr/hdp/current/hadoop-mapreduce-client/hadoop-mapreduce-examples.jar
 
 
 commons-logging.properties
