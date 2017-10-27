@@ -7,6 +7,9 @@ the above command will give you the details of different configurations, we need
 /usr/hdp/current/hadoop-mapreduce-client/hadoop-mapreduce-examples.jar
 /example/data/gutenberg/davinvi.txt
 
+jobs logging
+http://hn0-hdpana.zjcbv2tdk1tedez1imddivggtd.ax.internal.cloudapp.net:19888/jobhistory/logs
+
 commons-logging.properties
 log4j.properties
 task-log4j.properties
