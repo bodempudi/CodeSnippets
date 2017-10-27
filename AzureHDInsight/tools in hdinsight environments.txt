@@ -1,0 +1,3 @@
+putty - remote connection to head nore
+
+winscp - file transfer between widnows and remote(usually a linux box)
