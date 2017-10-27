@@ -5,7 +5,7 @@ the above command will give you the details of different configurations, we need
 /etc/hadoop/conf
 
 /usr/hdp/current/hadoop-mapreduce-client/hadoop-mapreduce-examples.jar
-
+/example/data/gutenberg/davinvi.txt
 
 commons-logging.properties
 log4j.properties
