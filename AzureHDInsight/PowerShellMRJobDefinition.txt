@@ -24,4 +24,4 @@ Get-AzureRmHDInsightJobOutput -ClusterName $clusterName -JobId $wordCountJob.Job
 # Download output file
 Write-Host "Downloading results..."
 Get-AzureStorageBlobContent -Context $blobContext -Container $containerName -Blob data/output/part-r-00000 -Destination "D:\Venkat\Outputfiles\"
-dir D:\Venkat\Outputfiles\part-r-00000
+dir D:\Venkat\Outputfiles\
