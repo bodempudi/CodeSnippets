@@ -16,3 +16,10 @@ $UserName = $FirstName + "." + $LastName + "@globomantics.org"
 
 New-MsolUser -DisplayName $DisplayName -UserPrinciPalName $UserName -FirstName $FirstName -LastName $LastName -Country $Country -City $city -Title $title -Department $department -Office $office -UsageLocation $Country -LicenseAssignment "globomanticsorg:ENTERPRISEPACK" -State $user.state
 }
+
+
+
+$users = import-csv 'filename'
+foreach ($user in $users){
+Set-MsolUserLicense -UserPrincipalName $user.UserPrincipalName -AddLicenses 'yourcompanyname:ENTERPRISEPACK'
+}
