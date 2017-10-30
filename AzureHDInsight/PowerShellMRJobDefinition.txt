@@ -1,0 +1,27 @@
+$Day1 =  get-date -UFormat %d
+$resourceGroupName = "analytics$Day1"
+$storageAccountName = "s$resourceGroupName"
+$containerName = "hdp$resourceGroupName"
+$clusterName = $containerName
+$httpUserName = "hduser"
+$password = ConvertTo-SecureString "Oct26@2017" -AsPlainText -Force
+$credential = New-Object System.Management.Automation.PSCredential ($httpUserName, $password)
+
+# Upload source data
+$storageAccountKey = (Get-AzureRmStorageAccountKey -ResourceGroupName $resourceGroupName -Name $storageAccountName)[0].Value
+$blobContext = New-AzureStorageContext -StorageAccountName $storageAccountName -StorageAccountKey $storageAccountKey
+Set-AzureStorageBlobContent -File D:\Venkat\Inputputfiles\change.log -Context $blobContext -Container $containerName -Blob data/treasure-island.txt -Force
+
+# Run a Map/Reduce job
+$jobDef = New-AzureRmHDInsightMapReduceJobDefinition -JarFile "/example/jars/hadoop-mapreduce-examples.jar" -ClassName "wordcount" -Arguments "/data/treasure-island.txt", "/data/output" -StatusFolder "status"
+$wordCountJob = Start-AzureRmHDInsightJob –ClusterName $clusterName –JobDefinition $jobDef -ResourceGroupName $resourceGroupName -HttpCredential $credential
+Write-Host "Map/Reduce job submitted..."
+ 
+# Wait, and then display job output information
+Wait-AzureRmHDInsightJob -JobId $wordCountJob.JobId -ResourceGroupName $resourceGroupName -ClusterName $clusterName -HttpCredential $credential
+Get-AzureRmHDInsightJobOutput -ClusterName $clusterName -JobId $wordCountJob.JobId -ResourceGroupName $resourceGroupName -HttpCredential $credential -DefaultStorageAccountName $storageAccountName -DefaultContainer $containerName -DefaultStorageAccountKey $storageAccountKey
+
+# Download output file
+Write-Host "Downloading results..."
+Get-AzureStorageBlobContent -Context $blobContext -Container $containerName -Blob data/output/part-r-00000 -Destination "D:\Venkat\Outputfiles\"
+dir D:\Venkat\Outputfiles\part-r-00000
