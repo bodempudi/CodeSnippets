@@ -1,0 +1,18 @@
+$users = import-csv 'file'
+
+foreach ($user in $users)
+{
+$FirstName = $user.FirstName
+$LastName = $user.LastName
+$Country = $user.Country
+$City = $user.city
+$Title = $user.title
+$department = $user.department
+$Office = $user.Office
+
+$DisplayName = $LastName + ", " + $FirstName
+$UserName = $FirstName + "." + $LastName + "@globomantics.org"
+
+
+New-MsolUser -DisplayName $DisplayName -UserPrinciPalName $UserName -FirstName $FirstName -LastName $LastName -Country $Country -City $city -Title $title -Department $department -Office $office -UsageLocation $Country -LicenseAssignment "globomanticsorg:ENTERPRISEPACK" -State $user.state
+}
