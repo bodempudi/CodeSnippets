@@ -10,7 +10,7 @@ set R Home directory to
 C:\program files\microsoft\ropen\r-3.4.2.
 
 download this file and install-
-https://mran.microsoft.com/install/mro/3.4.2/microsoft-r-open-3.4.2.exe
+https://mran.microsoft.com/install/mro/3.4.2/microsoft-r-open-3.4.2.exe (here version might be different - check latest version)
 
 
 input file url:
