@@ -2,7 +2,7 @@
 install.packages("mice")
 library(mice)
 tempData <- mice(dataset,m=1,maxit=50,meth='pmm',seed=100)
-completedData <- complete(tempData,1)
+completedData <- complete(tempData,1)#https://www.rdocumentation.org/packages/mice/versions/2.46.0/topics/complete
 output <- dataset
 output$completedValues <- completedData$"SMI missing values"
 
