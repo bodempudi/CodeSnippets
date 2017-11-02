@@ -1,0 +1,4 @@
+#Login-AzureRmAccount
+#Get-AzurePublishSettingsFile #to get the azure publish settings
+Import-AzurePublishSettingsFile -PublishSettingsFile D:\venkat\credentials.publishsettings
+New-AzureRmResourceGroup   -Name "onthefly"   -Location "eastus"
