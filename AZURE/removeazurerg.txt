@@ -1,3 +1,5 @@
 #if you remove the resouce group, all the resources in that group will be deleted automatically
-Login-AzurermAccount
+#Login-AzurermAccount
+#Get-AzurePublishSettingsFile
+Import-AzurePublishSettingsFile -PublishSettingsFile D:\venkat\credentials.publishsettings
 Remove-AzureRmResourceGroup -Name "onthefly" -Force
