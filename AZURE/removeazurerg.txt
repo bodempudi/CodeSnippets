@@ -1,0 +1,3 @@
+#if you remove the resouce group, all the resources in that group will be deleted automatically
+Login-AzurermAccount
+Remove-AzureRmResourceGroup -Name "onthefly" -Force
