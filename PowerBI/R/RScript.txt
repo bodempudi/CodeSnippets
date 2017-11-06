@@ -1,3 +1,4 @@
+install.packages("mice")
 library(mice)
 tempData <- mice(dataset,m=1,maxit=50,meth='pmm',seed=100)
 completedData <- complete(tempData,1)
