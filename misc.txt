@@ -8,3 +8,7 @@ http://www.boxofficemojo.com/alltime/world/?pagenum=2&p=.htm
 
 
 https://bodempudi.visualstudio.com/DefaultCollection/_git/Sample
+
+
+
+RANK = COUNTROWS(FILTER(ALL('DimProduct (2)'[UnitPrice]),'DimProduct (2)'[UnitPrice] > EARLIER('DimProduct (2)'[UnitPrice])))+1
