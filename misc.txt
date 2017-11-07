@@ -12,3 +12,18 @@ https://bodempudi.visualstudio.com/DefaultCollection/_git/Sample
 
 
 RANK = COUNTROWS(FILTER(ALL('DimProduct (2)'[UnitPrice]),'DimProduct (2)'[UnitPrice] > EARLIER('DimProduct (2)'[UnitPrice])))+1
+
+
+CYTD Sales = CALCULATE(SUM(FactInternetSales[SalesAmount]),
+	FILTER(ALL(DimDate),
+	DimDate[FullDateAlternateKey] <= MAX(DimDate[FullDateAlternateKey])
+		&& DimDate[Year] = MAX(DimDate[Year]))
+	)
+
+
+FYTD Sales = TOTALYTD(SUM(FactInternetSales[SalesAmount]),
+		DimDate[FullDateAlternateKey],ALL(DimDate),"03/31")
+
+
+YTD Sales = TOTALYTD(SUM(FactInternetSales[SalesAmount]),
+		DimDate[FullDateAlternateKey],ALL(DimDate))
