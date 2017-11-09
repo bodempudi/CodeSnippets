@@ -1,0 +1,54 @@
+--creating folder in ssis catalog using powershell
+$sqlConnectionString = "yourconnectionstring"
+ 
+# Load the IntegrationServices Assembly
+[System.Reflection.Assembly]::LoadWithPartialName("Microsoft.SqlServer.Management.IntegrationServices") | Out-Null;
+ 
+# Create a connection object based on the connection string
+# This connection will be used to connect to the Integration services service
+$sqlConnection = New-Object System.Data.SqlClient.SqlConnection $sqlConnectionString
+ 
+# Let's create a new Integration Services object based on the SSIS name space and 
+# the connection object created in the previous step
+$integrationServices = New-Object "Microsoft.SqlServer.Management.IntegrationServices.IntegrationServices" $sqlConnection
+ 
+#Let's print the object to validate the connection to the server
+echo $integrationServices
+
+--deploying project to catalog
+$ProjectFilePath = "ispac file location"
+$ProjectName = "SSISPackages"
+$EnvironmentName = "Development"
+ 
+$sqlConnectionString = "db connection string"
+$FolderName = "SSIS Deploy Demo"
+$FolderDescription = "SSIS Deploy Demo"
+ 
+# Load the IntegrationServices Assembly
+[System.Reflection.Assembly]::LoadWithPartialName("Microsoft.SqlServer.Management.IntegrationServices") | Out-Null;
+ 
+# Create a connection object based on the connection string
+# This connection will be used to connect to the Integration services service
+$sqlConnection = New-Object System.Data.SqlClient.SqlConnection $sqlConnectionString
+ 
+# Let's create a new Integration Services object based on the SSIS name space and 
+# the connection object created in the previous step
+$integrationServices = New-Object Microsoft.SqlServer.Management.IntegrationServices.IntegrationServices $sqlConnection
+ 
+echo $integrationServices.Catalogs["SSISDB"]
+ 
+$catalog = $integrationServices.Catalogs["SSISDB"]
+ 
+#As we have created an object for the catalog, we can access the catalog
+# and create a folder
+Write-Host "Creating Folder " $FolderName "  in the SSIS Catalog"
+ 
+$SSISfolder = New-Object Microsoft.SqlServer.Management.IntegrationServices.CatalogFolder ($catalog, $FolderName, $FolderDescription)
+$SSISfolder.Create()
+Write-Host $FolderName "Folder has been created in the SSIS Catalog"
+ 
+Write-Host "Deploying " $ProjectName " project ..."
+# Read the project file, and deploy it to the folder
+[byte[]] $projectFile = [System.IO.File]::ReadAllBytes($ProjectFilePath)
+$SSISfolder.DeployProject($ProjectName, $projectFile)
+Write-Host $ProjectName " project has been deployed successfully"
