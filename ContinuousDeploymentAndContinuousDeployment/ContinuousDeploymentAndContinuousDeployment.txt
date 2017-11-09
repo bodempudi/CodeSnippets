@@ -1,3 +1,4 @@
+//https://blogs.msdn.microsoft.com/mattm/2011/11/17/ssis-and-powershell-in-sql-server-2012/
 --creating folder in ssis catalog using powershell
 $sqlConnectionString = "yourconnectionstring"
  
