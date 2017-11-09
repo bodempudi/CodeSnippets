@@ -15,7 +15,51 @@ $integrationServices = New-Object "Microsoft.SqlServer.Management.IntegrationSer
 #Let's print the object to validate the connection to the server
 echo $integrationServices
 
---deploying project to catalog
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+$sqlConnectionString = "yourconnectionstring"
+ 
+ $FolderName ="SSIS Deploy Demo";
+ $FolderDescription = "SSIS Deploy Demo Desription";
+
+# Load the IntegrationServices Assembly
+[System.Reflection.Assembly]::LoadWithPartialName("Microsoft.SqlServer.Management.IntegrationServices") | Out-Null;
+ 
+# Create a connection object based on the connection string
+# This connection will be used to connect to the Integration services service
+$sqlConnection = New-Object System.Data.SqlClient.SqlConnection $sqlConnectionString
+ 
+# Let's create a new Integration Services object based on the SSIS name space and 
+# the connection object created in the previous step
+$integrationServices = New-Object "Microsoft.SqlServer.Management.IntegrationServices.IntegrationServices" $sqlConnection
+ 
+#Let's print the object to validate the connection to the server
+echo $integrationServices.Catalogs["SSISDB"]
+
+$catalogs= $integrationServices.Catalogs["SSISDB"]
+
+
+#As we have created an object for the catalog, we can access the catalog
+# and create a folder
+Write-Host "Creating Folder " $FolderName "  in the SSIS Catalog"
+
+$folderexists=$catalogs.Folders[$FolderName]; 
+if($folderexists)
+{
+    Write-Host "folder already exists";
+}
+else
+{
+    Write-Host "folder does not exists, creating the same";
+    $SSISfolder = New-Object Microsoft.SqlServer.Management.IntegrationServices.CatalogFolder ($catalogs, $FolderName, $FolderDescription)
+    $SSISfolder.Create()
+    Write-Host $FolderName "Folder has been created in the SSIS Catalog"
+ }
+ -------------------------------------------------------------------------------------------------------------------------------------
+
+
+
+
+
 $ProjectFilePath = "ispac file location"
 $ProjectName = "SSISPackages"
 $EnvironmentName = "Development"
