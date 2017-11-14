@@ -4,6 +4,8 @@ https://vlabs.holsystems.com/vlabs/technet?eng=VLabs&auth=none&src=vlabs&altadd=
 
 https://vlabs.holsystems.com/vlabs/technet?eng=VLabs&auth=none&src=vlabs&altadd=true&labid=29101&lod=true //linux machine
 
+https://vlabs.holsystems.com/vlabs/technet?eng=VLabs&auth=none&src=vlabs&altadd=true&labid=34769&lod=true //ssis
+
 http://www.boxofficemojo.com/alltime/world/?pagenum=2&p=.htm
 
 
