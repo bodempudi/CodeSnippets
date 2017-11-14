@@ -8,6 +8,8 @@ https://vlabs.holsystems.com/vlabs/technet?eng=VLabs&auth=none&src=vlabs&altadd=
 
 https://vlabs.holsystems.com/vlabs/technet?eng=VLabs&auth=none&src=vlabs&altadd=true&labid=23110&lod=true //ssas multidien
 
+https://vlabs.holsystems.com/vlabs/technet?eng=VLabs&auth=none&src=vlabs&altadd=true&labid=21981&lod=true //ssrs
+
 http://www.boxofficemojo.com/alltime/world/?pagenum=2&p=.htm
 
 
