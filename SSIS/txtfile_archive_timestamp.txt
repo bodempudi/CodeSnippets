@@ -1,0 +1,1 @@
+@[$Package::dstpath]+replace(replace( @[User::filename], @[$Package::Path],""),".txt","")+"_"+replace(substring(((dt_str,50,1252)getdate()),1,10),"-","")+".txt"
