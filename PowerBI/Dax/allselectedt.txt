@@ -1,0 +1,1 @@
+Measure = CALCULATE(COUNT(DimProduct[ProductKey]),ALLSELECTED(DimProductSubcategory[Subcategory]),ALLSELECTED(DimProduct[Product]))
