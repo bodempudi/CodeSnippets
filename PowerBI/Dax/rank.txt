@@ -20,3 +20,6 @@ insert into dbo.sales values(3,10);
 insert into dbo.sales values(3,10);
 insert into dbo.sales values(4,80);
 insert into dbo.sales values(4,50);
+
+
+RANK = IF(NOT(HASONEVALUE(DimProduct[Product])),BLANK(), RANKX(ALL(DimProduct[Product]),CALCULATE(SUM(FactInternetSales[SalesAmount])),,DESC,Dense))
