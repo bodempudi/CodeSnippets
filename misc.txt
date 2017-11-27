@@ -10,6 +10,8 @@ https://vlabs.holsystems.com/vlabs/technet?eng=VLabs&auth=none&src=vlabs&altadd=
 
 https://vlabs.holsystems.com/vlabs/technet?eng=VLabs&auth=none&src=vlabs&altadd=true&labid=21981&lod=true //ssrs
 
+https://vlabs.holsystems.com/vlabs/technet?eng=VLabs&auth=none&src=vlabs&altadd=true&labid=27679&lod=true //pbi desktop
+
 http://www.boxofficemojo.com/alltime/world/?pagenum=2&p=.htm
 
 
