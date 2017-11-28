@@ -1,0 +1,48 @@
+ $Day1 =  get-date -UFormat %d 
+$resourceGroupName = "analytics$Day1" 
+$location = "West Europe" 
+$storageAccountName = "s$resourceGroupName" 
+$containerName = "hdp$resourceGroupName" 
+$clusterName = $containerName 
+$clusterNodes = 2 
+$httpUserName = "hduser" 
+$sshUserName = "sshuser" 
+$password = ConvertTo-SecureString "Oct26@2017" -AsPlainText -Force 
+ 
+ 
+$localfolder = "D:\venkat\" 
+$destfolder = "files" 
+
+　
+ Login-AzureRmAccount 
+ 
+
+ # Create a resource group 
+ New-AzureRmResourceGroup -Name $resourceGroupName -Location $location 
+ 
+
+ # Create a storage account 
+ Write-Host "Creating storage account..." 
+ New-AzureRmStorageAccount -Name $storageAccountName -ResourceGroupName $resourceGroupName -Type "Standard_GRS" -Location $location 
+ 
+
+ # Create a Blob storage container 
+ Write-Host "Creating container..." 
+ $storageAccountKey = (Get-AzureRmStorageAccountKey -ResourceGroupName $resourceGroupName -Name $storageAccountName)[0].Value 
+ 
+
+ $destContext = New-AzureStorageContext -StorageAccountName $storageAccountName -StorageAccountKey $storageAccountKey 
+ New-AzureStorageContainer -Name $containerName -Context $destContext 
+ 
+ $files = Get-ChildItem $localfolder 
+ foreach($file in $files) 
+ { 
+     $filename = "$localfolder\$file" 
+     $blobname = "$destfolder/$file" 
+     write-host "copying $filename to $blobname" 
+     Set-AzureStorageBlobContent -File $filename -Container $containerName -Blob $blobname -Context $destContext 
+ } 
+ Write-Host "All files in $localfolder copied to $containerName" 
+
+ 
+ 
