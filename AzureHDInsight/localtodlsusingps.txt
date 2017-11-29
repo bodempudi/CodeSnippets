@@ -1,4 +1,4 @@
-#Login-AzureRmAccount
+Login-AzureRmAccount
 $resourceGroupName ="adlstest"
 $resourceGroupLocation='east us 2'
 $dataLakeStoreName = "venkatdatalakestorename"
