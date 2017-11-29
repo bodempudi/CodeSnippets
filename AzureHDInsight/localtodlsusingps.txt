@@ -1,6 +1,7 @@
 #Login-AzureRmAccount
 $resourceGroupName ="adlstest"
-$resourceGroupLocation='east us 2';
+$resourceGroupLocation='east us 2'
+$dataLakeStoreName = "venkatdatalakestorename"
 $resourceGroup = Get-AzureRmResourceGroup -Name $resourceGroupName -ErrorAction SilentlyContinue
 if(!$resourceGroup)
 {
@@ -10,18 +11,15 @@ if(!$resourceGroup)
 else{
     Write-Host "Using existing resource group '$resourceGroupName'";
 }
-$dataLakeStoreName = "venkatdatalakestorename"
-
-
-#check if Azure data lake store exists or not.
-$datalakestoreaccountexists=Get-AzureRmDataLakeStoreAccount -ResourceGroupName $resourceGroupName -Name $dataLakeStoreName -ev notexists -ea 0 | Out-Null
-#Create the Azure Data Lake Store if it doesn't exists
-Write-Host "PP--$datalakestoreaccountexists";
-if(!$datalakestoreaccountexists)
+$checkadlsaccount=Test-AzureRmDataLakeStoreAccount -Name $dataLakeStoreName
+if($checkadlsaccount)
 {
-    Write-Host "$dataLakeStoreName does not exists, creating the same"
-    New-AzureRmDataLakeStoreAccount -ResourceGroupName $resourceGroupName -Name $dataLakeStoreName -Location $resourceGroupLocation
-    #test if the account is successfully created
+    Write-Host "$dataLakeStoreName account exists";
+}
+else
+{
+    Write-Host "$dataLakeStoreName account does not exists, creating the same";    
+    New-AzureRmDataLakeStoreAccount -ResourceGroupName $resourceGroupName -Name $dataLakeStoreName -Location $resourceGroupLocation    
     if ((Test-AzureRmDataLakeStoreAccount -Name $dataLakeStoreName) -eq $True)
     { 
         Write-Host "Data Lake Store $dataLakeStoreName created successfully!!!" 
@@ -31,7 +29,8 @@ if(!$datalakestoreaccountexists)
         Write-Host "Data Lake Store $dataLakeStoreName failed to create"
     }
 }
-else
-{
-    Write-Host "$dataLakeStoreName already exists"
-}
+
+$myrootdir = "/"
+New-AzureRmDataLakeStoreItem -Folder -AccountName $dataLakeStoreName -Path $myrootdir/analytics
+
+Import-AzureRmDataLakeStoreItem -AccountName $dataLakeStoreName -Path "E:\Book1.xlsx" -Destination $myrootdir\analytics\Book1.xlsx -ov
