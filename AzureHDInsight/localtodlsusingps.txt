@@ -1,21 +1,38 @@
-$Day1 =  get-date -UFormat %d
-$resourceGroupName = "analytics1$Day1"
-$location = "eastus2"
-$storageAccountName = "s$resourceGroupName"
-$containerName = "hdp$resourceGroupName"
-$clusterName = $containerName
-$clusterNodes = 2
-$httpUserName = "hduser"
-$sshUserName = "sshuser"
-$password = ConvertTo-SecureString "Oct26@2017" -AsPlainText -Force
+#Login-AzureRmAccount
+$resourceGroupName ="adlstest"
+$resourceGroupLocation='east us 2';
+$resourceGroup = Get-AzureRmResourceGroup -Name $resourceGroupName -ErrorAction SilentlyContinue
+if(!$resourceGroup)
+{
+    Write-Host "Resource group '$resourceGroupName' does not exists, creating a new resource group";    
+    New-AzureRmResourceGroup -Name $resourceGroupName -Location $resourceGroupLocation
+}
+else{
+    Write-Host "Using existing resource group '$resourceGroupName'";
+}
+$dataLakeStoreName = "venkatdatalakestorename"
 
-Login-AzureRmAccount
 
-# Create a resource group
-New-AzureRmResourceGroup -Name $resourceGroupName -Location $location
-
-$dataLakeStoreName = "datalakestorevenkat$Day1"
- New-AzureRmDataLakeStoreAccount -ResourceGroupName $resourceGroupName -Name $dataLakeStoreName -Location $location
- $myrootdir = "/"
- New-AzureRmDataLakeStoreItem -Folder -AccountName $dataLakeStoreName -Path $myrootdir/mynewdirectory
- Import-AzureRmDataLakeStoreItem -AccountName $dataLakeStoreName -Path "D:\venkat\testfile.txt" -Destination $myrootdir\mynewdirectory\testfile.txt
+#check if Azure data lake store exists or not.
+Get-AzureRmDataLakeStoreAccount -ResourceGroupName $resourceGroupName -Name $dataLakeStoreName -ev notexists -ea 0 | Out-Null
+#Create the Azure Data Lake Store if it doesn't exists
+Write-Host "PP--$notexists";
+if((Test-AzureRmDataLakeStoreAccount -Name $dataLakeStoreName) -eq $True)
+{
+    Write-Host "data lake store does not exists" 
+    Write-Host "Creating the data lake store $dataLakeStoreName"
+    New-AzureRmDataLakeStoreAccount -ResourceGroupName $resourceGroupName -Name $dataLakeStoreName -Location $resourceGroupLocation
+    #test if the account is successfully created
+    if ((Test-AzureRmDataLakeStoreAccount -Name $dataLakeStoreName) -eq $True)
+    { 
+        Write-Host "Data Lake Store $dataLakeStoreName created successfully!!!" 
+    }
+    else
+    {
+        Write-Host "Data Lake Store $dataLakeStoreName failed to create"
+    }   
+}
+else
+{
+    Write-Host "data lake store already exists with name $dataLakeStoreName"
+}
