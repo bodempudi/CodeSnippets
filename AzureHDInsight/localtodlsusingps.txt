@@ -32,5 +32,5 @@ else
 
 $myrootdir = "/"
 New-AzureRmDataLakeStoreItem -Folder -AccountName $dataLakeStoreName -Path $myrootdir/analytics
-
-Import-AzureRmDataLakeStoreItem -AccountName $dataLakeStoreName -Path "E:\Book1.xlsx" -Destination $myrootdir\analytics\Book1.xlsx -ov
+$a=Get-AzureRmDataLakeStoreChildItem -AccountName $dataLakeStoreName -Path $myrootdir/analytics
+Import-AzureRmDataLakeStoreItem -AccountName $dataLakeStoreName -Path "E:\Book1.xlsx" -Destination $myrootdir\analytics\Book1.xlsx
