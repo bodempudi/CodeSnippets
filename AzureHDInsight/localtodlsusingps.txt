@@ -14,13 +14,12 @@ $dataLakeStoreName = "venkatdatalakestorename"
 
 
 #check if Azure data lake store exists or not.
-Get-AzureRmDataLakeStoreAccount -ResourceGroupName $resourceGroupName -Name $dataLakeStoreName -ev notexists -ea 0 | Out-Null
+$datalakestoreaccountexists=Get-AzureRmDataLakeStoreAccount -ResourceGroupName $resourceGroupName -Name $dataLakeStoreName -ev notexists -ea 0 | Out-Null
 #Create the Azure Data Lake Store if it doesn't exists
-Write-Host "PP--$notexists";
-if((Test-AzureRmDataLakeStoreAccount -Name $dataLakeStoreName) -eq $True)
+Write-Host "PP--$datalakestoreaccountexists";
+if(!$datalakestoreaccountexists)
 {
-    Write-Host "data lake store does not exists" 
-    Write-Host "Creating the data lake store $dataLakeStoreName"
+    Write-Host "$dataLakeStoreName does not exists, creating the same"
     New-AzureRmDataLakeStoreAccount -ResourceGroupName $resourceGroupName -Name $dataLakeStoreName -Location $resourceGroupLocation
     #test if the account is successfully created
     if ((Test-AzureRmDataLakeStoreAccount -Name $dataLakeStoreName) -eq $True)
@@ -30,9 +29,9 @@ if((Test-AzureRmDataLakeStoreAccount -Name $dataLakeStoreName) -eq $True)
     else
     {
         Write-Host "Data Lake Store $dataLakeStoreName failed to create"
-    }   
+    }
 }
 else
 {
-    Write-Host "data lake store already exists with name $dataLakeStoreName"
+    Write-Host "$dataLakeStoreName already exists"
 }
