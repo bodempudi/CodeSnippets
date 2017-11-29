@@ -1,0 +1,21 @@
+$Day1 =  get-date -UFormat %d
+$resourceGroupName = "analytics1$Day1"
+$location = "eastus2"
+$storageAccountName = "s$resourceGroupName"
+$containerName = "hdp$resourceGroupName"
+$clusterName = $containerName
+$clusterNodes = 2
+$httpUserName = "hduser"
+$sshUserName = "sshuser"
+$password = ConvertTo-SecureString "Oct26@2017" -AsPlainText -Force
+
+Login-AzureRmAccount
+
+# Create a resource group
+New-AzureRmResourceGroup -Name $resourceGroupName -Location $location
+
+$dataLakeStoreName = "datalakestorevenkat$Day1"
+ New-AzureRmDataLakeStoreAccount -ResourceGroupName $resourceGroupName -Name $dataLakeStoreName -Location $location
+ $myrootdir = "/"
+ New-AzureRmDataLakeStoreItem -Folder -AccountName $dataLakeStoreName -Path $myrootdir/mynewdirectory
+ Import-AzureRmDataLakeStoreItem -AccountName $dataLakeStoreName -Path "D:\venkat\testfile.txt" -Destination $myrootdir\mynewdirectory\testfile.txt
