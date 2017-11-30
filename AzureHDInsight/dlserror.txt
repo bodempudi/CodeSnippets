@@ -1,0 +1,9 @@
+Import-AzureRmDataLakeStoreItem : Upload operation failed due to the following underlying error: 
+System.IO.DirectoryNotFoundException: Could not find a part of the path 
+'C:\Users\LabUser\AppData\Local\Temp\1\FinancialSample.xlsx.transfer.xml'.
+   at Microsoft.Azure.Commands.DataLakeStore.Models.DataLakeStoreFileSystemClient.TrackUploadProgress(Task uploadTask, 
+ProgressRecord uploadProgress, Cmdlet commandToUpdateProgressFor, CancellationToken token)
+   at Microsoft.Azure.Commands.DataLakeStore.Models.DataLakeStoreFileSystemClient.CopyFile(String destinationPath, String 
+accountName, String sourcePath, CancellationToken cmdletCancellationToken, Int32 threadCount, Boolean overwrite, Boolean resume, 
+Boolean isBinary, Boolean isDownload, Cmdlet cmdletRunningRequest, ProgressRecord parentProgress). You can try to resume the upload 
+by specifying the "Resume" option. If the error persists, please contact Microsoft support.
