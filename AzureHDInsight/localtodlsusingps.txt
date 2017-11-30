@@ -1,4 +1,4 @@
-Login-AzureRmAccount
+#Login-AzureRmAccount
 $resourceGroupName ="adlstest"
 $resourceGroupLocation='east us 2'
 $dataLakeStoreName = "venkatdatalakestorename"
@@ -32,5 +32,4 @@ else
 
 $myrootdir = "/"
 New-AzureRmDataLakeStoreItem -Folder -AccountName $dataLakeStoreName -Path $myrootdir/analytics
-$a=Get-AzureRmDataLakeStoreChildItem -AccountName $dataLakeStoreName -Path $myrootdir/analytics
-Import-AzureRmDataLakeStoreItem -AccountName $dataLakeStoreName -Path "E:\Book1.xlsx" -Destination $myrootdir\analytics\Book1.xlsx
+Import-AzureRmDataLakeStoreItem -AccountName $dataLakeStoreName -Path "C:\Users\LabUser\Downloads\FinancialSample.xlsx" -Destination $myrootdir\analytics\Book1.xlsx -Force $True
