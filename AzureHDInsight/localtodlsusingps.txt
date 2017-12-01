@@ -47,7 +47,7 @@ write-host "uploading files started";
      $filename = "$localfolder\$file" 
      $blobname = "$destfolder/$file" 
      write-host "copying $filename to $dataLakeStoreName" 
-     Import-AzureRmDataLakeStoreItem -AccountName $dataLakeStoreName -Path $filename -Destination $myrootdir/analytics/SampleData.xlsx -Force     
+     Import-AzureRmDataLakeStoreItem -AccountName $dataLakeStoreName -Path $filename -Destination $myrootdir/analytics/$file -Force     
  } 
  Write-Host "All files in $localfolder copied to $dataLakeStoreName"
 
