@@ -39,13 +39,6 @@ else
     Write-Host "$myrootdir/analytics does not exists, creating same" 
     New-AzureRmDataLakeStoreItem -Folder -AccountName $dataLakeStoreName -Path $myrootdir/analytics
 }
-if ((Test-AzureRmDataLakeStoreItem -AccountName $dataLakeStoreName -Path $myrootdir/analytics/SampleData.xlsx) -eq $True)
-{ 
-    Write-Host "$myrootdir/analytics/SampleData.xlsx already exists" 
-}
-else
-{
-    Write-Host "$myrootdir/analytics/SampleData.xlsx does not exists"
-    Import-AzureRmDataLakeStoreItem -AccountName $dataLakeStoreName -Path "C:\Users\LabUser\Downloads\Financial Sample.xlsx" -Destination $myrootdir/analytics/SampleData.xlsx -Force $True -Resume $True
-}
+Import-AzureRmDataLakeStoreItem -AccountName $dataLakeStoreName -Path "C:\Users\LabUser\Downloads\Financial Sample.xlsx" -Destination $myrootdir/analytics/SampleData.xlsx -Force
+
 
