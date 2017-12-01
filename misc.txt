@@ -28,3 +28,59 @@ Nov@2017
 
 raddagonta@sqlschoolnov23.onmicrosoft.com
 Nov@2017
+
+
+/****** Object:  Table [stg].[EXT_ORDERS_HEADER_SAP]    Script Date: 12/1/2017 7:15:48 AM ******/
+SET ANSI_NULLS ON
+GO
+CREATE EXTERNAL TABLE [stg].[EXT_ORDERS_HEADER_DataLakeTest]
+(
+	[DI_SEQUENCE_NUMBER] [nvarchar](255) NULL,
+	[DI_OPERATION_TYPE] [nvarchar](255) NULL,
+	[ROCANCEL] [nvarchar](255) NULL,
+	[VBELN] [nvarchar](255) NULL,
+	[ANGDT] [nvarchar](255) NULL,
+	[AUART] [nvarchar](255) NULL,
+	[AUGRU] [nvarchar](255) NULL,
+	[BNDDT] [nvarchar](255) NULL,
+	[BUKRS] [nvarchar](255) NULL,
+	[ERDAT] [nvarchar](255) NULL,
+	[FAKSK] [nvarchar](255) NULL,
+	[HWAER] [nvarchar](255) NULL,
+	[KUNNR] [nvarchar](255) NULL,
+	[KURST] [nvarchar](255) NULL,
+	[KVGR1] [nvarchar](255) NULL,
+	[KVGR2] [nvarchar](255) NULL,
+	[KVGR3] [nvarchar](255) NULL,
+	[KVGR4] [nvarchar](255) NULL,
+	[KVGR5] [nvarchar](255) NULL,
+	[LIFSK] [nvarchar](255) NULL,
+	[PVRTNR] [nvarchar](255) NULL,
+	[STWAE] [nvarchar](255) NULL,
+	[VBTYP] [nvarchar](255) NULL,
+	[VDATU] [nvarchar](255) NULL,
+	[VKBUR] [nvarchar](255) NULL,
+	[VKGRP] [nvarchar](255) NULL,
+	[VKORG] [nvarchar](255) NULL,
+	[VTWEG] [nvarchar](255) NULL,
+	[WAERK] [nvarchar](255) NULL,
+	[AEDAT] [nvarchar](255) NULL,
+	[AUDAT1] [nvarchar](255) NULL,
+	[BSARK] [nvarchar](255) NULL,
+	[BSTNK] [nvarchar](255) NULL,
+	[ERNAM] [nvarchar](255) NULL,
+	[PKUNRE] [nvarchar](255) NULL,
+	[PKUNWE] [nvarchar](255) NULL,
+	[SPARA] [nvarchar](255) NULL,
+	[VGTYP_AK] [nvarchar](255) NULL,
+	[ANZAU] [nvarchar](255) NULL,
+	[PERIV] [nvarchar](255) NULL,
+	[ODQ_CHANGEMODE] [nvarchar](255) NULL,
+	[ODQ_ENTITYCNTR] [nvarchar](255) NULL
+)
+WITH (DATA_SOURCE = [AzureDataLakeStorage]
+	,LOCATION = N'adl://girdevdl.azuredatalakestore.net/analytics/SALES_ORDER_HEADER.CSV'
+	,FILE_FORMAT = [TextFileFormat],REJECT_TYPE = VALUE,REJECT_VALUE = 10)
+GO
+
+
