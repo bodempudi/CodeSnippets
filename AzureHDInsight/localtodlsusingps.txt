@@ -31,15 +31,15 @@ else
     }
 }
 $myrootdir = "/"
-if ((Test-AzureRmDataLakeStoreItem -AccountName $dataLakeStoreName -Path $myrootdir/analytics) -eq $True)
-{ 
-    Write-Host "$myrootdir/analytics already exists" 
-}
-else
-{
-    Write-Host "$myrootdir/analytics does not exists, creating same" 
-    New-AzureRmDataLakeStoreItem -Folder -AccountName $dataLakeStoreName -Path $myrootdir/analytics
-}
+#if ((Test-AzureRmDataLakeStoreItem -AccountName $dataLakeStoreName -Path $myrootdir/analytics) -eq $True)
+#{ 
+#    Write-Host "$myrootdir/analytics already exists" 
+#}
+#else
+#{
+#    Write-Host "$myrootdir/analytics does not exists, creating same" 
+#    New-AzureRmDataLakeStoreItem -Folder -AccountName $dataLakeStoreName -Path $myrootdir/analytics
+#}
 write-host "uploading files started";
  $files = Get-ChildItem $localfolder 
  foreach($file in $files) 
@@ -47,7 +47,18 @@ write-host "uploading files started";
      $filename = "$localfolder\$file" 
      $blobname = "$destfolder/$file" 
      write-host "copying $filename to $dataLakeStoreName" 
-     Import-AzureRmDataLakeStoreItem -AccountName $dataLakeStoreName -Path $filename -Destination $myrootdir/analytics/$file -Force     
+     if($file.Name.Contains("HR"))
+     {
+        Import-AzureRmDataLakeStoreItem -AccountName $dataLakeStoreName -Path $filename -Destination $myrootdir/HR/$file -Force     
+     }
+     elseif($file.Name.Contains("Finance"))
+     {
+        Import-AzureRmDataLakeStoreItem -AccountName $dataLakeStoreName -Path $filename -Destination $myrootdir/Finance/$file -Force     
+     }
+     else
+     {
+        Import-AzureRmDataLakeStoreItem -AccountName $dataLakeStoreName -Path $filename -Destination $myrootdir/General/$file -Force     
+     }
  } 
  Write-Host "All files in $localfolder copied to $dataLakeStoreName"
 
