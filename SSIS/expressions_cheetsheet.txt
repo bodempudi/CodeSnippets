@@ -1,0 +1,5 @@
+//yesterday date in string format - YYYYMMDD Format
+REPLACE((DT_WSTR,10)(DT_DBDATE) DATEADD( "day",-1,GETDATE()),"-","")
+
+//today date in string format - YYYYMMDD Format
+REPLACE((DT_WSTR,10)(DT_DBDATE) GETDATE(),"-","")
