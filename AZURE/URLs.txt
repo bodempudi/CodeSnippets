@@ -7,3 +7,5 @@ https://channel9.msdn.com/Series/Azure-Active-Directory-Videos-Demos/How-to-Purc
 https://azure.microsoft.com/en-us/resources/videos/azure-ad-and-identity-show-azure-ad-domain-services-preview/
 
 https://azure.microsoft.com/en-us/resources/videos/azure-active-directory-overview/
+
+https://azure.microsoft.com/en-us/resources/videos/azure-active-directory-scottgu/
