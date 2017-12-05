@@ -1,0 +1,3 @@
+https://blogs.msdn.microsoft.com/benjaminperkins/2017/07/27/how-to-change-associate-an-azure-active-directory-to-a-subscription/
+
+https://docs.microsoft.com/en-us/azure/active-directory/active-directory-how-subscriptions-associated-directory
