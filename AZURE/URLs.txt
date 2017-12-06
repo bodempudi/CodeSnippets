@@ -9,3 +9,5 @@ https://azure.microsoft.com/en-us/resources/videos/azure-ad-and-identity-show-az
 https://azure.microsoft.com/en-us/resources/videos/azure-active-directory-overview/
 
 https://azure.microsoft.com/en-us/resources/videos/azure-active-directory-scottgu/
+
+https://blogs.msdn.microsoft.com/azuredatalake/2017/04/25/exposing-hive/
