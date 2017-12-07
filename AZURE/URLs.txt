@@ -14,3 +14,5 @@ https://blogs.msdn.microsoft.com/azuredatalake/2017/04/25/exposing-hive/
 
 
 https://docs.microsoft.com/en-us/azure/data-lake-store/data-lake-store-data-transfer-sql-sqoop
+
+http://codehelp.online/en/2017/09/29/using-azure-automation-to-manage-local-resources-part-ii-schedule-file-copies-from-a-local-machine-to-an-azure-blob/
