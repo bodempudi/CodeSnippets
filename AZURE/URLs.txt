@@ -11,3 +11,6 @@ https://azure.microsoft.com/en-us/resources/videos/azure-active-directory-overvi
 https://azure.microsoft.com/en-us/resources/videos/azure-active-directory-scottgu/
 
 https://blogs.msdn.microsoft.com/azuredatalake/2017/04/25/exposing-hive/
+
+
+https://docs.microsoft.com/en-us/azure/data-lake-store/data-lake-store-data-transfer-sql-sqoop
