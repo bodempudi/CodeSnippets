@@ -7,3 +7,5 @@ https://channel9.msdn.com/series/Example-scenarios-for-developing-big-data-solut
 https://channel9.msdn.com/Series/Azure-Data-Lake
 
 https://channel9.msdn.com/Shows/Data-Exposed/Securing-Azure-HDInsight
+
+https://channel9.msdn.com/Shows/Data-Exposed/Connecting-On-premises-Hadoop-to-Azure-Data-Lake-Store
