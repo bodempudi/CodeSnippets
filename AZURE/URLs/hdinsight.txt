@@ -1,3 +1,7 @@
+https://channel9.msdn.com/Series/Getting-started-with-Windows-Azure-HDInsight-Service/Introduction-To-Windows-Azure-HDInsight-Service
+
+https://channel9.msdn.com/Series/Getting-started-with-Windows-Azure-HDInsight-Service/Introduction-to-Windows-Azure-HDInsight-Service-continued
+
 https://channel9.msdn.com/series/Example-scenarios-for-developing-big-data-solutions-on-Microsoft-Azure-HDInsight/Big-Data-Scenario-1-Iterative-Data-Exploration
 
 https://channel9.msdn.com/Series/Azure-Data-Lake
