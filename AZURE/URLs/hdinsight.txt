@@ -1,0 +1,3 @@
+https://channel9.msdn.com/series/Example-scenarios-for-developing-big-data-solutions-on-Microsoft-Azure-HDInsight/Big-Data-Scenario-1-Iterative-Data-Exploration
+
+https://channel9.msdn.com/Series/Azure-Data-Lake
