@@ -9,3 +9,5 @@ https://channel9.msdn.com/Series/Azure-Data-Lake
 https://channel9.msdn.com/Shows/Data-Exposed/Securing-Azure-HDInsight
 
 https://channel9.msdn.com/Shows/Data-Exposed/Connecting-On-premises-Hadoop-to-Azure-Data-Lake-Store
+
+https://mva.microsoft.com/en-US/training-courses/data-series-analytics-big-data-spark-on-hdinsight-17760?l=wVyEnEn4D_2611787171
