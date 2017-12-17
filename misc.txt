@@ -30,6 +30,19 @@ raddagonta@sqlschoolnov23.onmicrosoft.com
 Nov@2017
 
 
+Your user ID
+admin@sgsep6.onmicrosoft.com
+Sep@2017
+
+PSupriya@sgsep6.onmicrosoft.com
+Sep@2017
+
+BBindu@sgsep6.onmicrosoft.com
+Sep@2017
+
+AKumar@sgsep6.onmicrosoft.com
+Sep@2017
+
 /****** Object:  Table [stg].[EXT_ORDERS_HEADER_SAP]    Script Date: 12/1/2017 7:15:48 AM ******/
 SET ANSI_NULLS ON
 GO
