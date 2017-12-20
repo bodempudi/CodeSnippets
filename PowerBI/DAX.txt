@@ -196,3 +196,7 @@ CONCATENATEX ( VALUES ( DimSalesTerritory[Country] ), DimSalesTerritory[Country]
 CONCATENATEX ( VALUES ( DimDate[Year] ), DimDate[Year], " - " )
  & " - " &
  CONCATENATEX ( VALUES ( DimProduct[Class] ), DimProduct[Class], " - " )
+ 
+ 
+ 
+ 3 Mon Sales = CALCULATE( SUM(FactInternetSales[SalesAmount]), DATESBETWEEN(  DimDate[FullDateAlternateKey],  DATEADD(NEXTDAY(LASTDATE(DimDate[FullDateAlternateKey])),   -3,MONTH),LASTDATE(DimDate[FullDateAlternateKey])) ,ALL(FactInternetSales)) 
