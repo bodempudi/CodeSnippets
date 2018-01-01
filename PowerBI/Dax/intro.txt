@@ -63,9 +63,10 @@ MIN, MAX, SUM
       /*
         Multiline comments
       */
+Capitialize word in DAX:
+------------------------
 
-
-
+ UPPER(LEFT(Table1[Column1],1))&REPLACE(LOWER(Table1[Column1]),1,1,"")
 
 logical functions
 AND
