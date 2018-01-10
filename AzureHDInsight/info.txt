@@ -1,1 +1,4 @@
 https://github.com/Azure/learnAnalytics-HDI-Hero
+
+
+https://azure.github.io/learnAnalytics-public/cert_guides/certification_70-775_community_guide
