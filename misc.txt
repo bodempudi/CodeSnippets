@@ -43,6 +43,8 @@ Sep@2017
 AKumar@sgsep6.onmicrosoft.com
 Dec@2017
 
+DateSlicer = IF(DimTime[PK_Date].[Date]=TODAY(),"Today",  IF(DimTime[PK_Date].[Year]=YEAR(TODAY()),"This Year",   if(DimTime[PK_Date].[Year]=YEAR(TODAY())-1,"Last Year",    if(DimTime[PK_Date].[Year]=YEAR(TODAY())-2,"Last But One Year", IF(DimTime[PK_Date].[MonthNo]=MONTH(TODAY()) && DimTime[PK_Date].[Year]=YEAR(TODAY()),"This Month", IF(WEEKNUM(DimTime[PK_Date],2)=WEEKNUM(TODAY(),2) && DimTime[PK_Date].[Year]=YEAR(TODAY()),"This Week","Other")))  )))
+
 /****** Object:  Table [stg].[EXT_ORDERS_HEADER_SAP]    Script Date: 12/1/2017 7:15:48 AM ******/
 SET ANSI_NULLS ON
 GO
