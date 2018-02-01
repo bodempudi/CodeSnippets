@@ -1,5 +1,7 @@
 https://technet.microsoft.com/en-us/virtuallabs/bb467605.aspx
 
+https://www.microsoft.com/handsonlabs/SelfPacedLabs/?storyId=external://content-private/content/external/Microsoft-Virtual-Labs/SQ00135 --aas
+
 https://vlabs.holsystems.com/vlabs/technet?eng=VLabs&auth=none&src=vlabs&altadd=true&labid=34768&lod=true  //windows machine ssas tabular
 
 https://vlabs.holsystems.com/vlabs/technet?eng=VLabs&auth=none&src=vlabs&altadd=true&labid=29101&lod=true //linux machine
