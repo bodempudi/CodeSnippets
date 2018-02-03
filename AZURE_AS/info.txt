@@ -1,3 +1,6 @@
 https://sqlbits.com/Sessions/Event16/Introduction_to_Azure_Analysis_Services
 
 https://www.meetup.com/Power-BI-Manchester-Meetup/events/237898301/?_cookie-check=FALeqYQ_uK8T6lHH
+
+
+https://marketplace.visualstudio.com/items?itemName=ProBITools.MicrosoftAnalysisServicesModelingProjects
