@@ -1,0 +1,3 @@
+https://docs.microsoft.com/en-us/azure/analysis-services/analysis-services-create-powershell
+
+https://docs.microsoft.com/en-us/azure/analysis-services/analysis-services-powershell
