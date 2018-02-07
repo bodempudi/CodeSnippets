@@ -12,3 +12,5 @@ https://docs.microsoft.com/en-us/azure/analysis-services/analysis-services-gatew
 
 
 https://www.kasperonbi.com/analysis-services-in-azure-when-and-why/
+
+https://blogs.msdn.microsoft.com/cathyk/2011/10/17/the-bi-semantic-model-mdx-dax-and-you/
