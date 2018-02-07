@@ -9,3 +9,6 @@ https://docs.microsoft.com/en-us/sql/ssdt/download-sql-server-data-tools-ssdt --
 
 
 https://docs.microsoft.com/en-us/azure/analysis-services/analysis-services-gateway  --data gateway
+
+
+https://www.kasperonbi.com/analysis-services-in-azure-when-and-why/
