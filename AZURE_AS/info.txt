@@ -6,3 +6,6 @@ https://www.meetup.com/Power-BI-Manchester-Meetup/events/237898301/?_cookie-chec
 https://marketplace.visualstudio.com/items?itemName=ProBITools.MicrosoftAnalysisServicesModelingProjects
 
 https://docs.microsoft.com/en-us/sql/ssdt/download-sql-server-data-tools-ssdt --ssdt download
+
+
+https://docs.microsoft.com/en-us/azure/analysis-services/analysis-services-gateway  --data gateway
