@@ -8,4 +8,4 @@ MSBI  - Analysis Services
   models
 Azure Analysis Services
   What is Azure-why azure-SAAS-PAAS-IAAS-why Azure Analysis Services-Difference between On-Prem and cloud-Azure Basics - Features - 
-  Architecure - Comparing with on prem multi dimensional model and tabular model.
+  Architecure - Comparing with on prem multi dimensional model and tabular model -limitations - pricing.
