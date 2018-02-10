@@ -27,7 +27,7 @@ CREATE TABLE [dbo].[DimDate](
 GO
 
 --audit table script
-CREATE TABLE [dw].[DimAudit](
+CREATE TABLE [dbo].[DimAudit](
 	[AuditKey] [int] IDENTITY(1,1) NOT NULL,
 	[ParentAuditKey] [int] NOT NULL,
 	[TableName] [varchar](50) NOT NULL,
@@ -52,22 +52,22 @@ CREATE TABLE [dw].[DimAudit](
 	[AuditKey] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY]
 ) ON [PRIMARY]
-SET IDENTITY_INSERT [dw].[DimAudit] ON 
+SET IDENTITY_INSERT [dbo].[DimAudit] ON 
 
 INSERT [dw].[DimAudit] ([AuditKey], [ParentAuditKey], [TableName], [PkgName], [PkgGUID], [PkgVersionGUID], [PkgVersionMajor], [PkgVersionMinor], [ExecStartDT], [ExecStopDT], [ExecutionInstanceGUID], [ExtractRowCnt], [InsertRowCnt], [UpdateRowCnt], [ErrorRowCnt], [TableInitialRowCnt], [TableFinalRowCnt], [TableMaxDateTime], [SuccessfulProcessingInd]) VALUES (-1, -1, N'Not Applicable', N'Initial Load', NULL, NULL, 0, 0, getdate(), getdate(), NULL, 0, 0, 0, 0, 0, 0, getdate(), N' ')
-SET IDENTITY_INSERT [dw].[DimAudit] OFF
-ALTER TABLE [dw].[DimAudit] ADD  DEFAULT ('Unknown') FOR [TableName]
+SET IDENTITY_INSERT [dbo].[DimAudit] OFF
+ALTER TABLE [dbo].[DimAudit] ADD  DEFAULT ('Unknown') FOR [TableName]
 GO
-ALTER TABLE [dw].[DimAudit] ADD  DEFAULT ('Unknown') FOR [PkgName]
+ALTER TABLE [dbo].[DimAudit] ADD  DEFAULT ('Unknown') FOR [PkgName]
 GO
-ALTER TABLE [dw].[DimAudit] ADD  DEFAULT (getdate()) FOR [ExecStartDT]
+ALTER TABLE [dbo].[DimAudit] ADD  DEFAULT (getdate()) FOR [ExecStartDT]
 GO
-ALTER TABLE [dw].[DimAudit] ADD  DEFAULT ('N') FOR [SuccessfulProcessingInd]
+ALTER TABLE [dbo].[DimAudit] ADD  DEFAULT ('N') FOR [SuccessfulProcessingInd]
 GO
 
-ALTER TABLE [dw].[DimAudit]  WITH CHECK ADD  CONSTRAINT [FK_dbo_DimAudit_ParentAuditKey] FOREIGN KEY([ParentAuditKey])
-REFERENCES [dw].[DimAudit] ([AuditKey])
+ALTER TABLE [dbo].[DimAudit]  WITH CHECK ADD  CONSTRAINT [FK_dbo_DimAudit_ParentAuditKey] FOREIGN KEY([ParentAuditKey])
+REFERENCES [dbo].[DimAudit] ([AuditKey])
 GO
-ALTER TABLE [dw].[DimAudit] CHECK CONSTRAINT [FK_dbo_DimAudit_ParentAuditKey]
+ALTER TABLE [dbo].[DimAudit] CHECK CONSTRAINT [FK_dbo_DimAudit_ParentAuditKey]
 GO
 
