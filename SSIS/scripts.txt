@@ -1,1 +1,73 @@
-text
+--dim date table script
+CREATE TABLE [dbo].[DimDate](
+	[DateKey] [int] NOT NULL,
+	[FullDateAlternateKey] [date] NOT NULL,
+	[DayNumberOfWeek] [tinyint] NOT NULL,
+	[EnglishDayNameOfWeek] [nvarchar](10) NOT NULL,
+	[DayNumberOfMonth] [tinyint] NOT NULL,
+	[DayNumberOfYear] [smallint] NOT NULL,
+	[WeekNumberOfYear] [tinyint] NOT NULL,
+	[EnglishMonthName] [nvarchar](10) NOT NULL,
+	[MonthNumberOfYear] [tinyint] NOT NULL,
+	[CalendarQuarter] [tinyint] NOT NULL,
+	[CalendarYear] [smallint] NOT NULL,
+	[CalendarSemester] [tinyint] NOT NULL,
+	[AuditKey] int NOT NULL,
+	
+ CONSTRAINT [PK_DimDate_DateKey] PRIMARY KEY CLUSTERED 
+(
+	[DateKey] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY],
+ CONSTRAINT [AK_DimDate_FullDateAlternateKey] UNIQUE NONCLUSTERED 
+(
+	[FullDateAlternateKey] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY]
+) ON [PRIMARY]
+
+GO
+
+--audit table script
+CREATE TABLE [dw].[DimAudit](
+	[AuditKey] [int] IDENTITY(1,1) NOT NULL,
+	[ParentAuditKey] [int] NOT NULL,
+	[TableName] [varchar](50) NOT NULL,
+	[PkgName] [varchar](50) NOT NULL,
+	[PkgGUID] [uniqueidentifier] NULL,
+	[PkgVersionGUID] [uniqueidentifier] NULL,
+	[PkgVersionMajor] [smallint] NULL,
+	[PkgVersionMinor] [smallint] NULL,
+	[ExecStartDT] [datetime] NOT NULL,
+	[ExecStopDT] [datetime] NULL,
+	[ExecutionInstanceGUID] [uniqueidentifier] NULL,
+	[ExtractRowCnt] [bigint] NULL,
+	[InsertRowCnt] [bigint] NULL,
+	[UpdateRowCnt] [bigint] NULL,
+	[ErrorRowCnt] [bigint] NULL,
+	[TableInitialRowCnt] [bigint] NULL,
+	[TableFinalRowCnt] [bigint] NULL,
+	[TableMaxDateTime] [datetime] NULL,
+	[SuccessfulProcessingInd] [char](1) NOT NULL,
+ CONSTRAINT [PK_dbo.DimAudit] PRIMARY KEY CLUSTERED 
+(
+	[AuditKey] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY]
+) ON [PRIMARY]
+SET IDENTITY_INSERT [dw].[DimAudit] ON 
+
+INSERT [dw].[DimAudit] ([AuditKey], [ParentAuditKey], [TableName], [PkgName], [PkgGUID], [PkgVersionGUID], [PkgVersionMajor], [PkgVersionMinor], [ExecStartDT], [ExecStopDT], [ExecutionInstanceGUID], [ExtractRowCnt], [InsertRowCnt], [UpdateRowCnt], [ErrorRowCnt], [TableInitialRowCnt], [TableFinalRowCnt], [TableMaxDateTime], [SuccessfulProcessingInd]) VALUES (-1, -1, N'Not Applicable', N'Initial Load', NULL, NULL, 0, 0, getdate(), getdate(), NULL, 0, 0, 0, 0, 0, 0, getdate(), N' ')
+SET IDENTITY_INSERT [dw].[DimAudit] OFF
+ALTER TABLE [dw].[DimAudit] ADD  DEFAULT ('Unknown') FOR [TableName]
+GO
+ALTER TABLE [dw].[DimAudit] ADD  DEFAULT ('Unknown') FOR [PkgName]
+GO
+ALTER TABLE [dw].[DimAudit] ADD  DEFAULT (getdate()) FOR [ExecStartDT]
+GO
+ALTER TABLE [dw].[DimAudit] ADD  DEFAULT ('N') FOR [SuccessfulProcessingInd]
+GO
+
+ALTER TABLE [dw].[DimAudit]  WITH CHECK ADD  CONSTRAINT [FK_dbo_DimAudit_ParentAuditKey] FOREIGN KEY([ParentAuditKey])
+REFERENCES [dw].[DimAudit] ([AuditKey])
+GO
+ALTER TABLE [dw].[DimAudit] CHECK CONSTRAINT [FK_dbo_DimAudit_ParentAuditKey]
+GO
+
