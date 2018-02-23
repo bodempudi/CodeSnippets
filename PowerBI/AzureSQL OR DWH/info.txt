@@ -4,3 +4,6 @@ https://docs.microsoft.com/en-us/azure/sql-database/sql-database-ssms-mfa-authen
 
 
 https://docs.microsoft.com/en-us/azure/active-directory/connect/active-directory-aadconnect
+
+
+https://docs.microsoft.com/en-us/azure/active-directory/add-custom-domain
