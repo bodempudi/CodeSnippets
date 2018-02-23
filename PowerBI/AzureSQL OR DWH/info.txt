@@ -1,3 +1,6 @@
 https://azure.microsoft.com/en-in/blog/azure-ad-authentication-extensions-for-azure-sql-db-and-sql-dw-tools/
 
 https://docs.microsoft.com/en-us/azure/sql-database/sql-database-ssms-mfa-authentication-configure
+
+
+https://docs.microsoft.com/en-us/azure/active-directory/connect/active-directory-aadconnect
