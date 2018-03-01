@@ -1,1 +1,4 @@
 https://jaapwesselius.com/2015/05/04/manage-office-365-with-powershell/
+
+
+https://jaapwesselius.com/2015/05/06/manage-domains-in-office-365-using-powershell/
