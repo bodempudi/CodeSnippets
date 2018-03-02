@@ -7,3 +7,6 @@ https://docs.microsoft.com/en-us/azure/active-directory/connect/active-directory
 
 
 https://docs.microsoft.com/en-us/azure/active-directory/add-custom-domain
+
+
+https://docs.microsoft.com/en-us/sql/connect/odbc/using-azure-active-directory
