@@ -1,0 +1,37 @@
+Total Sales = SUM(FactInternetSales[SalesAmount])
+
+YTD Sales = TOTALYTD([Total Sales],DueDate[FullDateAlternateKey],ALL(DueDate))
+
+PY YTD Sales = CALCULATE([YTD Sales],PARALLELPERIOD(DueDate[FullDateAlternateKey],-12,MONTH),ALL(DueDate))
+
+Running Total = CALCULATE(
+	[Total Sales],
+	FILTER(
+		ALL(DueDate),
+		DueDate[FullDateAlternateKey] <= MAX(DueDate[FullDateAlternateKey])
+	)
+)
+
+SPLY Sales = CALCULATE(
+	SUM(FactInternetSales[SalesAmount]),
+	SAMEPERIODLASTYEAR(DimDate[FullDateAlternateKey]),
+	ALL(DimDate)
+)
+
+
+12 Month Moving Sales = CALCULATE(
+SUM(FactInternetSales[SalesAmount]),DATESBETWEEN(DueDate[FullDateAlternateKey],
+NEXTDAY(SAMEPERIODLASTYEAR(LASTDATE(DueDate[FullDateAlternateKey]))),
+LASTDATE(DueDate[FullDateAlternateKey])
+),ALL(FactInternetSales))
+
+Number Of Months = 
+CALCULATE(
+CALCULATE(COUNTROWS(VALUES(DueDate[MonthNumberOfYear])),FactInternetSales),
+DATESBETWEEN(DueDate[FullDateAlternateKey],
+	NEXTDAY(SAMEPERIODLASTYEAR(LASTDATE(DueDate[FullDateAlternateKey]))),
+	LASTDATE(DueDate[FullDateAlternateKey])),ALL(FactInternetSales)
+)
+
+Moving 12 Month Avg = DIVIDE([12 Month Moving Sales],[Number Of Months])
+
