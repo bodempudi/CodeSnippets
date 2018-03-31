@@ -1,1 +1,6 @@
-test
+creating a native app
+
+//https://dev.powerbi.com/apps
+
+http://localhost:13526
+
