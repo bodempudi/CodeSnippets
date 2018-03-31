@@ -1,0 +1,19 @@
+//install.packages(“forecast”). 
+
+
+library(forecast)
+
+# group searches by date
+dataset <- aggregate(Search ~ Date, data = dataset, FUN= sum)
+
+# create a time series based on month
+ts <- ts(dataset$Search, frequency=4)
+
+# pull out the seasonal, trend, and irregular components from the time series (train the forecast model)
+decom <- stl(ts, s.window = "periodic")
+
+# predict the next 3 months of searches
+pred <- forecast(decom, h = 12)
+
+# plot the predicted searches
+plot(pred)
