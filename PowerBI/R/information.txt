@@ -12,6 +12,10 @@ C:\program files\microsoft\ropen\r-3.4.2.
 download this file and install-
 https://mran.microsoft.com/install/mro/3.4.2/microsoft-r-open-3.4.2.exe (here version might be different - check latest version)
 
+all the packages you can find here.
+
+https://cran.r-project.org/web/packages/available_packages_by_name.html
+
 --install r stuio
 --install microsoft r open
 
