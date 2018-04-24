@@ -1,0 +1,2 @@
+1. conisder we have .txt files and .xlsx files of same schema(metadata), we need to load all the files into single table.
+2. consider we have two DFTs, one DFT should execute only on Monday and Other DFT should execute only Tuesday.
