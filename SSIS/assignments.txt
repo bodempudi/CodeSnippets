@@ -1,2 +1,14 @@
 1. conisder we have .txt files and .xlsx files of same schema(metadata), we need to load all the files into single table.
 2. consider we have two DFTs, one DFT should execute only on Monday and Other DFT should execute only Tuesday.
+3. create excel file with multiple sheets(file name should be FileName_TodayDate.xlsx and sheet names can be anything).
+4. create excel file with multiple sheets(here sheet names are dynamic, sheet1name=Sheet1_currendate, sheet2name=Sheet2_currentdaydate, sheet3name=Sheet3_currentdate).
+5. Write atleast 100 words difference between dataflow and control flow.
+6. Execute your package only when the input file is available, if file is not available you should send an email to the team, email priority should be high.
+7. Load any text file, once you load that, archive it to a location by adding current date and share the same with team in a seperate location.
+    ex: input file is filename.xlsx
+        archive file name is: filename_ddmmyyyy.xlsx(filename_24DEC2017.xlsx)
+8. Load XML file.
+9. Load excel with single sheet(package should work if we change the file name).
+10. load excel file with multiple sheets.
+11. Load multiple text files and archive each one with date.
+12. 
