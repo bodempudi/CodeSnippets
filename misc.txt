@@ -103,3 +103,5 @@ WITH (DATA_SOURCE = [AzureDataLakeStorage]
 GO
 
 
+https://www.quora.com/To-become-a-complete-big-data-Hadoop-developer-I-came-up-with-the-following-learning-path-1-Big-Data-Hadoop-developer-2-Apache-Cassandra-MongoDB-developer-3-Apache-Spark-and-Scala-Apache-Kafka-and-4-Impala-Is-this-the-correct-sequence-of-courses-I-should-take
+
