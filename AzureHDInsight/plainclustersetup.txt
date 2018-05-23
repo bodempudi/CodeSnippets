@@ -10,3 +10,4 @@ mkdir -p /Opt
 cd /opt
 
 tar xvzf /tmp/hadoop-2.9.1.tar.gz -C /opt
+
