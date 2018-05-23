@@ -37,3 +37,7 @@ for dl_url in ${jdk_download_url4[@]}; do
          --header "Cookie: oraclelicense=accept-securebackup-cookie" \
          -N $dl_url
 done
+
+--find out the RPM file in a specfic path and install the following command
+sudo rpm –ivh jdk-7u80-linux-x64.rpm
+
