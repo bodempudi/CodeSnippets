@@ -1,3 +1,12 @@
 wget -P /tmp http://mirrors.ibiblio.org/apache/hadoop/common/stable/hadoop-2.9.1.tar.gz
 
 
+verify file download using 
+ls /tmp
+
+--creating a new directory
+mkdir -p /Opt
+
+cd /opt
+
+tar xvzf /tmp/hadoop-2.9.1.tar.gz -C /opt
