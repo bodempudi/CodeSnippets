@@ -1,2 +1,4 @@
 vi /etc/hosts
 :q! to come out of vi mode
+
+nano .bashrc
