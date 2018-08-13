@@ -1,3 +1,5 @@
 https://docs.microsoft.com/en-us/power-bi/webinars
 
 https://www.youtube.com/user/chassMSFT/videos
+
+https://www.youtube.com/watch?v=3gpMacpLq44  - Power BI security deep dive by Kasper de Jonge
