@@ -1,0 +1,40 @@
+--sql table for storing single column
+CREATE TABLE [dbo].[Line](
+	[id] [int] IDENTITY(1,1) NOT NULL,
+	[Row] [varchar](max) NULL
+) ON [PRIMARY] TEXTIMAGE_ON [PRIMARY]
+GO
+
+
+--c# code goes in inside main method
+ string line;
+            string constr = "Data Source=sqlserver2017;Initial Catalog=Demo;Integrated Security=True";
+            //above connection string change your server and your db
+            // Read the file and display it line by line.  
+            System.IO.StreamReader file =
+                new System.IO.StreamReader(@"d:\file.txt");//change this to your local path
+            while ((line = file.ReadLine()) != null)
+            {
+                //System.Console.WriteLine(line);
+                //counter++;
+                StoreInDB(constr,line);
+            }
+
+            file.Close();
+
+--this function after main method(once main method completes, then paste this)
+  private static void StoreInDB(string constr,string line)
+        {
+            using (SqlConnection con = new SqlConnection(constr))
+            {
+                using (SqlCommand cmd = new SqlCommand())
+                {
+                    cmd.CommandText = "INSERT INTO dbo.Line([Row]) values('"+line+"')";
+                    //cmd.Parameters.AddWithValue("@row", line);
+                    cmd.Connection = con;
+                    con.Open();
+                    cmd.ExecuteNonQuery();
+                }
+            }
+        }
+
