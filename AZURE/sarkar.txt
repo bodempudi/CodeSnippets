@@ -38,3 +38,17 @@ GO
             }
         }
 
+
+
+SELECT [row],
+replace(substring([row],CHARINDEX('id',row), CHARINDEX(',',row)) ,',','') Id,
+replace(substring(substring([row],CHARINDEX(',',row)+1,len(row)-CHARINDEX(',',row))
+,CHARINDEX('name',substring([row],CHARINDEX(',',row)+1,len(row)-CHARINDEX(',',row)))
+,CHARINDEX(',',substring([row],CHARINDEX(',',row)+1,len(row)-CHARINDEX(',',row)))),',','') name
+,
+replace(substring(
+substring([row],CHARINDEX(',',row)+1,len(row)-CHARINDEX(',',row))
+,charindex(',',substring([row],CHARINDEX(',',row)+1,len(row)-CHARINDEX(',',row)))
+,len(substring([row],CHARINDEX(',',row)+1,len(row)-CHARINDEX(',',row)))
+-charindex(',',substring([row],CHARINDEX(',',row),len(row)-CHARINDEX(',',row)))),',','') salary
+FROM dbo.[Line]
