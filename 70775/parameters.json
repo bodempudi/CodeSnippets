@@ -1,0 +1,54 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentParameters.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "administratorLogin": {
+            "value": "venkatdec20"
+        },
+        "administratorLoginPassword": {
+            "value": "December@2018"
+        },
+        "collation": {
+            "value": "SQL_Latin1_General_CP1_CI_AS"
+        },
+        "databaseName": {
+            "value": "venkatdec20"
+        },
+        "tier": {
+            "value": "Standard"
+        },
+        "skuName": {
+            "value": "S0"
+        },
+        "location": {
+            "value": "eastus2"
+        },
+        "maxSizeBytes": {
+            "value": 268435456000
+        },
+        "sampleName": {
+            "value": ""
+        },
+        "serverName": {
+            "value": "venkatdec20"
+        },
+        "zoneRedundant": {
+            "value": false
+        },
+        "licenseType": {
+            "value": ""
+        },
+        "readScaleOut": {
+            "value": "Disabled"
+        },
+        "numberOfReplicas": {
+            "value": 0
+        },
+        "enableATP": {
+            "value": false
+        },
+        "allowAzureIps": {
+            "value": true
+        }
+    }
+}
