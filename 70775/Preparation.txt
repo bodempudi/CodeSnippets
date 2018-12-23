@@ -2,3 +2,8 @@ azcopy - copy data from local to azure blob and one azure blob to another azure 
 adlcopy - copy data from azure blob to adls Gen1(not reverese), can copy between on adls to another
 sqoop
 distscp
+
+
+
+HDFS/advanced HDFS-SITE.xml
+  dfs.blocksize
