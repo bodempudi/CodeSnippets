@@ -1,9 +1,89 @@
-//using variables
-
-Return Sales = var q= SUM(FactInternetSales[SalesAmount]) 
-return
-if(
-	q > 1000,
-	q*5,
-	q*10
-)
+Top X = 
+VAR TopNumber =
+    5
+VAR Rest =
+    COUNTROWS ( DimProduct ) - TopNumber
+RETURN
+    IF (
+        HASONEVALUE ( Products[EnglishProductName] ),
+        CALCULATE (
+            [Sum of Sales Amount],
+            FILTER (
+                DimProduct,
+                [EnglishProductName] = VALUES ( Products[EnglishProductName])
+                  && DimProduct[EnglishProductName] <> "Mountain-200 Silver, 46"  && CONTAINS (
+                        TOPN (
+                            6,
+                            ADDCOLUMNS (
+                                ALL ( Products[EnglishProductName] ),
+                                "Sales", CALCULATE (
+                                    [Sum of Sales Amount],
+                                    FILTER ( DimProduct, DimProduct[EnglishProductName] = EARLIER ( [EnglishProductName] ) )
+                                )
+                            ),
+                            [Sales], DESC
+                        ),Products[EnglishProductName]
+                        , VALUES ( Products[EnglishProductName]  )
+                    )
+            )
+        )
+    )
+    
+    
+    Other = 
+VAR TopNumber =
+    5
+VAR Rest =
+    COUNTROWS ( DimProduct ) - 5
+RETURN
+    IF (
+        HASONEVALUE ( Products[EnglishProductName]  ),
+        IF (
+            VALUES ( Products[EnglishProductName]  ) = "Others" && VALUES(Products[EnglishProductName]) <> "Mountain-200 Silver, 46",
+            SUMX (
+                TOPN (
+                    (COUNTROWS ( DimProduct ) - 5),
+                    ADDCOLUMNS (
+                        VALUES ( DimProduct[EnglishProductName]  ),
+                        "Measure", [Sum of Sales Amount]
+                    ),
+                    [Measure], ASC
+                ),
+                [Measure]
+            )
+        )
+    )
+    
+    
+    Abbott = 
+VAR TopNumber =
+    1
+VAR Rest =
+    COUNTROWS ( DimProduct ) - TopNumber
+RETURN
+    IF (
+        HASONEVALUE ( Products[EnglishProductName] ),
+        CALCULATE (
+            [Sum of Sales Amount],
+            FILTER (
+                DimProduct,
+                [EnglishProductName] = VALUES ( Products[EnglishProductName])
+                  && DimProduct[EnglishProductName] = "Mountain-200 Silver, 46"  && CONTAINS (
+                        TOPN (
+                             COUNTROWS ( DimProduct ),
+                            ADDCOLUMNS (
+                                ALL ( Products[EnglishProductName] ),
+                                "Sales", CALCULATE (
+                                    [Sum of Sales Amount],
+                                    FILTER ( DimProduct, DimProduct[EnglishProductName] = EARLIER ( [EnglishProductName] ) )
+                                )
+                            ),
+                            [Sales], DESC
+                        ),Products[EnglishProductName]
+                        , VALUES ( Products[EnglishProductName]  )
+                    )
+            )
+        )
+    )
+    
+    All = IF([Top X] = BLANK(), [Abbott], [Top X])
