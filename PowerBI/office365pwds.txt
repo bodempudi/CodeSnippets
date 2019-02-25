@@ -6,6 +6,7 @@ https://portal.office.com/
 admin@ownconsultingfeb252019.onmicrosoft.com
 Feb@2019
 Install-Module -Name Az -AllowClobber
+Install-Module -Name Microsoft.ADAL.PowerShell	
 
 
 $sqlConn = New-Object System.Data.SqlClient.SqlConnection
