@@ -1,3 +1,5 @@
+#https://docs.microsoft.com/en-us/powershell/scripting/install/installing-windows-powershell?view=powershell-6
+
 $sqlConn = New-Object System.Data.SqlClient.SqlConnection
 $sqlConn.ConnectionString = “Server=powerbi-sql;Integrated Security=true;Initial Catalog=demos”
 $sqlConn.Open()
