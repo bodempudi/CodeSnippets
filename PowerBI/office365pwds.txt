@@ -1,6 +1,8 @@
 Sign-in page
 https://portal.office.com/
 158da1cd-735e-4706-83d3-fc3f21f9bc4d   --aplication id
+5734619b-8a52-4734-8358-da7515e6a553 --group id
+4d2cee07-af4d-4667-8133-c0862f52a818 -- dataset id
 admin@ownconsultingfeb252019.onmicrosoft.com
 Feb@2019
 
