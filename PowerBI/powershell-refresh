@@ -1,5 +1,8 @@
 #https://docs.microsoft.com/en-us/powershell/scripting/install/installing-windows-powershell?view=powershell-6
 #https://github.com/Azure-Samples/powerbi-powershell/blob/master/manageRefresh.ps1
+
+https://blogs.msdn.microsoft.com/charles_sterling/2017/06/29/running-the-power-bi-refresh-apis-headless/
+
 $sqlConn = New-Object System.Data.SqlClient.SqlConnection
 $sqlConn.ConnectionString = “Server=powerbi-sql;Integrated Security=true;Initial Catalog=demos”
 $sqlConn.Open()
