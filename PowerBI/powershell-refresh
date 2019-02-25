@@ -9,9 +9,59 @@ $sqlcmd.CommandText = $query
 $res=$sqlcmd.ExecuteScalar();
 if($res -eq 1)
 {
-    Write-Host "one"
+    $groupID = "5734619b-8a52-4734-8358-da7515e6a553" 
+    $datasetID = "4d2cee07-af4d-4667-8133-c0862f52a818"
+    $clientId = "158da1cd-735e-4706-83d3-fc3f21f9bc4d"
+    Write-Host "equal to one"
+
+
+    $token = GetAuthToken
+    # Building Rest API header with authorization token
+    $authHeader = @{
+       'Content-Type'='application/json'
+       'Authorization'=$token.CreateAuthorizationHeader()
+    }
+   
+    # properly format groups path
+    $groupsPath = ""
+    if ($groupID -eq "me") {
+        $groupsPath = "myorg"
+    } else {
+        $groupsPath = "myorg/groups/$groupID"
+    }
+    Write-Host "Rest Invoke Started"
+# Refresh the dataset
+$uri = "https://api.powerbi.com/v1.0/$groupsPath/datasets/$datasetID/refreshes"
+Write-Host $uri
+#POST   https://api.powerbi.com/v1.0/myorg/groups/{group_id}/datasets/{dataset_id}/refreshes
+Invoke-RestMethod -Uri $uri –Headers $authHeader –Method POST –Verbose
+Write-Host "Invoke Completed"
 }
 else
 {
     Write-Hose "not one"
+}
+
+function GetAuthToken
+{
+    Write-Host "Inside function";
+    $adal = "${env:ProgramFiles}\WindowsPowerShell\Modules\AzureRM.profile\5.1.0\Microsoft.IdentityModel.Clients.ActiveDirectory.dll"
+    
+    $adalforms = "${env:ProgramFiles}\WindowsPowerShell\Modules\AzureRM.profile\5.1.0\Microsoft.IdentityModel.Clients.ActiveDirectory.WindowsForms.dll"
+ 
+    [System.Reflection.Assembly]::LoadFrom($adal) | Out-Null
+
+    [System.Reflection.Assembly]::LoadFrom($adalforms) | Out-Null
+
+    $redirectUri = "urn:ietf:wg:oauth:2.0:oob"
+
+    $resourceAppIdURI = "https://analysis.windows.net/powerbi/api"
+
+    $authority = "https://login.microsoftonline.com/common/oauth2/authorize";
+
+    $authContext = New-Object "Microsoft.IdentityModel.Clients.ActiveDirectory.AuthenticationContext" -ArgumentList $authority
+
+    $authResult = $authContext.AcquireToken($resourceAppIdURI, $clientId, $redirectUri, "Auto")
+
+    return $authResult
 }
