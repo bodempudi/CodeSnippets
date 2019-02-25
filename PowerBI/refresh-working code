@@ -1,0 +1,32 @@
+function GetAuthToken
+{
+    Write-Host "Inside function";
+    $adal = "${env:ProgramFiles}\WindowsPowerShell\Modules\Microsoft.ADAL.PowerShell\1.12\Microsoft.IdentityModel.Clients.ActiveDirectory.dll"
+    
+    
+    $adalforms = "${env:ProgramFiles}\WindowsPowerShell\Modules\Microsoft.ADAL.PowerShell\1.12\Microsoft.IdentityModel.Clients.ActiveDirectory.WindowsForms.dll"
+ 
+    [System.Reflection.Assembly]::LoadFrom($adal) | Out-Null
+
+    [System.Reflection.Assembly]::LoadFrom($adalforms) | Out-Null
+
+    $redirectUri = "urn:ietf:wg:oauth:2.0:oob"
+
+    $resourceAppIdURI = "https://analysis.windows.net/powerbi/api"
+    $clientId="6671c48a-1560-4604-8dab-05bbc5745fce"
+    $authority = "https://login.microsoftonline.com/common/oauth2/authorize";
+    $authContext = New-Object “Microsoft.IdentityModel.Clients.ActiveDirectory.AuthenticationContext” -ArgumentList $authority
+
+$UserCred = New-Object “Microsoft.IdentityModel.Clients.ActiveDirectory.UserCredential” -ArgumentList “admin@ownconsultingfeb252019.onmicrosoft.com“, “Feb@2019”
+
+    $authResult = $authContext.AcquireToken($resourceAppIdURI, $clientId, $UserCred)
+
+return $authResult
+
+
+}
+
+
+
+
+    $token = GetAuthToken
