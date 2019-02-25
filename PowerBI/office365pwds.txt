@@ -4,6 +4,25 @@ https://portal.office.com/
 admin@ownconsultingfeb252019.onmicrosoft.com
 Feb@2019
 
+$sqlConn = New-Object System.Data.SqlClient.SqlConnection
+$sqlConn.ConnectionString = “Server=;Integrated Security=false;User ID= bodemvx; Password= Pwd;Initial Catalog=DEV_RDM”
+$sqlConn.Open()
+$sqlcmd = $sqlConn.CreateCommand()
+$sqlcmd = New-Object System.Data.SqlClient.SqlCommand
+$sqlcmd.Connection = $sqlConn
+$query = “select result from ”
+$sqlcmd.CommandText = $query
+$res=$sqlcmd.ExecuteScalar();
+if($res -eq 1)
+{
+    Write-Host "one"
+}
+else
+{
+    Write-Hose "not one"
+}
+
+
 
 create database demos;
 go
