@@ -5,6 +5,8 @@ https://portal.office.com/
 4d2cee07-af4d-4667-8133-c0862f52a818 -- dataset id
 admin@ownconsultingfeb252019.onmicrosoft.com
 Feb@2019
+Install-Module -Name Az -AllowClobber
+
 
 $sqlConn = New-Object System.Data.SqlClient.SqlConnection
 $sqlConn.ConnectionString = “Server=;Integrated Security=false;User ID= bodemvx; Password= Pwd;Initial Catalog=DEV_RDM”
