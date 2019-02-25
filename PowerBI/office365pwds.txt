@@ -11,6 +11,16 @@ go
 use demos;
 go
 
+create table dbo.datarefreshcheck(
+id int identity,
+datarefreshcheck bit
+);
+
+insert into dbo.datarefreshcheck values(1);
+
+
+
+select * from dbo.datarefreshcheck
 
 create table dbo.dimproduct(
 id int primary key identity,
