@@ -1,0 +1,17 @@
+$sqlConn = New-Object System.Data.SqlClient.SqlConnection
+$sqlConn.ConnectionString = “Server=powerbi-sql;Integrated Security=true;Initial Catalog=demos”
+$sqlConn.Open()
+$sqlcmd = $sqlConn.CreateCommand()
+$sqlcmd = New-Object System.Data.SqlClient.SqlCommand
+$sqlcmd.Connection = $sqlConn
+$query = “select datarefreshcheck from dbo.datarefreshcheck”
+$sqlcmd.CommandText = $query
+$res=$sqlcmd.ExecuteScalar();
+if($res -eq 1)
+{
+    Write-Host "one"
+}
+else
+{
+    Write-Hose "not one"
+}
