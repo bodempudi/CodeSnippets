@@ -1,4 +1,15 @@
- $groupID = "5734619b-8a52-4734-8358-da7515e6a553" 
+$TimeToStart =get-date
+$TimeToComplete = (Get-Date).AddHours(3)
+Write-Host $TimeToStart
+Write-Host $TimeToComplete
+$refreshstatus=0
+for($i=$TimeToStart;$i -le $TimeToComplete;$i=$i.AddMinutes(15))
+{
+    
+}
+
+
+$groupID = "5734619b-8a52-4734-8358-da7515e6a553" 
  $clientId="6671c48a-1560-4604-8dab-05bbc5745fce"
     $datasetID = "8caf813b-e80d-4be9-8ad4-947d5a3fd564"
 function GetAuthToken
