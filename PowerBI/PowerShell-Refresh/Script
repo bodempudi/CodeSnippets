@@ -1,5 +1,8 @@
 $TimeToStart =get-date
 $TimeToComplete = (Get-Date).AddHours(3)
+#Install-Module -Name Az -AllowClobber
+#Install-Module -Name Microsoft.ADAL.PowerShell	
+#Install-Module -Name ADAL.PS
 $groupID = "5734619b-8a52-4734-8358-da7515e6a553" 
 $clientId="6671c48a-1560-4604-8dab-05bbc5745fce"
 $datasetID = "8caf813b-e80d-4be9-8ad4-947d5a3fd564"
@@ -22,7 +25,7 @@ function GetAuthToken
 while((get-date) -le $TimeToComplete)
 {
     $sqlConn = New-Object System.Data.SqlClient.SqlConnection
-    $sqlConn.ConnectionString = “Server=dev-qa-db-rdm-1.ckaysldlfc2p.eu-west-1.rds.amazonaws.com,1443;Integrated Security=false;User ID= bodemvx; Password= Pwd;Initial Catalog=DEV_RDM”
+    $sqlConn.ConnectionString = “Server=;Integrated Security=false;User ID= ; Password= Pwd;Initial Catalog=”
     $sqlConn.Open()
     $sqlcmd = $sqlConn.CreateCommand()
     $sqlcmd = New-Object System.Data.SqlClient.SqlCommand
