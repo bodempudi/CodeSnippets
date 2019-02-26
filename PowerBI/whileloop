@@ -22,7 +22,7 @@ function GetAuthToken
 while((get-date) -le $TimeToComplete)
 {
     $sqlConn = New-Object System.Data.SqlClient.SqlConnection
-    $sqlConn.ConnectionString = “Server=dev-qa-db-rdm-1.ckaysldlfc2p.eu-west-1.rds.amazonaws.com,1443;Integrated Security=false;User ID= bodemvx; Password= Pwd;Initial Catalog=DEV_RDM”
+    $sqlConn.ConnectionString = “Server=;Integrated Security=false;User ID= ; Password= Pwd;Initial Catalog=”
     $sqlConn.Open()
     $sqlcmd = $sqlConn.CreateCommand()
     $sqlcmd = New-Object System.Data.SqlClient.SqlCommand
