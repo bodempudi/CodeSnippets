@@ -1,0 +1,29 @@
+while loop(
+
+1. Validate the log table to check the data mart refresh is complete
+
+ 
+
+2. if yes ->
+
+{   refresh the Power BI Data Model
+
+                                     send an email notification -> success
+
+                                     break the while loop;
+
+                                }
+
+timer ++; 
+
+if (timer > 6 AM)
+
+{
+
+  send an email notification -> failure
+
+  break while loop;
+
+}
+
+)
