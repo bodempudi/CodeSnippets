@@ -18,15 +18,3 @@ https://github.com/Azure-Samples/powerbi-powershell/blob/master/manageRefresh.ps
 
 https://blogs.msdn.microsoft.com/charles_sterling/2017/06/29/running-the-power-bi-refresh-apis-headless/
 
-
-windows machine, where sql server and this machine are in same network
-1. install the following
-#Install-Module -Name Az -AllowClobber
-#Install-Module -Name Microsoft.ADAL.PowerShell	
-#Install-Module -Name ADAL.PS
-2.clientId after registering application(normal user cannot do this, only tenant admin can do this), 
-while registering choose native and provide necessary permissions.
-3.allow the application created in step 2 to access api calls in azure portal active directory
-4.need one user creds, needs to be used in power shell
-5. SMTP Details for email sending
-6. DLs for sucess or failure mail sending
