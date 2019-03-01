@@ -1,0 +1,38 @@
+
+create table dbo.dimproduct(
+id int primary key identity,
+name varchar(500));
+go
+
+
+create table dbo.sales(
+id int foreign key references dbo.dimproduct(id),
+sales int
+); 
+go
+
+insert into dbo.dimproduct([name]) values('Product A');
+insert into dbo.dimproduct([name]) values('Product B');
+insert into dbo.dimproduct([name]) values('Product C');
+insert into dbo.dimproduct([name]) values('Product D');
+insert into dbo.dimproduct([name]) values('Product E');
+
+insert into dbo.dimproduct([name]) values('Product F');
+insert into dbo.dimproduct([name]) values('Product G');
+insert into dbo.dimproduct([name]) values('Product H');
+insert into dbo.dimproduct([name]) values('Product I');
+insert into dbo.dimproduct([name]) values('Product J');
+GO
+
+
+INSERT INTO dbo.sales(id,sales) values(1,10000);
+INSERT INTO dbo.sales(id,sales) values(3,20000);
+INSERT INTO dbo.sales(id,sales) values(2,30000);
+INSERT INTO dbo.sales(id,sales) values(4,40000);
+INSERT INTO dbo.sales(id,sales) values(5,50000);
+INSERT INTO dbo.sales(id,sales) values(6,60000);
+INSERT INTO dbo.sales(id,sales) values(7,70000);
+go
+
+select * from dbo.dimproduct;
+select * from dbo.sales;
