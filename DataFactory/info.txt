@@ -1,1 +1,1 @@
-Copy multiple tables in bulk by using Azure DataFactory
+Copy multiple tables in bulk by using Azure DataFactory - working with multiple pipelines - passing paramters from one pipeline to another pipeline
