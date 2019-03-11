@@ -1,0 +1,1 @@
+Copy multiple tables in bulk by using Azure DataFactory
