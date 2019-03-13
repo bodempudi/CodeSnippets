@@ -1,0 +1,1 @@
+https://www.mssqltips.com/sqlservertip/5164/basic-database-continuous-integration-and-delivery-cicd-using-visual-studio-team-services-vsts/
