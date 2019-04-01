@@ -10,3 +10,4 @@ Mar@2019
 URls
 https://community.powerbi.com/t5/Desktop/Power-BI-Report-Performance-Troubleshooting/m-p/658255#M316011
 https://community.powerbi.com/t5/Desktop/Power-BI-Premium-Recommendation/m-p/658522#M316159
+https://community.powerbi.com/t5/Desktop/Weekly-Sales-Last-week-not-null-sales/td-p/625538
