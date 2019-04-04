@@ -11,3 +11,4 @@ URls
 https://community.powerbi.com/t5/Desktop/Power-BI-Report-Performance-Troubleshooting/m-p/658255#M316011
 https://community.powerbi.com/t5/Desktop/Power-BI-Premium-Recommendation/m-p/658522#M316159
 https://community.powerbi.com/t5/Desktop/Weekly-Sales-Last-week-not-null-sales/td-p/625538
+https://community.powerbi.com/t5/Desktop/Top-5-Manfacturers-and-Others-And-Default-Products/m-p/661639#M317880
