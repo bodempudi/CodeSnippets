@@ -17,3 +17,6 @@ IF((MONTH(NOW())>9 &&MONTH(NOW()) <13)&& (CALCULATE(DISTINCTCOUNT(Query1[Quarter
         ,CALCULATE(VALUES(Query1[Quarter]),Query1[Date]<=NOW())&if(OR(OR(CALCULATE(VALUES(Query1[Quarter]),Query1[Date]<=NOW())="Q1",CALCULATE(VALUES(Query1[Quarter]),Query1[Date]<=NOW())="Q2"),CALCULATE(VALUES(Query1[Quarter]),Query1[Date]<=NOW())="Q3"),BLANK(),"-QTD"),
     IF(MONTH(NOW()) > 3 &&MONTH(NOW()) < 7,"Q1,Q2-QTD",IF(MONTH(NOW())>6 && MONTH(NOW())<10,"Q1,Q2,Q3-QTD","Q1,Q2,Q3,Q4-QTD"))))))
 return yearval&"-"&QTR
+
+kirankiran@powerbiadminvmay042019.onmicrosoft.com 
+May@2019
