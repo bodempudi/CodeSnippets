@@ -1,3 +1,5 @@
+https://proserveit.com/ms-power-bi-topn-and-other/
+
 Partner Rank = 
 IF(SELECTEDVALUE('Others'[EnglishProductName]) = "Others", 6, RANKX(ALL('Others'), [Total Sales]))
 
