@@ -33,3 +33,5 @@ return
           
           
           Total Sales = CALCULATE(SUM('FactInternetSales'[SalesAmount]))
+
+Others = UNION(VALUES(DimProduct[EnglishProductName]),ROW("EnglishProductName","Others"))
