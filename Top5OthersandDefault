@@ -1,0 +1,35 @@
+Partner Rank = 
+IF(SELECTEDVALUE('Others'[EnglishProductName]) = "Others", 6, RANKX(ALL('Others'), [Total Sales]))
+
+Top Trading Partner and Other = 
+var DefaultProductName="Road-150 Red, 44"
+var DefaultProductRank = CALCULATE([Partner Rank],Others[EnglishProductName]=DefaultProductName)
+return 
+    IF(DefaultProductRank <= 5,
+        IF(
+            [Partner Rank] <= 5, 
+            [Total Sales],
+            IF(
+                SELECTEDVALUE('Others'[EnglishProductName]) = "Others", 
+                sumx(filter(all('Others'[EnglishProductName]), [Partner Rank] > 5),  [Total Sales]),
+                0
+              )
+          ),
+
+
+          IF(
+            [Partner Rank] <= 5, 
+            [Total Sales],
+            IF(
+                SELECTEDVALUE('Others'[EnglishProductName]) = "Others", 
+                sumx(filter(all('Others'[EnglishProductName]), [Partner Rank] > 5 && [Partner Rank] <> DefaultProductRank),  [Total Sales]),
+                IF(
+                SELECTEDVALUE('Others'[EnglishProductName]) = DefaultProductName, 
+                sumx(filter(all('Others'[EnglishProductName]), [Partner Rank] = DefaultProductRank),  [Total Sales])
+              )
+          )
+    )
+          )
+          
+          
+          Total Sales = CALCULATE(SUM('FactInternetSales'[SalesAmount]))
