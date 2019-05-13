@@ -1,0 +1,16 @@
+SELECT *
+FROM dbo.DimDate;
+
+SELECT DateKey, 
+FullDateAlternateKey, 
+DayNumberOfWeek, 
+EnglishDayNameOfWeek, 
+DayNumberOfMonth, 
+DayNumberOfYear, 
+WeekNumberOfYear, 
+EnglishMonthName,  
+MonthNumberOfYear, 
+CalendarQuarter, 
+CalendarYear, 
+CalendarSemester
+FROM dbo.DimDate;
