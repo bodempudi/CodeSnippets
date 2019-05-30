@@ -20,3 +20,20 @@ return CALCULATE(SUM(FactInternetSales[SalesAmount]),DimDate[FullDateAlternateKe
 PreviousYearAllColorSales = CALCULATE([PreviousYearSales],ALL(DimProduct[Color]))
 
 GainORLossPer = DIVIDE([CurrentYearSales],[CurrentYearAllColorSales])-DIVIDE([PreviousYearSales],[PreviousYearAllColorSales])
+
+
+
+-----------------------
+PreviousYearSales = 
+var PY=2008
+return CALCULATE(SUM(FactInternetSales[SalesAmount]),DimDate[CalendarYear]=PY)
+PreviousYearAllColorSales = IF([PreviousYearSales]>0, CALCULATE([PreviousYearSales],ALL(DimProduct[Color])))
+PreviousYearPreviousYearSales = 
+var PY=2008
+var PreviousPY=PY-1
+return CALCULATE(SUM(FactInternetSales[SalesAmount]),DimDate[CalendarYear]=PreviousPY)
+PreviousYearPreviousYearAllColorSales = 
+var PY=2008
+var PreviousPY=PY-1
+return IF([PreviousYearPreviousYearSales]>0,CALCULATE([PreviousYearPreviousYearSales],ALL(DimProduct[Color])))
+MSGainORLossPYPer = DIVIDE([PreviousYearSales],[PreviousYearAllColorSales])-DIVIDE([PreviousYearPreviousYearSales],[PreviousYearPreviousYearAllColorSales])
