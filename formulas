@@ -1,0 +1,22 @@
+MAT:
+CurrentYearSales = 
+var year = 2008
+var prevyear = year-1
+var prevbutoneyear = prevyear-1
+var startdate=DATE(prevyear,MONTH(NOW()),(DAY(NOW())+1))
+var enddate=DATE(year,MONTH(NOW()),DAY(NOW()))
+return CALCULATE(SUM(FactInternetSales[SalesAmount]),DimDate[FullDateAlternateKey] >= startdate && DimDate[FullDateAlternateKey] <= enddate)
+
+CurrentYearAllColorSales = CALCULATE([CurrentYearSales],ALL(DimProduct[Color]))
+
+PreviousYearSales = 
+var year = 2008
+var prevyear = year-1
+var prevbutoneyear = prevyear-1
+var startdate=DATE(prevbutoneyear,MONTH(NOW()),(DAY(NOW())+1))
+var enddate=DATE(prevyear,MONTH(NOW()),DAY(NOW()))
+return CALCULATE(SUM(FactInternetSales[SalesAmount]),DimDate[FullDateAlternateKey] >= startdate && DimDate[FullDateAlternateKey] <= enddate)
+
+PreviousYearAllColorSales = CALCULATE([PreviousYearSales],ALL(DimProduct[Color]))
+
+GainORLossPer = DIVIDE([CurrentYearSales],[CurrentYearAllColorSales])-DIVIDE([PreviousYearSales],[PreviousYearAllColorSales])
