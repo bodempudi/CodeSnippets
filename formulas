@@ -37,3 +37,20 @@ var PY=2008
 var PreviousPY=PY-1
 return IF([PreviousYearPreviousYearSales]>0,CALCULATE([PreviousYearPreviousYearSales],ALL(DimProduct[Color])))
 MSGainORLossPYPer = DIVIDE([PreviousYearSales],[PreviousYearAllColorSales])-DIVIDE([PreviousYearPreviousYearSales],[PreviousYearPreviousYearAllColorSales])
+-----------------------------------
+PreviousQuarterColorSales = 
+var PrevYear=2008
+var PrevQTR = 3
+return 
+IF(SUM(FactInternetSales[SalesAmount])>0,
+CALCULATE(SUM(FactInternetSales[SalesAmount]),DimDate[CalendarYear]=PrevYear,DimDate[CalendarQuarter]=PrevQTR))
+PreviousQuarterAllColorSales = if(SUM(FactInternetSales[SalesAmount])>0,
+CALCULATE([PreviousQuarterColorSales],ALL(DimProduct[Color])))
+PreviousButQuarterColorSales = 
+var PrevYear=2008
+var PrevQTR = 3
+var PrevButQTR =if(PrevQTR-1=0,4,PrevQTR-1)
+var PrevButYear = if(PrevButQTR=0,PrevYear-1,PrevYear)
+return CALCULATE(SUM(FactInternetSales[SalesAmount]),DimDate[CalendarYear]=PrevButYear,DimDate[CalendarQuarter]=PrevButQTR)
+PreviousButQuarterAllColorSales = 
+CALCULATE([PreviousButQuarterColorSales],ALL(DimProduct[Color]))
