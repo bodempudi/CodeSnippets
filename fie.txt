@@ -6,6 +6,9 @@ admin@ownconsultingonemay15.onmicrosoft.com
 userone@ownconsultingonemay15.onmicrosoft.com
 usertwo@ownconsultingonemay15.onmicrosoft.com
 
+1. why we donot have these many columns in fact actual sales
+2. why there is no connection between dimprod and sales target table
+
 
 YearLabel = 
 var yearval=SELECTEDVALUE(Query1[Year])
