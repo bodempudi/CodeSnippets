@@ -9,3 +9,9 @@ SharePointOnlineManagementShell_8924-1200_x64_en-us.msi
 vc_redist.x64.exe
 Win8.1AndW2K12R2-KB3191564-x64.msu
 SkypeOnlinePowerShell.Exe
+
+
+
+Administer Office 365 with Windows PowerShell - an introduction - OS0016
+Administering and using Microsoft Teams - OS00193
+Administering Microsoft 365 - OS0020
