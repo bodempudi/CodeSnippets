@@ -15,3 +15,23 @@ SkypeOnlinePowerShell.Exe
 Administer Office 365 with Windows PowerShell - an introduction - OS0016
 Administering and using Microsoft Teams - OS00193
 Administering Microsoft 365 - OS0020
+
+
+$users = import-csv 'C:\Scripts\Module2\CreateMultipleUsers\Users.csv'
+
+foreach ($user in $users)
+{
+$FirstName = $user.FirstName
+$LastName = $user.LastName
+$Country = $user.Country
+$City = $user.city
+$Title = $user.title
+$department = $user.department
+$Office = $user.Office
+
+$DisplayName = $LastName + ", " + $FirstName
+$UserName = $FirstName + "." + $LastName + "@globomantics.org"
+
+
+New-MsolUser -DisplayName $DisplayName -UserPrinciPalName $UserName -FirstName $FirstName -LastName $LastName -Country $Country -City $city -Title $title -Department $department -Office $office -UsageLocation $Country -LicenseAssignment "globomanticsorg:ENTERPRISEPACK" -State $user.state
+}
