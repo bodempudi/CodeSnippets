@@ -1,0 +1,22 @@
+$cred=get-credential
+connect-msolservice -credential $cred
+$users = import-csv 'D:\PowerBI\users.csv'
+
+foreach ($user in $users)
+{
+$FirstName = $user.FirstName
+$LastName = $user.LastName
+$Country = $user.Country
+$City = $user.city
+$Title = $user.title
+$department = $user.department
+$Office = $user.Office
+
+$DisplayName = $LastName + ", " + $FirstName
+$UserName = $FirstName + "." + $LastName + "@powerbiconsu.onmicrosoft.com"
+
+
+New-MsolUser -DisplayName $DisplayName -UserPrinciPalName $UserName -Password "June@2019" -FirstName $FirstName -LastName $LastName -Country $Country -City $city  -Title $title -Department $department -Office $office -UsageLocation $Country -LicenseAssignment "powerbiconsu:ENTERPRISEPACK" -State $user.state 
+Set-MsolUserLicense -UserPrincipalName $UserName -AddLicenses "powerbiconsu:POWER_BI_PRO"
+   
+}
