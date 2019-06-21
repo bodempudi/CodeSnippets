@@ -1,0 +1,20 @@
+$creds=Get-Credential
+Connect-MsolService -Credential $creds
+$users = import-csv 'D:\PowerBI\Users.csv'
+#admin@powerbie5venkatjune21.onmicrosoft.com
+foreach ($user in $users)
+{
+$FirstName = $user.FirstName
+$LastName = $user.LastName
+$Country = $user.Country
+$City = $user.city
+$Title = $user.title
+$department = $user.department
+$Office = $user.Office
+
+$DisplayName = $LastName + ", " + $FirstName
+$UserName = $FirstName + "." + $LastName + "@powerbie5venkatjune21.onmicrosoft.com"
+
+
+New-MsolUser -DisplayName $DisplayName -UserPrinciPalName $UserName -FirstName $FirstName -LastName $LastName -Country $Country -City $city -Title $title -Department $department -Office $office -UsageLocation $Country -LicenseAssignment "powerbie5venkatjune21:ENTERPRISEPREMIUM_NOPSTNCONF" -State $user.state
+}
