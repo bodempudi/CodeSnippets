@@ -5,7 +5,7 @@ https://community.powerbi.com/t5/Desktop/Display-Hierarchy-based-on-User/m-p/648
 M9Gd8rokIjye+C75i/aghzvdCXCkAZNbwKaK18ybYh1r70i9shzjtkSYjHsYNzKbG9CkqBTgfNSK7nxKKCjHmg==
 https://community.powerbi.com/t5/Desktop/Weekly-Sales-Last-week-not-null-sales/m-p/627473#M299770
 
-https://abbottmeetings.webex.com/abbottmeetings/j.php?MTID=me85c313dd25912251c64d129dfa7a67d
+https://abbottmeetings.webex.com/abbottmeetings/e.php?MTID=ma329a35c648c2e9a2a7e157ece213bad
 
 Couldn't load the data for this visual
 Join paths are expected to form a tree, but the table 'Fact' has two join paths to table 'Dim':
