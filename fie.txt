@@ -2,6 +2,12 @@ id,name,sal,pno
 1,venkat,4000,50000
 2,pavan,5000,123456
 
+DIM_ACCOUNT is a dimension table that holds the Details of all the accounts sourced from SFDC. The account might be a Hospital/Clinic, Pharmacy, Laboratory, etc
+ 
+
+DIM_CONTACT is a dimension table that holds the Details of all the contacts sourced from SFDC. The contact might be a Doctor, Nurse, Pharmacist, Specialist, etc
+ 
+
 admin@ownconsultingonemay15.onmicrosoft.com
 userone@ownconsultingonemay15.onmicrosoft.com
 usertwo@ownconsultingonemay15.onmicrosoft.com
