@@ -2,3 +2,10 @@ admin@hbsitconjune24.onmicrosoft.com
 June
 
 https://community.powerbi.com/t5/Service/Row-Level-Security-External-User/m-p/756857#M73574
+https://community.powerbi.com/t5/Service/Power-BI-Report-Embedding-in-Sharepoint-License-Details/m-p/756909#M73575
+
+
+
+Others
+https://community.powerbi.com/t5/Service/sharing-sharepoint-embedded-report-with-external-users/m-p/610636#M61120
+https://community.powerbi.com/t5/Power-Query/Guest-user-rights-when-embedding-PBI-report-in-Sharepoint-Online/m-p/664185#M22617
