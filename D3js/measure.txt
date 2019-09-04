@@ -1,0 +1,134 @@
+YearLabel Sales Analysis = 
+VAR yearval =
+    SELECTEDVALUE ( DimPeriod[CAL_YEAR] )
+VAR CurrentYear =
+    YEAR ( NOW () )
+VAR currentmonth =
+    MONTH ( NOW () )
+VAR currentqtr =
+    ROUNDUP ( MONTH ( TODAY () ) / 3, 0 )
+VAR qtrdate =
+    IF (
+        currentqtr = 1,
+        DATE ( CurrentYear, IF ( currentmonth = 1, 1, IF ( currentmonth = 2, 2, 3 ) ), 31 ),
+        IF (
+            currentqtr = 2,
+            DATE ( CurrentYear, IF ( currentmonth = 4, 4, IF ( currentmonth = 5, 5, 6 ) ), 30 ),
+            IF (
+                currentqtr = 3,
+                DATE ( CurrentYear, IF ( currentmonth = 7, 7, IF ( currentmonth = 8, 8, 9 ) ), 30 ),
+                DATE ( CurrentYear, IF ( currentmonth = 10, 10, IF ( currentmonth = 11, 11, 12 ) ), 31 )
+            )
+        )
+    )
+VAR SelectedQuarters =
+    ALLSELECTED ( DimPeriod[CAL_QTR] )
+VAR CurrentQuarterName = "Q" & currentqtr
+VAR NetSalesCS =
+    ""
+        & CONCATENATEX (
+            CALCULATETABLE ( VALUES ( DimPeriod[CAL_QTR] ), DimPeriod[CAL_DATE] <= qtrdate ),
+            DimPeriod[CAL_QTR],
+            ", "
+        )
+VAR NetSalesCS1 =
+    ""
+        & CONCATENATEX (
+            CALCULATETABLE ( VALUES ( DimPeriod[CAL_QTR] )),
+            DimPeriod[CAL_QTR],
+            ", "
+        )
+/*VAR PlanCS =
+    " Plan: "
+        & CONCATENATEX (
+            CALCULATETABLE ( VALUES ( DimPeriod[CAL_QTR] ), DimPeriod[CAL_DATE] <= qtrdate ),
+            DimPeriod[CAL_QTR],
+            ", "
+        )
+VAR PlanSelectedQuartersCS =
+    " Plan: "
+        & CONCATENATEX (
+            CALCULATETABLE ( VALUES ( DimPeriod[CAL_QTR] ) ),
+            DimPeriod[CAL_QTR],
+            ", "
+        )*/
+VAR SelectedMonths =
+    ALLSELECTED ( DimPeriod[CAL_MTH] )
+VAR DistinctSelectedMonths =
+    CONCATENATEX ( VALUES ( DimPeriod[CAL_MTH] ), DimPeriod[CAL_MTH], "," )
+VAR NetSalesMonthsCS =
+    ""
+        & CONCATENATEX (
+            CALCULATETABLE (
+                VALUES ( DimPeriod[MonthShortName] ),
+                DimPeriod[CAL_DATE] <= qtrdate
+            ),
+            DimPeriod[MonthShortName],
+            ", "
+        )
+/*VAR PlanMonthsCS =
+    " Plan: "
+        & CONCATENATEX (
+            CALCULATETABLE (
+                VALUES ( DimPeriod[MonthShortName] ),
+                DimPeriod[CAL_DATE] <= qtrdate
+            ),
+            DimPeriod[MonthShortName],
+            ", "
+        )
+VAR PlanSelectedMonthsCS =
+    " Plan: "
+        & CONCATENATEX (
+            CALCULATETABLE ( VALUES ( DimPeriod[MonthShortName] ) ),
+            DimPeriod[MonthShortName],
+            ", "
+        )*/
+VAR MonthCount =
+    ( DISTINCTCOUNT ( DimPeriod[Quarter] ) * 3 )
+RETURN
+    IF (
+        ( ( DISTINCTCOUNT ( DimPeriod[CAL_MTH] ) ) < MonthCount ),
+        --If Specific Month filter is Selected
+        IF (
+            ( CONTAINSSTRING ( DistinctSelectedMonths, currentmonth ) ),
+            --If Selected Months has Current Month
+            CONCATENATEX(VALUES(DimPeriod[CAL_YEAR]),DimPeriod[CAL_YEAR],",") & " - " & NetSalesMonthsCS
+                & IF ( yearval = CurrentYear, " MTD", "" ) ,
+            --If Current Month is not selected
+            CONCATENATEX(VALUES(DimPeriod[CAL_YEAR]),DimPeriod[CAL_YEAR],",") & " - "
+                & IF ( MIN ( DimPeriod[CAL_DATE] ) <= qtrdate, NetSalesMonthsCS & "; ", "" ) 
+        ),
+        IF (
+            yearval = CurrentYear
+                && ( ( DISTINCTCOUNT ( DimPeriod[Quarter] ) ) = 4 ),
+            --If Quarter is All
+            CONCATENATEX(VALUES(DimPeriod[CAL_YEAR]),DimPeriod[CAL_YEAR],",") & " - " & NetSalesCS & " QTD" ,
+            IF (
+                yearval = CurrentYear
+                    && ( CurrentQuarterName IN SelectedQuarters ),
+                --If Selected Quarters has Current Quarter
+                CONCATENATEX(VALUES(DimPeriod[CAL_YEAR]),DimPeriod[CAL_YEAR],",") & " - " & NetSalesCS & " QTD" ,
+                IF (
+                    yearval = CurrentYear,
+                    --If Current Quarter is not selected
+                    CONCATENATEX(VALUES(DimPeriod[CAL_YEAR]),DimPeriod[CAL_YEAR],",") & " - "
+                        & IF ( TRUE(), NetSalesCS1 & " ", "" ) ,
+                    IF (
+                        yearval <> CurrentYear
+                            && ( ( DISTINCTCOUNT ( DimPeriod[Quarter] ) ) = 4 ),
+                        --If Quarter is All
+                        CONCATENATEX(VALUES(DimPeriod[CAL_YEAR]),DimPeriod[CAL_YEAR],",") & "-"
+                            & CONCATENATEX ( VALUES ( DimPeriod[CAL_QTR] ), DimPeriod[CAL_QTR], ", " ),
+                        IF (
+                            yearval <> CurrentYear
+                                && ( ( DISTINCTCOUNT ( DimPeriod[Quarter] ) ) <> 4 ),
+                            CONCATENATEX(VALUES(DimPeriod[CAL_YEAR]),DimPeriod[CAL_YEAR],",") & "-"
+                                & CONCATENATEX ( VALUES ( DimPeriod[CAL_QTR] ), DimPeriod[CAL_QTR], ", " ),
+                            CONCATENATEX(VALUES(DimPeriod[CAL_YEAR]),DimPeriod[CAL_YEAR],",") & "-"
+                                & CONCATENATEX ( VALUES ( DimPeriod[CAL_QTR] ), DimPeriod[CAL_QTR], ", " )
+                        )
+                    )
+                )
+            )
+        )
+    )
