@@ -6,3 +6,14 @@ community creds
 powerbiven
 hema@powerbimar12019venkat.onmicrosoft.com
 Mar@2019
+
+
+[Region]
+    IN CALCULATETABLE (
+        VALUES ( UserList[Region] ),
+        FILTER (
+            ALL ( UserList ),
+            [User email] = USERNAME ()
+                || [User email] = USERPRINCIPALNAME ()
+        )
+    ) 
