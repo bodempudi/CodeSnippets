@@ -22,7 +22,6 @@ let
     ChangedAllColTypes = Table.TransformColumnTypes(InsertWeekEnding,{{"MonthInCalendar", type text}, {"QuarterInCalendar", type text}, {"DayInWeek", Int64.Type}, {"Year", Int64.Type}, {"QuarterOfYear", Int64.Type}, {"MonthOfYear", Int64.Type}, {"DayOfMonth", Int64.Type}, {"DateInt", Int64.Type}}),
     #"Added Conditional Column" = Table.AddColumn(ChangedAllColTypes, "Custom", each if [Date] = DateTime.Date(DateTime.LocalNow()) then "Today" else if [Date] = DateTime.Date(Date.AddDays(DateTime.LocalNow(),-1))  then "Yesterday" else ">= 2 Days"),
     #"Changed Type" = Table.TransformColumnTypes(#"Added Conditional Column",{{"Custom", type text}}),
-    #"Renamed Columns" = Table.RenameColumns(#"Changed Type",{{"Custom", "Duration"}}),
-    #"Filtered Rows" = Table.SelectRows(#"Renamed Columns", each ([Year] = 2019) and ([MonthName] = "October"))
+    #"Renamed Columns" = Table.RenameColumns(#"Changed Type",{{"Custom", "Duration"}})
 in
-    #"Filtered Rows"
+   #"Renamed Columns"
