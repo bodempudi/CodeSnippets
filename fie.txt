@@ -1,38 +1,14 @@
-id,name,sal,pno
-1,venkat,4000,50000
-2,pavan,5000,123456
-[Region]
-    IN CALCULATETABLE (
-        VALUES ( UserList[Region] ),
-        FILTER (
-            ALL ( UserList ),
-            [User email] = USERNAME ()
-                || [User email] = USERPRINCIPALNAME ()
-        )
-    )
- 
-
-admin@ownconsultingonemay15.onmicrosoft.com
-userone@ownconsultingonemay15.onmicrosoft.com
-usertwo@ownconsultingonemay15.onmicrosoft.com
-
-1. why we donot have these many columns in fact actual sales
-2. why there is no connection between dimprod and sales target table
-
-
-YearLabel = 
-var yearval=SELECTEDVALUE(Query1[Year])
-VAR CQTR="Q"&ROUNDUP(MONTH(TODAY())/3,0)
-VAR QTR=IF(MONTH(NOW())<4
-        ,"Q1-QTD"
-        ,IF((MONTH(NOW())>3 &&MONTH(NOW()) <7)&& (CALCULATE(DISTINCTCOUNT(Query1[Quarter]),Query1[Date]<=NOW())=1)
-        ,CALCULATE(VALUES(Query1[Quarter]),Query1[Date]<=NOW())&if(CALCULATE(VALUES(Query1[Quarter]),Query1[Date]<=NOW())="Q1",BLANK()
-        ,"-QTD"),IF((MONTH(NOW())>6 &&MONTH(NOW()) <10)&& (CALCULATE(DISTINCTCOUNT(Query1[Quarter]),Query1[Date]<=NOW())=1)
-        ,CALCULATE(VALUES(Query1[Quarter]),Query1[Date]<=NOW())&if(OR(CALCULATE(VALUES(Query1[Quarter]),Query1[Date]<=NOW())="Q1",CALCULATE(VALUES(Query1[Quarter]),Query1[Date]<=NOW())="Q2"),BLANK(),"-QTD"),
-IF((MONTH(NOW())>9 &&MONTH(NOW()) <13)&& (CALCULATE(DISTINCTCOUNT(Query1[Quarter]),Query1[Date]<=NOW())=1)
-        ,CALCULATE(VALUES(Query1[Quarter]),Query1[Date]<=NOW())&if(OR(OR(CALCULATE(VALUES(Query1[Quarter]),Query1[Date]<=NOW())="Q1",CALCULATE(VALUES(Query1[Quarter]),Query1[Date]<=NOW())="Q2"),CALCULATE(VALUES(Query1[Quarter]),Query1[Date]<=NOW())="Q3"),BLANK(),"-QTD"),
-    IF(MONTH(NOW()) > 3 &&MONTH(NOW()) < 7,"Q1,Q2-QTD",IF(MONTH(NOW())>6 && MONTH(NOW())<10,"Q1,Q2,Q3-QTD","Q1,Q2,Q3,Q4-QTD"))))))
-return yearval&"-"&QTR
-
-kirankiran@powerbiadminvmay042019.onmicrosoft.com 
-May@2019
+PW Sales = 
+var WeekNumber = SELECTEDVALUE(DimDate[Week_Of_Year])
+var WeekYear = SELECTEDVALUE(DimDate[Year])
+var MaxWeekNumber = CALCULATE(MAX(DimDate[Week_Of_Year]),ALL(DimDate))
+RETURN
+SUMX(
+    FILTER(
+        ALL(DimDate),
+        IF(WeekNumber=1
+        ,DimDate[Week_Of_Year] = MaxWeekNumber && 
+        DimDate[Year] = WeekYear-1
+        ,DimDate[Week_Of_Year] = WeekNumber - 1 && DimDate[Year] = WeekYear)
+    ),
+    [Sales])
