@@ -13,5 +13,5 @@ SUMX(
     ),
     [Sales])
 
-
+https://note.microsoft.com/MPW0009294-CLE_CatalogDisplayPage.html
 https://note.microsoft.com/IN-NOGEP-WBNR-FY19-05May-28-DP-200WorkingwithAzureDatabricksandCosmosDBinAzure-MPW0009295-03_Registration.html
