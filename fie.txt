@@ -12,3 +12,6 @@ SUMX(
         ,DimDate[Week_Of_Year] = WeekNumber - 1 && DimDate[Year] = WeekYear)
     ),
     [Sales])
+
+
+https://note.microsoft.com/IN-NOGEP-WBNR-FY19-05May-28-DP-200WorkingwithAzureDatabricksandCosmosDBinAzure-MPW0009295-03_Registration.html
