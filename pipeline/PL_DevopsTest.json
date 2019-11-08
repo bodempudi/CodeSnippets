@@ -1,0 +1,58 @@
+{
+	"name": "PL_DevopsTest",
+	"properties": {
+		"activities": [
+			{
+				"name": "Execute SP",
+				"type": "SqlServerStoredProcedure",
+				"dependsOn": [],
+				"policy": {
+					"timeout": "7.00:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"storedProcedureName": "[dbo].[PipeLineDevOpsTest]",
+					"storedProcedureParameters": {
+						"Environment": {
+							"value": {
+								"value": "@pipeline().parameters.Environment",
+								"type": "Expression"
+							},
+							"type": "String"
+						},
+						"PipelineID": {
+							"value": {
+								"value": "@pipeline().RunId",
+								"type": "Expression"
+							},
+							"type": "String"
+						},
+						"PipelineName": {
+							"value": {
+								"value": "@pipeline().Pipeline",
+								"type": "Expression"
+							},
+							"type": "String"
+						}
+					}
+				},
+				"linkedServiceName": {
+					"referenceName": "AzureSqlDatabase1",
+					"type": "LinkedServiceReference"
+				}
+			}
+		],
+		"parameters": {
+			"Environment": {
+				"type": "string",
+				"defaultValue": "Dev"
+			}
+		},
+		"annotations": []
+	},
+	"type": "Microsoft.DataFactory/factories/pipelines"
+}
