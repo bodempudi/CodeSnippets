@@ -1,0 +1,18 @@
+{
+	"name": "AzureSqlDatabase1",
+	"type": "Microsoft.DataFactory/factories/linkedservices",
+	"properties": {
+		"parameters": {
+			"ServerName": {
+				"type": "String",
+				"defaultValue": "productdetailsnov4.database.windows.net"
+			}
+		},
+		"annotations": [],
+		"type": "AzureSqlDatabase",
+		"typeProperties": {
+			"connectionString": "integrated security=False;encrypt=True;connection timeout=30;data source=@{linkedService().ServerName};initial catalog=master;user id=productdetailsnov4",
+			"encryptedCredential": "ew0KICAiVmVyc2lvbiI6ICIyMDE3LTExLTMwIiwNCiAgIlByb3RlY3Rpb25Nb2RlIjogIktleSIsDQogICJTZWNyZXRDb250ZW50VHlwZSI6ICJQbGFpbnRleHQiLA0KICAiQ3JlZGVudGlhbElkIjogIlBST0RVQ1RJTkNSTE9BRElOR19kNDk2OTgxNC00YjQyLTRlZDItYTcwYi0xMzhjY2E1MWU3M2UiDQp9"
+		}
+	}
+}
