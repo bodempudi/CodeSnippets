@@ -1,0 +1,22 @@
+DECLARE @StartDate DATE = '20110101'
+DECLARE @EndDate DATE = '20251231'
+--drop TABLE dbo.DimDate
+CREATE TABLE dbo.DimDate(
+Date_PK INT PRIMARY KEY,
+[DateName] DATE,
+[Quarter] TINYINT,
+[QuarterName] VARCHAR(500),
+MonthNumber TINYINT,
+[MonthName] VARCHAR(500)
+);
+
+WHILE(@StartDate <= @EndDate)
+BEGIN
+	INSERT INTO dbo.DimDate
+	select cast(replace(cast(@StartDate as varchar(50)),'-','') as int),
+	CAST(@StartDate as date),
+	DATEpart(QUARTER,@StartDate),'Q'+DATENAME(QUARTER,@StartDate),
+	DATEpart(month,@StartDate),
+	DATEname(month,@StartDate)
+	SET @StartDate = DATEADD(D,1,@StartDate);
+END
