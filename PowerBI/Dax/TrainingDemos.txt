@@ -1,4 +1,20 @@
 Total Sales = SUM(FactInternetSales[SalesAmount])
+PW Sales = 
+var WeekNumber = SELECTEDVALUE(DimDate[Week_Of_Year])
+VAR Year = SELECTEDVALUE(DimDate[Year])
+VAR MaxWeekNumber = CALCULATE(max(DimDate[Week_Of_Year]),ALL(DimDate))
+RETURN 
+SUMX(
+FILTER(ALL(DimDate),
+IF(WeekNumber=1,DimDate[Week_Of_Year]=MaxWeekNumber && DimDate[Year]=Year-1
+,DimDate[Week_Of_Year]=WeekNumber-1 && DimDate[Year]=Year
+)
+)
+,[TotalSales]
+)
+
+
+
 
 YTD Sales = TOTALYTD([Total Sales],DueDate[FullDateAlternateKey],ALL(DueDate))
 
