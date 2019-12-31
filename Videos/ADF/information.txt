@@ -1,0 +1,5 @@
+#Connect-AzureRmAccount 
+#Enable-AzureRmContextAutosave
+#Get-AzureRmContext
+ New-AzureRmResourceGroup -Name ADFVenkat -Location "South Central US"
+New-AzureRmDataFactory -ResourceGroupName "ADFVenkat" -Name "VenkatWikiADF" -Location "WestUS"
