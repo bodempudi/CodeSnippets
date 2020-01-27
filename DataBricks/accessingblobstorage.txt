@@ -1,0 +1,10 @@
+storage_account_name = "venkatnormalblobstorage"
+storage_account_access_key = "kutYGTCjtItDJV3Ga91e3S/dDrDycimlO71n5bEb7OsjMfx6T1LlFq6yGMc6aaZUTunjdII0CyiDv6eEQw8jBA=="
+file_location = "wasbs://files@venkatnormalblobstorage.blob.core.windows.net/employees.csv"
+file_type = "csv"  
+spark.conf.set(
+  "fs.azure.account.key."+storage_account_name+".blob.core.windows.net",
+  storage_account_access_key)
+df = spark.read.format(file_type).option("inferSchema", "true").option("header","true").load(file_location)
+poc=df.createOrReplaceTempView("poc")
+display(df)
