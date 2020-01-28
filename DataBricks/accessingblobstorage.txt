@@ -6,5 +6,5 @@ spark.conf.set(
   "fs.azure.account.key."+storage_account_name+".blob.core.windows.net",
   storage_account_access_key)
 df = spark.read.format(file_type).option("inferSchema", "true").option("header","true").load(file_location)
-poc=df.createOrReplaceTempView("poc")
+df = df.filter(df.sal > 5000)
 display(df)
