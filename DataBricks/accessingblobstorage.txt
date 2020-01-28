@@ -7,4 +7,13 @@ spark.conf.set(
   storage_account_access_key)
 df = spark.read.format(file_type).option("inferSchema", "true").option("header","true").load(file_location)
 df = df.filter(df.sal > 5000)
-display(df)
+
+jdbcHostname = "onpremazuresql.database.windows.net"
+jdbcDatabase = "onpremazuresql"
+username="onpremazuresql"
+password="December@2p019"
+jdbcPort = 1433
+jdbcUrl = "jdbc:sqlserver://{0}:{1};database={2};user={3};password={4}".format(jdbcHostname, jdbcPort, jdbcDatabase, username, password)
+#display(df)
+table="emps"
+df.write.mode("append").format("jdbc").option("url", jdbcUrl).option("dbtable", table).option("driver", "com.microsoft.sqlserver.jdbc.SQLServerDriver").save()
