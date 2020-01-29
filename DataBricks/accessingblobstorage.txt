@@ -17,3 +17,14 @@ jdbcUrl = "jdbc:sqlserver://{0}:{1};database={2};user={3};password={4}".format(j
 #display(df)
 table="emps"
 df.write.mode("append").format("jdbc").option("url", jdbcUrl).option("dbtable", table).option("driver", "com.microsoft.sqlserver.jdbc.SQLServerDriver").save()
+
+
+
+--mounting dbfs
+dbutils.fs.mount(source="wasbs://files@databrickspocjan29.blob.core.windows.net",
+                 mount_point="/mnt/files",
+                 extra_configs={"fs.azure.account.key.databrickspocjan29.blob.core.windows.net": "uUuOmfLvAONfUUWQkkBOR0DUV5OgtlNYhLZOfGMbSn5E6EK7gLQ+s4VYncSgav0sTFmz+f8ygZkJ+RS7KbexGA=="})
+file_type = "csv"
+df=spark.read.format("csv").option("inferSchema", "true").option("header","true").load("/mnt/files/emp.csv")
+df=df.filter(df.sal > 5000)
+display(df)
