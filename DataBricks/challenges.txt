@@ -5,3 +5,8 @@ ADF Challenges:
 3. Does not support all SSIS transformations in Version 2, because this need to depend on writing TSQL code
 for transformations.
 4. having another physical machines at onprem environment for integration runtimes
+5. No Excel Source(workaround: depending on legarchy systems for loading excel files)
+
+Databricks:
+--------------
+1. Currently it takes nearly 7 minutes to provision a cluster, it is difficult for adhoc requests to wait for that time. Workarounds include using an existing cluster but the recommended approach when creating a job is to create a new cluster for each job run(infra is different for each job run).
