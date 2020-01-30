@@ -28,3 +28,6 @@ file_type = "csv"
 df=spark.read.format("csv").option("inferSchema", "true").option("header","true").load("/mnt/files/emp.csv")
 df=df.filter(df.sal > 5000)
 display(df)
+
+
+IR@d803f4ef-289b-4490-b7c0-92e201a1aea3@databrickspoc@eu2@S/0bbEALKBO076wXxWVw9VXwCLZMn/H2PgYoEj9lZPA=
