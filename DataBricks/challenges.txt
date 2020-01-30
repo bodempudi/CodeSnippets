@@ -1,0 +1,7 @@
+ADF Challenges:
+---------------
+1. No Activity to send email notifications(Workaround: Use Web Activity)
+2. No Activity for file system related operations(workaround: combining multiple activities to achieve this)
+3. Does not support all SSIS transformations in Version 2, because this need to depend on writing TSQL code
+for transformations.
+4. having another physical machines at onprem environment for integration runtimes
