@@ -3,3 +3,11 @@
 
 --incremental expression
 @concat('select * from dept where CreationDatetime > ''',activity('Lookup1').output.firstrow.MaxCompletionDatetime,'''')
+
+--full loading and incremental loading same pipe  line  
+    --lookup code
+      select MAX(CompletionDatetime) MaxCompletionDatetime from ProcessControl where name=N'IncrDept' and Status=N'Completed'
+    --set variable
+      @formatDateTime(coalesce(activity('Lookup1').output.firstrow.MaxCompletionDatetime,'2010-01-01 01:01:01'))
+    --if condition
+      @equals(variables('MaxDateTime'),formatDateTime('2010-01-01 01:01:01','yyyy-MM-dd HH:mm:ss'))
