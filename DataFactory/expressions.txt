@@ -12,3 +12,5 @@
       @formatDateTime(coalesce(activity('Lookup1').output.firstrow.MaxCompletionDatetime,'2010-01-01 01:01:01'))
     --if condition
       @equals(variables('MaxDateTime'),formatDateTime('2010-01-01 01:01:01','yyyy-MM-dd HH:mm:ss'))
+--Archive File Name
+    --@concat(replace(Item(),'.csv',''),'_',utcnow(),'.csv')
