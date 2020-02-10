@@ -1,8 +1,9 @@
-@concat(item(),'.csv')--concatenation
+--concatenation
+    --@concat(item(),'.csv')
 
 
 --incremental expression
-@concat('select * from dept where CreationDatetime > ''',activity('Lookup1').output.firstrow.MaxCompletionDatetime,'''')
+    --@concat('select * from dept where CreationDatetime > ''',activity('Lookup1').output.firstrow.MaxCompletionDatetime,'''')
 
 --full loading and incremental loading same pipe  line  
     --lookup code
