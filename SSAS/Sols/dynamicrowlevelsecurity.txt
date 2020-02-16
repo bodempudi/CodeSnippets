@@ -3,7 +3,17 @@ GO
 
 USE DynamicRowLevelSecurity;
 GO
+NONEMPTY(
 
+[Project].[Project Name].[Project Name].MEMBERS,
+
+(   [Measures].[Project ID],
+
+StrToMember(“[Users].[Resource NT Account].&[” + username() + “]”)
+
+)
+
+)
 
 CREATE TABLE dbo.DimStore(
 StoreKey INT PRIMARY KEY IDENTITY,
