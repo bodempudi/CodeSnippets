@@ -1,0 +1,61 @@
+CREATE DATABASE DynamicRowLevelSecurity;
+GO
+
+USE DynamicRowLevelSecurity;
+GO
+
+
+CREATE TABLE dbo.DimStore(
+StoreKey INT PRIMARY KEY IDENTITY,
+StoreName VARCHAR(500));
+GO
+
+INSERT INTO dbo.DimStore(StoreName) VALUES('Store 1');
+INSERT INTO dbo.DimStore(StoreName) VALUES('Store 2');
+INSERT INTO dbo.DimStore(StoreName) VALUES('Store 3');
+INSERT INTO dbo.DimStore(StoreName) VALUES('Store 4');
+INSERT INTO dbo.DimStore(StoreName) VALUES('Store 5');
+GO
+
+
+CREATE TABLE dbo.FactSales(
+	StoreKey INT,
+	SalesAmount INT
+);
+GO
+
+INSERT INTO dbo.DimStore(StoreKey,SalesAmount) VALUES(1,'Store 1');
+INSERT INTO dbo.DimStore(StoreKey,SalesAmount) VALUES(2,'Store 2');
+INSERT INTO dbo.DimStore(StoreKey,SalesAmount) VALUES(3,'Store 3');
+INSERT INTO dbo.DimStore(StoreKey,SalesAmount) VALUES(4,'Store 4');
+INSERT INTO dbo.DimStore(StoreKey,SalesAmount) VALUES(5,'Store 5');
+INSERT INTO dbo.DimStore(StoreKey,SalesAmount) VALUES(1,'Store 1');
+INSERT INTO dbo.DimStore(StoreKey,SalesAmount) VALUES(2,'Store 2');
+INSERT INTO dbo.DimStore(StoreKey,SalesAmount) VALUES(3,'Store 3');
+INSERT INTO dbo.DimStore(StoreKey,SalesAmount) VALUES(4,'Store 4');
+INSERT INTO dbo.DimStore(StoreKey,SalesAmount) VALUES(5,'Store 5');
+GO
+
+CREATE TABLE dbo.DimUser(
+UserKey INT PRIMARY KEY IDENTITY,
+UserName VARCHAR(500),
+DomianUserName VARCHAR(500)
+);
+GO
+
+
+
+CREATE TABLE dbo.UserMapping(
+UserKey INT,
+StoreKey INT
+);
+GO
+
+
+
+
+
+
+
+
+
