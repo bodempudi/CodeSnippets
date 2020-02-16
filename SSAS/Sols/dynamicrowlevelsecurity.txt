@@ -1,6 +1,8 @@
 CREATE DATABASE DynamicRowLevelSecurity;
 GO
 
+http://richardlees.blogspot.com/2010/10/ssas-dynamic-security.html
+
 USE DynamicRowLevelSecurity;
 GO
 NONEMPTY(
