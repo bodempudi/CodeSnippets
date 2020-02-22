@@ -3,7 +3,7 @@ adlcopy - copy data from azure blob to adls Gen1(not reverese), can copy between
 sqoop
 distscp
 
-
+aaaaaaa
 
 HDFS/advanced HDFS-SITE.xml
   dfs.blocksize
