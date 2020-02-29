@@ -138,3 +138,16 @@ GO
 
 https://www.quora.com/To-become-a-complete-big-data-Hadoop-developer-I-came-up-with-the-following-learning-path-1-Big-Data-Hadoop-developer-2-Apache-Cassandra-MongoDB-developer-3-Apache-Spark-and-Scala-Apache-Kafka-and-4-Impala-Is-this-the-correct-sequence-of-courses-I-should-take
 
+…or create a new repository on the command line
+echo "# consulting" >> README.md
+git init
+git add README.md
+git commit -m "first commit"
+git remote add origin https://github.com/bodempudi/consulting.git
+git push -u origin master
+…or push an existing repository from the command line
+git remote add origin https://github.com/bodempudi/consulting.git
+git push -u origin master
+…or import code from another repository
+You can initialize this repository with code from a Subversion, Mercurial, or TFS project.
+
