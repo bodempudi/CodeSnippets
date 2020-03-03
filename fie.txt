@@ -19,5 +19,118 @@ GO
 
 
 
-https://note.microsoft.com/MPW0009294-CLE_CatalogDisplayPage.html
-https://note.microsoft.com/IN-NOGEP-WBNR-FY19-05May-28-DP-200WorkingwithAzureDatabricksandCosmosDBinAzure-MPW0009295-03_Registration.html
+CREATE TABLE [dbo].[Site_ReportingMediaType](
+	[reporting_media_type_id] [int] IDENTITY(1,1) NOT NULL,
+	[media_type_description_s] [varchar](255) NOT NULL
+) ON [PRIMARY]
+GO
+
+
+CREATE TABLE [dbo].[site_values_wildcards](
+	[site_values_wildcards_id] [int] IDENTITY(1,1) NOT NULL,
+	[sitevalues_id] [int] NOT NULL,
+	[wildcard_entry] [nvarchar](1024) NOT NULL,
+ CONSTRAINT [PK_site_values_wildcards] PRIMARY KEY CLUSTERED 
+(
+	[site_values_wildcards_id] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, FILLFACTOR = 80) ON [PRIMARY]
+) ON [PRIMARY]
+GO
+
+CREATE TABLE [dbo].[site_value_type](
+	[value_type] [char](2) NOT NULL,
+	[Site_Value_Type_n] [varchar](100) NOT NULL,
+ CONSTRAINT [PK_site_value_type] PRIMARY KEY CLUSTERED 
+(
+	[value_type] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, FILLFACTOR = 80) ON [PRIMARY]
+) ON [PRIMARY]
+GO
+
+
+CREATE TABLE [dbo].[site_MetaData](
+	[Site_MetaData_ID] [int] IDENTITY(1,1) NOT NULL,
+	[site_key] [int] NOT NULL,
+	[MetaDataLabel] [nvarchar](256) NOT NULL,
+	[MetaDataValue] [nvarchar](max) NULL,
+ CONSTRAINT [PK_site_MetaData] PRIMARY KEY CLUSTERED 
+(
+	[Site_MetaData_ID] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, FILLFACTOR = 80) ON [PRIMARY]
+) ON [PRIMARY] TEXTIMAGE_ON [PRIMARY]
+GO
+
+
+CREATE TABLE [dbo].[BisSite](
+	[BisSiteID] [int] NOT NULL,
+	[BisSiteName] [varchar](500) NOT NULL,
+	[StartDate] [datetime] NULL
+) ON [PRIMARY]
+GO
+
+
+
+CREATE TABLE [dbo].[BisSiteMap](
+	[SiteID] [int] NOT NULL,
+	[BisSiteID] [int] NOT NULL,
+	[Channel] [int] NOT NULL,
+	[Updated] [datetime] NOT NULL,
+	[ProviderId] [int] NULL
+) ON [PRIMARY]
+GO
+
+
+CREATE TABLE [dbo].[site_change_comments](
+[update_user] INT, 
+[update_date] DATETIME, 
+[update_type] VARCHAR(50), 
+[comment] VARCHAR(1000), 
+[homedb] CHAR(2), 
+[site_id] INT, 
+[site_status] CHAR(2)
+);
+GO
+
+
+CREATE TABLE [dbo].[site_values](
+[sitevalues_id] INT PRIMARY KEY , 
+[sitekey] INT, 
+[value_type] CHAR(2), 
+[value_entry] NVARCHAR(4000), 
+[VisitsPerSession] INT NOT NULL, 
+[MinValue] INT, 
+[MaxValue] INT, 
+[Priority] INT
+);
+GO
+
+CREATE TABLE [dbo].[Profiles_Sites](
+[Profile_ID]					INT NOT NULL, 
+[site_key]						INT NOT NULL, 
+[SpiderCount]					INT NOT NULL, 
+[LastSpiderDate]				DATETIME NOT NULL, 
+[SpiderPercentage]				INT NOT NULL, 
+[LastResetDate]					DATETIME NOT NULL, 
+[UserId]						INT NOT NULL, 
+[Password]						INT NOT NULL, 
+[MaxRetries]					INT NOT NULL, 
+[ForceCount]					INT NOT NULL,
+PRIMARY KEY(Profile_ID,site_key)
+);
+GO
+
+
+CREATE TABLE [dbo].[Youtube_Channels](
+	[Site ID] [int] NULL,
+	[Site Name] [varchar](255) NULL,
+	[Site URL] [varchar](255) NULL,
+	[Main Channel] [varchar](255) NULL,
+	[Channel Id] [varchar](255) NULL,
+	[Published Date] [datetime] NULL,
+	[Description] [nvarchar](2000) NULL,
+	[Default Thumbnail] [varchar](1000) NULL,
+	[High Thumbnail] [varchar](1000) NULL,
+	[Medium Thumbnail] [varchar](1000) NULL
+) ON [PRIMARY]
+GO
+
