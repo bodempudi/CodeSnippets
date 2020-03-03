@@ -1,17 +1,23 @@
-PW Sales = 
-var WeekNumber = SELECTEDVALUE(DimDate[Week_Of_Year])
-var WeekYear = SELECTEDVALUE(DimDate[Year])
-var MaxWeekNumber = CALCULATE(MAX(DimDate[Week_Of_Year]),ALL(DimDate))
-RETURN
-SUMX(
-    FILTER(
-        ALL(DimDate),
-        IF(WeekNumber=1
-        ,DimDate[Week_Of_Year] = MaxWeekNumber && 
-        DimDate[Year] = WeekYear-1
-        ,DimDate[Week_Of_Year] = WeekNumber - 1 && DimDate[Year] = WeekYear)
-    ),
-    [Sales])
+
+/****** Object:  Table [dbo].[SiteNavigationType]    Script Date: 3/3/2020 12:48:20 PM ******/
+SET ANSI_NULLS ON
+GO
+
+SET QUOTED_IDENTIFIER ON
+GO
+
+CREATE TABLE [dbo].[SiteNavigationType](
+	[SiteNavigationType_ID] [int] NOT NULL,
+	[NavigationTypeName] [nvarchar](512) NOT NULL,
+	[NavigationTypeDesc] [nvarchar](max) NULL,
+ CONSTRAINT [PK_CouponNavigationType] PRIMARY KEY CLUSTERED 
+(
+	[SiteNavigationType_ID] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, FILLFACTOR = 80) ON [PRIMARY]
+) ON [PRIMARY] TEXTIMAGE_ON [PRIMARY]
+GO
+
+
 
 https://note.microsoft.com/MPW0009294-CLE_CatalogDisplayPage.html
 https://note.microsoft.com/IN-NOGEP-WBNR-FY19-05May-28-DP-200WorkingwithAzureDatabricksandCosmosDBinAzure-MPW0009295-03_Registration.html
