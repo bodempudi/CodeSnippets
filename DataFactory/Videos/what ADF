@@ -1,1 +1,4 @@
-d
+
+ALTER ROLE db_datareader ADD MEMBER [venkatdfapr3]
+ALTER ROLE db_datawriter ADD MEMBER [venkatdfapr3]
+	 			    GRANT EXECUTE TO [venkatdfapr3]
