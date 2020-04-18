@@ -1,0 +1,9 @@
+$azureAplicationId ="35532a34-0a56-4e23-b985-e635fccf3033"
+$azureTenantId= "fef05738-7566-46e2-809d-00dcad43514f"​
+$azurePassword = ConvertTo-SecureString "cAFo4CWHlw3qSp:-VHab6M.2Qu.6wW?T" -AsPlainText -Force​
+$psCred = New-Object System.Management.Automation.PSCredential($azureAplicationId , $azurePassword)​
+Add-AzureRmAccount -Credential $psCred -TenantId $azureTenantId  -ServicePrincipal ​
+​
+New-AzResourceGroup -Name ADFTutorialResourceGroup  -Location "West US"​
+​
+New-AzDataFactory -ResourceGroupName ADFTutorialResourceGroup -Name FirstDataFactoryPSH –Location "West US"
