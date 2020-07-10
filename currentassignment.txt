@@ -1,0 +1,1 @@
+= Number.FromText(Number.ToText(Date.Year(Date.From(Date.AddDays(DateTime.LocalNow(),-5))))&""&Text.End("0"&Number.ToText(Date.Month(Date.From(Date.AddDays(DateTime.LocalNow(),-5)))),2)&""&Text.End("0"&Number.ToText(Date.Day(Date.From(Date.AddDays(DateTime.LocalNow(),-5)))),2))
