@@ -1,5 +1,7 @@
 https://technet.microsoft.com/en-us/virtuallabs/bb467605.aspx
 
+https://venkatdevops20200822@dev.azure.com/venkatdevops20200822/ConsoleApp5/_git/ConsoleApp5
+
 https://community.powerbi.com/t5/Desktop/Dril-Down-Display-sales-in-Multiple-Currencies/m-p/641575#M307305
 https://community.powerbi.com/t5/Desktop/Display-Hierarchy-based-on-User/m-p/648808#M311094
 M9Gd8rokIjye+C75i/aghzvdCXCkAZNbwKaK18ybYh1r70i9shzjtkSYjHsYNzKbG9CkqBTgfNSK7nxKKCjHmg==
