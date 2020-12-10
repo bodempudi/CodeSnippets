@@ -1,39 +1,33 @@
-insert into dbo.hold_prv_specialty_pk
-(payor ,specialty_code, specialty_name, external_change_date, external_change_init, internal_change_date, pcp_specialty, display_in_mobile)
-values (1011 ,'S@U$H@AN_D','Surgery - Hand', '2013-02-27 11:07:14.837', 'Htrio', '2020-04-29 18:40:19.447', 'N', 1),
-  (1011 ,'S_UH@AN_D','Surgery - Hand', '2013-02-27 11:07:14.837', 'Htrio', '2020-04-29 18:40:19.447', 'N', 1),
-  (1011 ,'SUHA$_ND','Surgery - Hand', '2013-02-27 11:07:14.837', 'Htrio', '2020-04-29 18:40:19.447', 'N', 1)
-
-declare @sql varchar(max)
-
-BEGIN TRY
----BEGIN TRAN update_hold_prv_type_special
-
-SET @sql = 'WHILE (SELECT COUNT(*)
-FROM dbo.hold_prv_specialty_pk
-WHERE PATINDEX(''%[^a-zA-Z0-9]%'', specialty_code) <> 0) > 0
+CREATE FUNCTION [dbo].[fn_StripCharacters]
+(
+    @String NVARCHAR(MAX), 
+    @MatchExpression VARCHAR(255)
+)
+RETURNS NVARCHAR(MAX)
+AS
 BEGIN
-UPDATE dbo.hold_prv_specialty_pk
-SET specialty_code = REPLACE(specialty_code, SUBSTRING(specialty_code, PATINDEX(''%[^a-zA-Z0-9]%'', specialty_code), 1),'''')
-WHERE PATINDEX(''%[^a-zA-Z0-9]%'', specialty_code) <> 0
-END'
-EXECUTE(@sql)
-print (@sql)
+    SET @MatchExpression =  '%['+@MatchExpression+']%'
 
-COMMIT TRAN update_hold_prv_type_special
-END --TRY
+    WHILE PatIndex(@MatchExpression, @String) > 0
+        SET @String = Stuff(@String, PatIndex(@MatchExpression, @String), 1, '')
 
-BEGIN CATCH
+    RETURN @String
 
-insert into error_hold_prv_specialty_pk (specialty_code, updated_specialty_code,table_name,log_date)
-select specialty_code,REPLACE(specialty_code, SUBSTRING(specialty_code, PATINDEX('%[^a-zA-Z0-9]%', specialty_code), 1),''),'dbo.hold_prv_specialty_pk',getdate()
-FROM dbo.hold_prv_specialty_pk
-WHERE PATINDEX('%[^a-zA-Z0-9]%', specialty_code) <> 0;
-
-DELETE
-FROM dbo.hold_prv_specialty_pk
+	select payor ,
+specialty_code, 
+[dbo].[ReplaceASCII](specialty_code), 
+[dbo].[fn_StripCharacters](specialty_code,'^a-zA-Z0-9'),
+specialty_name, external_change_date, external_change_init, internal_change_date, pcp_specialty, display_in_mobile from hold_prv_specialty_pk  
 WHERE PATINDEX('%[^a-zA-Z0-9]%', specialty_code) <> 0
-COMMIT  TRAN update_hold_prv_type_special
 
-END CATCH
 
+END
+
+SELECT * FROM (select payor ,
+specialty_code, 
+[dbo].[ReplaceASCII](specialty_code) SP, 
+[dbo].[fn_StripCharacters](specialty_code,'^a-zA-Z0-9') SPR,
+ROW_NUMBER() over(partition by [dbo].[fn_StripCharacters](specialty_code,'^a-zA-Z0-9') order by [dbo].[fn_StripCharacters](specialty_code,'^a-zA-Z0-9')) RN,
+specialty_name, external_change_date, external_change_init, internal_change_date, pcp_specialty, display_in_mobile from hold_prv_specialty_pk  
+WHERE PATINDEX('%[^a-zA-Z0-9]%', specialty_code) <> 0) A
+WHERE A.RN=1
