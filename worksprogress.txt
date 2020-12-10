@@ -1,1 +1,39 @@
+insert into dbo.hold_prv_specialty_pk
+(payor ,specialty_code, specialty_name, external_change_date, external_change_init, internal_change_date, pcp_specialty, display_in_mobile)
+values (1011 ,'S@U$H@AN_D','Surgery - Hand', '2013-02-27 11:07:14.837', 'Htrio', '2020-04-29 18:40:19.447', 'N', 1),
+  (1011 ,'S_UH@AN_D','Surgery - Hand', '2013-02-27 11:07:14.837', 'Htrio', '2020-04-29 18:40:19.447', 'N', 1),
+  (1011 ,'SUHA$_ND','Surgery - Hand', '2013-02-27 11:07:14.837', 'Htrio', '2020-04-29 18:40:19.447', 'N', 1)
+
+declare @sql varchar(max)
+
+BEGIN TRY
+---BEGIN TRAN update_hold_prv_type_special
+
+SET @sql = 'WHILE (SELECT COUNT(*)
+FROM dbo.hold_prv_specialty_pk
+WHERE PATINDEX(''%[^a-zA-Z0-9]%'', specialty_code) <> 0) > 0
+BEGIN
+UPDATE dbo.hold_prv_specialty_pk
+SET specialty_code = REPLACE(specialty_code, SUBSTRING(specialty_code, PATINDEX(''%[^a-zA-Z0-9]%'', specialty_code), 1),'''')
+WHERE PATINDEX(''%[^a-zA-Z0-9]%'', specialty_code) <> 0
+END'
+EXECUTE(@sql)
+print (@sql)
+
+COMMIT TRAN update_hold_prv_type_special
+END --TRY
+
+BEGIN CATCH
+
+insert into error_hold_prv_specialty_pk (specialty_code, updated_specialty_code,table_name,log_date)
+select specialty_code,REPLACE(specialty_code, SUBSTRING(specialty_code, PATINDEX('%[^a-zA-Z0-9]%', specialty_code), 1),''),'dbo.hold_prv_specialty_pk',getdate()
+FROM dbo.hold_prv_specialty_pk
+WHERE PATINDEX('%[^a-zA-Z0-9]%', specialty_code) <> 0;
+
+DELETE
+FROM dbo.hold_prv_specialty_pk
+WHERE PATINDEX('%[^a-zA-Z0-9]%', specialty_code) <> 0
+COMMIT  TRAN update_hold_prv_type_special
+
+END CATCH
 
