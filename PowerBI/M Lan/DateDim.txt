@@ -1,3 +1,5 @@
+
+//https://www.barmartland.com/compare-sales-with-last-year-on-day-in-week/
 let
     StartDate = #date(2010,1,1),
     //StartDate = #date(Date.Year(DateTime.LocalNow())-10,1,1),
