@@ -1,33 +1,6 @@
-CREATE FUNCTION [dbo].[fn_StripCharacters]
-(
-    @String NVARCHAR(MAX), 
-    @MatchExpression VARCHAR(255)
-)
-RETURNS NVARCHAR(MAX)
-AS
-BEGIN
-    SET @MatchExpression =  '%['+@MatchExpression+']%'
-
-    WHILE PatIndex(@MatchExpression, @String) > 0
-        SET @String = Stuff(@String, PatIndex(@MatchExpression, @String), 1, '')
-
-    RETURN @String
-
-	select payor ,
-specialty_code, 
-[dbo].[ReplaceASCII](specialty_code), 
-[dbo].[fn_StripCharacters](specialty_code,'^a-zA-Z0-9'),
-specialty_name, external_change_date, external_change_init, internal_change_date, pcp_specialty, display_in_mobile from hold_prv_specialty_pk  
-WHERE PATINDEX('%[^a-zA-Z0-9]%', specialty_code) <> 0
-
-
-END
-
-SELECT * FROM (select payor ,
-specialty_code, 
-[dbo].[ReplaceASCII](specialty_code) SP, 
-[dbo].[fn_StripCharacters](specialty_code,'^a-zA-Z0-9') SPR,
-ROW_NUMBER() over(partition by [dbo].[fn_StripCharacters](specialty_code,'^a-zA-Z0-9') order by [dbo].[fn_StripCharacters](specialty_code,'^a-zA-Z0-9')) RN,
-specialty_name, external_change_date, external_change_init, internal_change_date, pcp_specialty, display_in_mobile from hold_prv_specialty_pk  
-WHERE PATINDEX('%[^a-zA-Z0-9]%', specialty_code) <> 0) A
-WHERE A.RN=1
+1. Able to set up the liquibase environment
+2. Able to execute both xml and sql based files to create objectes in SQL Server
+3. Able to tag the deployment
+4. Able to rollback the previous deployment based on tag
+5. Able to apply the reference information for deployment
+6. Able to publish the changes to the SQL Server using Code in GIT
