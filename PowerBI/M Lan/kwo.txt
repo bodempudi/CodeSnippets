@@ -1,0 +1,34 @@
+//first one
+
+let aa=(fy1 as number ,fy2 as number ,fy3 as number ,fy4 as number )=>
+let
+    a=if(fy1 is null) then -2018 else fy1  
+    ,  
+    a1=if(fy2 is null) then -2019 else fy2  ,  
+    a2=if(fy3 is null) then -2020 else fy3   , 
+    a3=if(fy4 is null) then -2021 else fy4,
+    b=if((a<>-2018) and (a1=-2019 or a2=-2020 or a3=-2021)) then 2018
+    else if((a1<>-2019) and (a=-2018 or a2=-2020 or a3=-2021)) then 2019
+    else if((a2<>-2020) and (a1=-2019 or a=-2018 or a3=-2021)) then 2020
+    else if((a3<>-2021) and (a1=-2019 or a2=-2020 or a=-2018)) then 2021
+    else if((a<>-2018) and (a1<>-2019) and (a2<>-2020) or (a3<>-2021)) then 2018
+    else null
+    in b
+in aa
+//second  one
+let
+    Source = Sql.Databases("servername"),
+    SampleDatabase = Source{[Name="dbname"]}[Data],
+    dbo_KReportTest = SampleDatabase{[Schema="dbo",Item="KReportTest"]}[Data],
+    #"Replaced Value" = Table.ReplaceValue(dbo_KReportTest,null,-2021,Replacer.ReplaceValue,{"SpendYearCY"}),
+    #"Replaced Value1" = Table.ReplaceValue(#"Replaced Value",null,-2020,Replacer.ReplaceValue,{"SpendYear1"}),
+    #"Replaced Value2" = Table.ReplaceValue(#"Replaced Value1",null,-2019,Replacer.ReplaceValue,{"SpendYear2"}),
+    #"Replaced Value3" = Table.ReplaceValue(#"Replaced Value2",null,-2018,Replacer.ReplaceValue,{"SpendYear3"}),
+    #"Invoked Custom Function" = Table.AddColumn(#"Replaced Value3", "ReturnFn", each ReturnFn([SpendYear3], [SpendYear2], [SpendYear1], [SpendYearCY])),
+    #"Replaced Value4" = Table.ReplaceValue(#"Invoked Custom Function",-2018,0,Replacer.ReplaceValue,{"SpendYear3"}),
+    #"Replaced Value5" = Table.ReplaceValue(#"Replaced Value4",-2019,0,Replacer.ReplaceValue,{"SpendYear2"}),
+    #"Replaced Value6" = Table.ReplaceValue(#"Replaced Value5",-2020,0,Replacer.ReplaceValue,{"SpendYear1"}),
+    #"Replaced Value7" = Table.ReplaceValue(#"Replaced Value6",-2021,0,Replacer.ReplaceValue,{"SpendYearCY"}),
+    #"Changed Type" = Table.TransformColumnTypes(#"Replaced Value7",{{"ReturnFn", Int64.Type}})
+in
+    #"Changed Type"
