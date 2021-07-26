@@ -1,27 +1,19 @@
-let
-    StartDate = #date(2010,1,1),
-    //StartDate = #date(Date.Year(DateTime.LocalNow())-10,1,1),
-    EndDate = #date(2020,12,31),
-    //EndDate = #date(Date.Year(DateTime.LocalNow())+1,12,31),//using Date.Year(DateTime.LocalNow()), you can make it more dynamic
-    DayCount = Duration.Days(Duration.From(EndDate - StartDate)),
-    ListDates = List.Dates(StartDate,DayCount,#duration(1,0,0,0)),//duration is just an increment value by 1
-    TableFromList = Table.FromList(ListDates, Splitter.SplitByNothing()),
-    ChangedType = Table.TransformColumnTypes(TableFromList,{{"Column1", type date}}),
-    RenamedColumns = Table.RenameColumns(ChangedType,{{"Column1", "Date"}}),
-    InsertYear = Table.AddColumn(RenamedColumns, "Year", each Date.Year([Date])),
-    InsertQuarter = Table.AddColumn(InsertYear, "QuarterOfYear", each Date.QuarterOfYear([Date])),
-    InsertMonth = Table.AddColumn(InsertQuarter, "MonthOfYear", each Date.Month([Date])),
-    InsertDay = Table.AddColumn(InsertMonth, "DayOfMonth", each Date.Day([Date])),
-    InsertDayInt = Table.AddColumn(InsertDay, "DateInt", each [Year] * 10000 + [MonthOfYear] * 100 + [DayOfMonth]),
-    InsertMonthName = Table.AddColumn(InsertDayInt, "MonthName", each Date.ToText([Date], "MMMM", "en-us"), type text),
-    InsertCalendarMonth = Table.AddColumn(InsertMonthName, "MonthInCalendar", each (try(Text.Range([MonthName],0,3)) otherwise [MonthName]) & " " & Number.ToText([Year])),
-    InsertCalendarQtr = Table.AddColumn(InsertCalendarMonth, "QuarterInCalendar", each "Q" & Number.ToText([QuarterOfYear]) & " " & Number.ToText([Year])),
-    InsertDayWeek = Table.AddColumn(InsertCalendarQtr, "DayInWeek", each Date.DayOfWeek([Date])+1),
-    InsertDayName = Table.AddColumn(InsertDayWeek, "DayOfWeekName", each Date.ToText([Date], "dddd", "en-us"), type text),
-    InsertWeekEnding = Table.AddColumn(InsertDayName, "WeekEnding", each Date.EndOfWeek([Date]), type date),
-    ChangedAllColTypes = Table.TransformColumnTypes(InsertWeekEnding,{{"MonthInCalendar", type text}, {"QuarterInCalendar", type text}, {"DayInWeek", Int64.Type}, {"Year", Int64.Type}, {"QuarterOfYear", Int64.Type}, {"MonthOfYear", Int64.Type}, {"DayOfMonth", Int64.Type}, {"DateInt", Int64.Type}}),
-    #"Added Conditional Column" = Table.AddColumn(ChangedAllColTypes, "Custom", each if [Date] = DateTime.Date(DateTime.LocalNow()) then "Today" else if [Date] = DateTime.Date(Date.AddDays(DateTime.LocalNow(),-1))  then "Yesterday" else ">= 2 Days"),
-    #"Changed Type" = Table.TransformColumnTypes(#"Added Conditional Column",{{"Custom", type text}}),
-    #"Renamed Columns" = Table.RenameColumns(#"Changed Type",{{"Custom", "Duration"}})
-in
-   #"Renamed Columns"
+select storeid,BusinessDate,salescy SalesCY,
+(SELECT SalesCY from sales where businessdate in 
+(select businessdately from sales c where c.storeid=b.storeid and c.businessdate=b.businessdate
+
+) and storeid=b.storeid) SalesLY
+/*,(SELECT businessdate from sales where businessdate in 
+(select businessdately from sales c where c.storeid=b.storeid and c.businessdate=b.businessdate
+
+) and storeid=b.storeid) BusinessDateLY
+*/
+,(SELECT SalesCY from sales where businessdate in 
+(select businessdately from sales c where c.storeid=b.storeid and  c.businessdate in(
+select businessdately from sales cc where cc.storeid=b.storeid and cc.businessdate=b.businessdate
+)
+
+) and storeid=b.storeid) SalesLLY
+
+from sales b
+--where year(BusinessDate)=2021
