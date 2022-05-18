@@ -1,3 +1,13 @@
+(startdate ,enddate )=>
+let
+    hours = Duration.Hours(enddate-startdate),
+    mins= Duration.Minutes(enddate-startdate),
+    hourstext= if hours>0 then Number.ToText(hours)&"Hrs " else "0 Hrs",
+    minstext = if mins>0 then Number.ToText(mins)&"Mins"  else "0 Mins",
+    res=hourstext&" "&minstext
+in
+    res
+
 https://technet.microsoft.com/en-us/virtuallabs/bb467605.aspx
 https://github.com/bodempudi/devopslearning.git
 https://venkatdevops20200822@dev.azure.com/venkatdevops20200822/ConsoleApp5/_git/ConsoleApp5
