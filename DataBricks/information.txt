@@ -1,1 +1,2 @@
 --logging learning experience
+The previous programmer has already made a head start on the code.
