@@ -1,0 +1,32 @@
+1. architecture of api? how will you do api testing?
+2. explain about mobile testing?
+3. what is the security challenge you came across in testing?
+4. how to you identify igrames in selenium?
+5. how do you handle exceptions in selenium?
+6. how do you identify different test scenarios?
+7. what are all the bugs you noticed in api testing?
+8. different status codes?
+9. how will you select dropdown value using selenium?
+10. how will you run/execution javascript code using selenium?
+11. how will you get 3 rows and 3 cols table in selenium?
+12. verify and assert difference?
+13. what is sdlc and stlc in agile?
+14. how do you test entire appication? which type of testing you prefer first?
+15. explain database testing?
+16. outbox test scenarios?
+17. security testing?
+18. write api testing to pass age, name, designation to a post method?
+19. different scenarios both positive and negative?
+20. difference between http and https?
+21. what different stautus codes 201,504,203.
+22. get, post, put , delete.
+23. write a login test case using selenium?
+24. write any api test cast?
+25. difference between findelement and findelements?
+26. regression testing and re testing?
+27. white box and black box testing?
+28. agile methodology?
+29. which better agile/whaterfall ? why?
+30. how do you test session expiration ?
+31. what protocols/tools to be followed for api testing?
+32. action chains in selenium?
