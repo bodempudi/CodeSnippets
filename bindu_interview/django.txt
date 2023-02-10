@@ -1,0 +1,4 @@
+1. explain which architectural pattern does mvt?
+2. expalin the significance of settings.py?
+3. a variety of apis, restfull interfaces in django?
+4. expain manage.py
