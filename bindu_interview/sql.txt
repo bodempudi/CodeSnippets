@@ -1,0 +1,3 @@
+1. unique constriaint.
+2. expalin join, diff between inner, left,right?
+3. triggers, views?
