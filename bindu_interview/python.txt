@@ -1,0 +1,37 @@
+1. difference between list, tuple and set? and their methods as well.
+2. explain decarators with example
+3. what is the difference between a is b , a in b, a==b?
+4. what is pickling? 
+5. how to retrive data from pickling?
+6. what is the function for unpickling?
+7. how print last 10 elements from list?
+8. what is list and dictionary comprehension?
+9. what are lambda function? write a program to print or odd number using lambda function?
+10. how multiple inheritence can be achieved in python,
+11. what are the methods available to open a file?
+12. different file modes available in python?
+13. how to remove duplicates from a list?
+14. how does garbage collection works in python>
+15. how does python memory management works?
+16. how to debug code in python?
+17. convert ["Monday","Tuesday",---,"Sunday"] to a string.
+18. write a program to reverse string/sentence/list?
+19. print duplicates in list
+20. what is type casting?
+21. how to copy an object in python?
+22. diffence between deep copy and shallow copy?
+23. difference between break and continue?
+24. explain pep8?
+25. global,private,protected access specifiers?
+26. namespaces in python?
+27. if a number is divisble by 3 then print 'fizz', divisible by 5 then 'buzz' , divible by both 3 and 5 then print 'fizzbuzz'?
+28. mutuable and immutable objects in python?
+29. datatypes in python
+30. what is __init__
+31. find second smallest number in a list?
+32. significance of __name__ == "__main__"
+33. why/how python is dynamically type language?
+34. scope resolution in python?
+35. how will you check whether a class is child or not?
+36. split , join functions in python?
+37. multi threadding program?
