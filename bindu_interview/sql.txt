@@ -1,3 +1,21 @@
 1. unique constriaint.
 2. expalin join, diff between inner, left,right?
 3. triggers, views?
+4. primary key vs unique.
+5. identity in sql
+6. window functions.
+7. rank and desnse rank functions.
+8. difference between functin and sp?
+9. view? view stores any data or not?
+10. delete vs truncate vs drop.
+11. indexes? clustered vs non clustered?
+12. constraints?
+13. remove duplicates from a table?
+14. difference between char and varchar?
+15. acid properties?
+16. self join
+17. union, minus, intersect
+18. cursor
+19. olap or oltp
+20. How to create empty tables with the same structure as another table?
+21. second highest salary?
