@@ -1,0 +1,5 @@
+1. explain what deos git clone do?
+2. explain what is conflict in git?
+3. git status command
+4. git revert and git reset.
+5. if we have a broken commit, which is the best option out of new commit / amending old one?
