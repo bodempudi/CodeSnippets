@@ -46,3 +46,12 @@ Diff b/w sort and sorted.
 Map, Filter, Reduce
 Multi Threading and Multi process.
 Magic methods
+Python Program for n-th Fibonacci number
+Python code to get the Cumulative sum of a list
+Python code to get the Cumulative sum of a list
+Break a list into chunks of size N in Python
+find the size of the largest subset of anagram words
+Function remove the minimum number of characters so that two strings become anagram
+Remove all duplicates words from a given sentence
+Arrange a list in the waveform.
+Merge multiple files into a single file.
