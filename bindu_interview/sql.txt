@@ -19,3 +19,11 @@
 19. olap or oltp
 20. How to create empty tables with the same structure as another table?
 21. second highest salary?
+What are the types of joining and explain each?
+What is the difference between BETWEEN and IN operators in SQL
+What is the index?
+What is the difference between primary key and unique constraints?
+What are all the different types of indexes?
+What is the difference between DELETE and TRUNCATE commands?
+How to fetch common records from two tables?
+How to select unique records from a table?
