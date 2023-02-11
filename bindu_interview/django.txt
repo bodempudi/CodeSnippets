@@ -2,3 +2,14 @@
 2. expalin the significance of settings.py?
 3. a variety of apis, restfull interfaces in django?
 4. expain manage.py
+What are decorators in Python?
+What are Dict and List comprehensions?
+What is lambda in Python?
+What are generators in Python?
+Class Methods in python
+What does *args and **kwargs mean?
+What is the difference between .py and .pyc files?
+Diff b/w sort and sorted.
+Map, Filter, Reduce
+Multi Threading and Multi process.
+Magic methods
