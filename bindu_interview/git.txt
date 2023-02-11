@@ -3,3 +3,9 @@
 3. git status command
 4. git revert and git reset.
 5. if we have a broken commit, which is the best option out of new commit / amending old one?
+Difference between git fetch and git pull.
+What is the difference between Git and Github?
+What is Git stash?
+What is the difference between fork, branch, and clone?
+What is the difference between the ‘git diff ’and ‘git status’?
+Diff b/w git stash pop and git stash drop.
