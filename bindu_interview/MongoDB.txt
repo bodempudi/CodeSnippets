@@ -1,0 +1,10 @@
+How does replication work in MongoDB?
+How is MongoDB better than other SQL databases?
+Does MongoDB push the writes to disk immediately or lazily?
+How many indexes does MongoDB create by default for a new collection?
+What is Sharding in MongoDB? Explain.
+By default, which index is created by MongoDB for every collection?
+Update query in Mongo
+By default order of mongo results
+MongoDB uses what type of locking.
+How to override the _id in mongo.
