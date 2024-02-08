@@ -22,3 +22,11 @@ Now you can open your SSMS by going to taskbar as below.
 Now you have your SSMS is ready to get started as below.
 
 ![SSMS Opened](https://github.com/bodempudi/CodeSnippets/blob/master/images/SQLServer/Open-SSMS.png)
+
+Now we should know the Server details from team if you work in a company. Please try to collect the server details from the team. Now as we are learning the SQL Server now and already installed it in our laptop. Try connecting to it from your SSMS.
+
+usually the server name is either a name or an ip address. They will give you this and username and password as well.
+
+Once you connet to the SQL Server from SSMS, you can find it as below.
+
+![Connected to SSMS](https://github.com/bodempudi/CodeSnippets/blob/master/images/SQLServer/Open-SSMS.png)
