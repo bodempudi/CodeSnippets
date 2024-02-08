@@ -80,6 +80,12 @@ Below is the reference to see the file group of a table.
 
 ![table file groups](https://github.com/bodempudi/CodeSnippets/assets/2835142/c7004650-96de-4e78-88e3-6b4f76aaec21)
 
+Now lets have a basic understanding of data files in SQL Server.
+mdf file - In this file the actual data contents will be there. Tables, Views, Indexes, all such objects actually exists in this file.
+ldf file - This file always keeps track of all the operations you do with your database. This file is very very important to the SQL Server, since SQL Server is going to use the informaion in this server
+to make your database consistant. For example, When you add/delete any data to database, SQL Server will add that information first to the log file and then it will add to the database.
 
+### Adding columns to an existing table.
+ALTER TABLE TABLENAME ADD YOURColumnName DATATYPE
 
-
+EX: ALTER TABLE SampleApplication ADD IsActive BIT NOT NULL;
