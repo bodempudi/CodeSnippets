@@ -36,3 +36,6 @@ Once you connect to SQL Server, first thing you should know is version of the SQ
 **SELECT @@VERSION**
 
 we can use this command to know the same. Run this command in SSIS and see the result.
+
+**Understand the difference between windows authentication and SQL Server authentication**
+In case of windows authentication your windows username and password is going to be used to connect to the sql server. Incase of SQL Server authentication you need username and password from the team to connect to the SQL Server
