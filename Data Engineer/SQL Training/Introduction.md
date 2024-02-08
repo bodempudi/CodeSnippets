@@ -14,3 +14,9 @@ Click start button and start typing SSMS in windows search, it starts displaying
 Once you find your SSMS, pin to your laptop task bar so that i will be easy to access it from next time. You can do this as below.
 
 ![SSMS Pin To Task Bar](https://github.com/bodempudi/CodeSnippets/blob/master/images/SQLServer/SSMS-Pint-Taskbar.png)
+
+Now you can open your SSMS by going to taskbar as below.
+
+![Open SSMS from Taskbar](https://github.com/bodempudi/CodeSnippets/blob/master/images/SQLServer/Open%20SSMS%20from%20Taskbar.png)
+
+Now you have your SSMS is ready to get started.
