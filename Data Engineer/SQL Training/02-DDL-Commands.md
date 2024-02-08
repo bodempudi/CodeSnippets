@@ -63,7 +63,14 @@ GO
 
  Batch is nothing a series commands executed in single batch.
 
+--Basic Table Creation Syntax
+CREATE TABLE dbo.SampleApplication(
+ApplicationID INT IDENTITY PRIMARY KEY,
+ApplicationName VARCHAR(50),
+AddedDate DATETIME
+);
 
+When write any SQL Code, Please make sure your names and code is neat and meaning full.
 
 
 
