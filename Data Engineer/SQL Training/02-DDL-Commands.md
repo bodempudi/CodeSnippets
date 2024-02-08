@@ -87,5 +87,7 @@ to make your database consistant. For example, When you add/delete any data to d
 
 ### Adding columns to an existing table.
 ALTER TABLE TABLENAME ADD YOURColumnName DATATYPE
+adding columns to an existing table, alter columns, altering constraints all these operations syntaxes can be find in internet and you can use it for your work completion. Just know about all these operations.
+
 
 EX: ALTER TABLE SampleApplication ADD IsActive BIT NOT NULL;
