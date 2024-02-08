@@ -63,6 +63,13 @@ You use dropdown box as below to change the database for your query window as be
 
 **System Databases**
 Now lets try to the understand the systems databases we have in SQL Server.
+**master** Database	Records all the system-level information for an instance of SQL Server. It stores all the required built in SQL Server information.
+
+msdb Database	Is used by SQL Server Agent for scheduling alerts and jobs.
+
+model Database	Is used as the template for all databases created on the instance of SQL Server. Modifications made to the model database, such as database size, collation, recovery model, and other database options, are applied to any databases created afterward.
+
+tempdb Database	Is a workspace for holding temporary objects or intermediate result
 
 **Database files**
 
