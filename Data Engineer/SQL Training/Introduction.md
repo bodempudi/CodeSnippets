@@ -19,4 +19,6 @@ Now you can open your SSMS by going to taskbar as below.
 
 ![Open SSMS from Taskbar](https://github.com/bodempudi/CodeSnippets/blob/master/images/SQLServer/Open%20SSMS%20from%20Taskbar.png)
 
-Now you have your SSMS is ready to get started.
+Now you have your SSMS is ready to get started as below.
+
+![SSMS Opened](https://github.com/bodempudi/CodeSnippets/blob/master/images/SQLServer/Open-SSMS.png)
