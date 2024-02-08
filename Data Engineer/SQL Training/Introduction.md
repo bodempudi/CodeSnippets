@@ -9,4 +9,4 @@ Now i will be adding all the important details you should know before you start 
 As mentioned earlier, SQL Server Management Studio is an integrated development environment. Please open your SSMS in your laptop.
 Click start button and start typing SSMS in windows search, it starts displaying as below.
 
-
+![SQL Server Management Studio](https://github.com/bodempudi/CodeSnippets/blob/master/images/SQLServer/Search-SSMS.png)
