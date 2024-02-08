@@ -24,3 +24,17 @@ These are the views which gives information about user created tables in the sel
 
 There are two views available which gives information about tables in SQL Server. In the picture i have selected the database ** Sample **, so all the tables
 in the database are displayed. You can use respective view as you need.
+
+I recommed you always using views from Information_Schema schema.
+
+
+
+
+
+
+
+
+
+
+
+
