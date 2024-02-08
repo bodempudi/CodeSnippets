@@ -25,8 +25,13 @@ These are the views which gives information about user created tables in the sel
 There are two views available which gives information about tables in SQL Server. In the picture i have selected the database ** Sample **, so all the tables
 in the database are displayed. You can use respective view as you need.
 
-I recommed you always using views from Information_Schema schema.
+Please see below picture.
 
+![All Columns View](https://github.com/bodempudi/CodeSnippets/blob/master/images/SQLServer/Columns.png)
+
+When take a look at above view, the data coming from sys view is having system related as well where as columns coming from information_schema view is having only. So when you do any column implementations, consider taking columns from information_schema view rather sys.views.
+
+I recommed you always using views from Information_Schema schema. You please do you own investigation before taking your decision.
 
 
 
