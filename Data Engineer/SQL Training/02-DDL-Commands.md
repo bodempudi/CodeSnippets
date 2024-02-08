@@ -59,7 +59,7 @@ to create a schema in database.
 CREATE SCHEMA SchemaName;
 GO
 
- Here GO a end of batch
+ Here GO is a end of batch
 
  Batch is nothing a series commands executed in single batch.
 
@@ -71,6 +71,15 @@ AddedDate DATETIME
 );
 
 When write any SQL Code, Please make sure your names and code is neat and meaning full.
+In this code, SampleApplication is a table created in dbo schema, when you do not specify a schema name along with your table name, your table is going
+to be created in dbo schema. dbo is a default schema in SQL Server. 
+
+Every table belongs to a file group, default file group is primary. When you want your table to be created in a different file group you speficy that. File groups is different subject, we will take a look at it in later point of time.
+
+Below is the reference to see the file group of a table.
+
+![table file groups](https://github.com/bodempudi/CodeSnippets/assets/2835142/c7004650-96de-4e78-88e3-6b4f76aaec21)
+
 
 
 
