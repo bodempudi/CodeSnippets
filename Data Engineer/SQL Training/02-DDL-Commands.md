@@ -33,11 +33,35 @@ When take a look at above view, the data coming from sys view is having system r
 
 I recommed you always using views from Information_Schema schema. You please do you own investigation before taking your decision.
 
+When we create a table in SQL Server, It will always be inside a SQL Server schema. By default it is dbo in SQL Server, we can define a user defined
+schema as well.
+
+Basically a schema is nothing but a container. Similar to a folder in your computer. How we manage our files in Folders, similary we create our tables 
+in schemas.
+
+Basically following is the hierarchial order
+
+SQL Server Instance ----> Database A
+                              |
+                              |---->Schema 1(Table1, Table2, Table3)
+                              |
+                              |---->Schema 2(Table1,Table2,Table3)
+                    ----> Database B
+                    ----> Database C
+
+Table is the low level entity, every table will be inside a schema.
+
+To know all the schemas inside a database, below is the Query.
+SELECT * FROM sys.schemas
+to create a schema in database.
 
 
+CREATE SCHEMA SchemaName;
+GO
 
+ Here GO a end of batch
 
-
+ Batch is nothing a series command executed in single batch.
 
 
 
