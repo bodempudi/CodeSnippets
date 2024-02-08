@@ -1,1 +1,1 @@
-//intro
+#Comments in SQL Server
