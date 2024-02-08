@@ -39,3 +39,40 @@ we can use this command to know the same. Run this command in SSIS and see the r
 
 **Understand the difference between windows authentication and SQL Server authentication**
 In case of windows authentication your windows username and password is going to be used to connect to the sql server. Incase of SQL Server authentication you need username and password from the team to connect to the SQL Server
+
+To write any query in SSMS, we should first open a query window. You can use Ctrl+N or File menu to open a new query window. Make you sure your query window is pointing to correct database. The query you write should be executed in correct database.
+
+Server level information is going to be same irrespective of the database. For example, **SELECT @@SERVER** gives same information in case of any database, Because this is server level information.
+
+To make sure your query window pointing to correct database. Please use below commands in your query windows.
+
+use YourDatabaseName;
+GO
+
+Before you execute use command, it looks like below
+
+![Use Database before](https://github.com/bodempudi/CodeSnippets/blob/master/images/SQLServer/Usedatabase-Before.png)
+
+After you execute use command, it looks like below.
+
+![After Database before](https://github.com/bodempudi/CodeSnippets/blob/master/images/SQLServer/Use-Database-After.png)
+
+You use dropdown box as below to change the database for your query window as below
+
+![Change Data](https://github.com/bodempudi/CodeSnippets/blob/master/images/SQLServer/Select-Database.png)
+
+**System Databases**
+Now lets try to the understand the systems databases we have in SQL Server.
+
+**Database files**
+
+**Query Executions**
+Various Query Executions
+
+
+
+
+
+
+
+
