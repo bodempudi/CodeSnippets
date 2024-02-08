@@ -10,3 +10,7 @@ As mentioned earlier, SQL Server Management Studio is an integrated development 
 Click start button and start typing SSMS in windows search, it starts displaying as below.
 
 ![SQL Server Management Studio](https://github.com/bodempudi/CodeSnippets/blob/master/images/SQLServer/Search-SSMS.png)
+
+Once you find your SSMS, pin to your laptop task bar so that i will be easy to access it from next time. You can do this as below.
+
+![SSMS Pin To Task Bar](https://github.com/bodempudi/CodeSnippets/blob/master/images/SQLServer/SSMS-Pint-Taskbar.png)
