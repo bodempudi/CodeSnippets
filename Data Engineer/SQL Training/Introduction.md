@@ -30,3 +30,9 @@ usually the server name is either a name or an ip address. They will give you th
 Once you connet to the SQL Server from SSMS, you can find it as below.
 
 ![Connected to SSMS](https://github.com/bodempudi/CodeSnippets/blob/master/images/SQLServer/Open-SSMS.png)
+
+Once you connect to SQL Server, first thing you should know is version of the SQL Server.
+
+**SELECT @@VERSION**
+
+we can use this command to know the same. Run this command in SSIS and see the result.
