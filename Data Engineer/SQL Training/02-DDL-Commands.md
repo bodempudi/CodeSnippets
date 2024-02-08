@@ -40,7 +40,7 @@ Basically a schema is nothing but a container. Similar to a folder in your compu
 in schemas.
 
 Basically following is the hierarchial order
-
+<pre>
 SQL Server Instance ----> Database A
                               |
                               |---->Schema 1(Table1, Table2, Table3)
@@ -48,7 +48,7 @@ SQL Server Instance ----> Database A
                               |---->Schema 2(Table1,Table2,Table3)
                     ----> Database B
                     ----> Database C
-
+</pre>
 Table is the low level entity, every table will be inside a schema.
 
 To know all the schemas inside a database, below is the Query.
