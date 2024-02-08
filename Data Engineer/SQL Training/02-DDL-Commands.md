@@ -61,7 +61,7 @@ GO
 
  Here GO a end of batch
 
- Batch is nothing a series command executed in single batch.
+ Batch is nothing a series commands executed in single batch.
 
 
 
