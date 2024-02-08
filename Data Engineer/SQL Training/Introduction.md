@@ -72,9 +72,19 @@ model Database	Is used as the template for all databases created on the instance
 tempdb Database	Is a workspace for holding temporary objects or intermediate result
 
 **Database files**
+In SQL Server there are three types of files.
+  Primary data file(.mdf)
+  Second data file(.ndf)
+  Log data file(.ldf)
+Every database will have minimum of two files. One mdf file and one ldf file.
+You can create many data files as you need. We will look into this in details in later.
 
 **Query Executions**
 Various Query Executions
+When we write queries in SSMS, every query window can contain mutliple queries. When you have multiple queries in your query window and clicking execute button or pressing f5 will enables all queries to get executed against the pointed database. When you want only a specific query to be executed, select only that query and click execute button or press f5 button.
+
+When you join any company, intially when you write queries be carefull with drop, delete, truncate command.
+Never execute any queries with these command in any database. Always go with select command.
 
 
 
