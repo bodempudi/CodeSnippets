@@ -36,7 +36,7 @@ I recommed you always using views from Information_Schema schema. You please do 
 When we create a table in SQL Server, It will always be inside a SQL Server schema. By default it is dbo in SQL Server, we can define a user defined
 schema as well.
 
-Basically a schema is nothing but a container. Similar to a folder in your computer. How we manage our files in Folders, similary we create our tables 
+Basically a database is a container for tables, stored procudes and other objects. a schema is nothing but a sub-container(or container) in a database. Similar to a folder in your computer. How we manage our files in Folders, similary we create our tables 
 in schemas.
 
 Basically following is the hierarchial order
