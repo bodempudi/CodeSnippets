@@ -63,7 +63,8 @@ GO
 
  Batch is nothing a series commands executed in single batch.
  
-You can control permissions at the schema level. For example, you can grant a user SELECT permissions on a schema, allowing the user to query data from all objects in that schema. So security is one of the considerations for determining how to arrange objects in schemas
+You can control permissions at the schema level. For example, you can grant a user SELECT permissions on a schema, allowing the user to query data from all objects in that schema. So security is one of the considerations for determining how to arrange objects in schemas.
+It is always recommended(best practise) that referring to your table name along with your schema name.
 
 --Basic Table Creation Syntax
 CREATE TABLE dbo.SampleApplication(
