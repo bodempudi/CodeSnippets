@@ -27,11 +27,14 @@ The prime focus of the OLTP is data entry not reporting.
 
  Data warehouse is contains entire organization data, but some times we may store one specific subject or business case(Retail sales or online sales) data, this spefic business data storage system is called Datamart. When combine all the datamarts it will become data warehouse.
 
- There few theorietical topics to concepts should aware of data warehousing.
- 
 There is book called, Data warehousing toolkit 2nd Edition Ralf Kimbal, just read first 25 pages, that is more than enough.
+When any ETL developer started working on data warehousing projects, he should first understand the business or domain.
 
- They are
+In any ETL systems, First we connect to source systems(OLTP systems or Operational Source System). Each company follows different models to allow subsequest systems to connect and read the data for further ETL purposes. Most of the companies won't allow connecting to production systems directly, this will lead to performance issues. Rather allowing connecting to production systems directly, they create a replicated database server and they allow connecting to replicated server data for ETL puposes. We bring the data from source systems(Operational Source System) to staging(Landing) area. Stage layer always follow truncate and load model. Once we have the data in stage layer, it very flexible to apply the required transformations to the data into data warehouse.
+
+There are few theorietical topics that every ETL developer should be aware of data warehousing.
+
+They are
   1. Surrogate Key
   2. Facts
   3. Dimensions
