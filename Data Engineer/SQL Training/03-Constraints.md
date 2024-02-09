@@ -7,7 +7,20 @@ valid as per business.
 
 Constraints can be defined at either column level or at table level.
 
-Primary Key - this is going to be used to uniquely identify each record in a table, it wont allow nulls and duplicates
+Primary Key - this is going to be used to uniquely identify each record in a table, it wont allow nulls and duplicates. The correct word about primary key is entity integrity. Entity is nothing but a table, so primary key brings the data integrity in a particular table. It means no duplicates in a column and column always will have a value in it. Candidate key is nothing but a primary key, primary key can be 
+defined on more than one column. When we define primary key on more than one column, we have to do this at table level.
+
+Below is the example code:
+--Basic Table Creation Syntax
+CREATE TABLE dbo.SampleApplicationPrimaryKeyAtTableLevel(
+ApplicationID INT IDENTITY ,
+ApplicationName VARCHAR(50),
+AddedDate DATETIME,
+constraint SampleApplicationPrimaryKeyAtTableLevel_ApplicationID_ApplicationName PRIMARY KEY(ApplicationId,ApplicationName)
+);
+
+Please take a look at the naming convention that i have followed. Naming conventions are very important when you write your code. Every team will have some naming coventions, please follow the same.
+
 
 NOT NULL - it will not allow null values, which means column always should have a value.
 
