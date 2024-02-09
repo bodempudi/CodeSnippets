@@ -35,12 +35,20 @@ In any ETL systems, First we connect to source systems(OLTP systems or Operation
 There are few theorietical topics that every ETL developer should be aware of data warehousing.
 
 They are
-  1. Surrogate Key
-  2. Facts
-  3. Dimensions
-  4. Star Schema
-  5. Snowflake Schema
-  6. Early arriving Facts or Late Arriving Dimensions.
-  7. Staging Area
-  8. Lineage/Audit Columns
-  9. Control Table
+  1. **Surrogate Key** 
+      Basically surrogate key will not have a business meaning. It is just a primary key which will be used to uniqely indentify a record in a table. We might get a Question that we load the data from OLTP or any other systems. Such systems already have a primary key, why we need another primary key at data warehouse
+ level. The reason for this is for any dimension member, values of that dimension member may change over a period of time. When a value is changed in source system we might have to load again into data warehouse with changed values. Source system primary key value will not change, when we load again the same primary key column into ware house we will have duplicate value in the column and we will end up with an error saying duplicates in column. To avoid this we create our own primary key in data warehouse and when we load the changed values into data warehouse, new surrogate key value will be generated and new source values will be stored with new surrogate key value. This way we load the changed value and we maintain unique value to load the data at data warehouse side as well.
+
+2. **Dimensions**
+      
+  4. Facts
+  5. Dimensions
+  6. Star Schema
+  7. Snowflake Schema
+  8. Early arriving Facts or Late Arriving Dimensions.
+  9. Staging Area
+  10. Lineage/Audit Columns
+  11. Control Table
+  12. Slowly Changing Dimensions
+
+All ETL systems follow more or less same design patterns. For easy trouble sho
