@@ -28,6 +28,8 @@ The prime focus of the OLTP is data entry not reporting.
  Data warehouse is contains entire organization data, but some times we may store one specific subject or business case(Retail sales or online sales) data, this spefic business data storage system is called Datamart. When combine all the datamarts it will become data warehouse.
 
  There few theorietical topics to concepts should aware of data warehousing.
+ 
+There is book called, Data warehousing toolkit 2nd Edition Ralf Kimbal, just read first 25 pages, that is more than enough.
 
  They are
   1. Surrogate Key
