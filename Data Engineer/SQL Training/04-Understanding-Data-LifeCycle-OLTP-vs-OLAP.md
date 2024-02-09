@@ -36,3 +36,6 @@ The prime focus of the OLTP is data entry not reporting.
   4. Star Schema
   5. Snowflake Schema
   6. Early arriving Facts or Late Arriving Dimensions.
+  7. Staging Area
+  8. Lineage/Audit Columns
+  9. Control Table
