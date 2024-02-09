@@ -60,16 +60,22 @@ Unless you add these dimensions to the facts, 0.295 and 1.250 does not have any 
 
 We will take a look at these implementations later.
 
-  **6. Star Schema**
+  4. **Star Schema**
     Star Schema is a one of the dimensional modeling design technique. In this dimension modeling design technique each dimension directly connects to facts.
     Most of the data warehousing systems follows star schema based design to avoid more joins to read data from few places.
     
-  7. Snowflake Schema
+  5. **Snowflake Schema**
      Snowflake schema is another dimensional modeling design technique. In this dimensional modeling design technique few dimensions connects to facts through a referred dimension. This type of design is used only for POCs.
+  6. **Slowly Changing Dimensions**
+     Slowly changing dimensions are the dimenions which values will change over a period of time. When the value is changed we create a new record in dimension
+     table and we tag old record with flag column or enddate column.
+
+     Ex: If we take DimEmployee as example, once an employee changes his designatin over a period of time, we will have multiple entries in DimEmployee dimension with new suggogate key value.
+     
   9. Early arriving Facts or Late Arriving Dimensions.
-  10. Staging Area
-  11. Lineage/Audit Columns
-  12. Control Table
-  13. Slowly Changing Dimensions
+       Few facts values comes early to the system then we load the data into the  fact tables first and will populate referenced columns with -1 values. When we receive the data we wil update them with actual data.
+  11. Staging Area - temparory/landing are in data warehousing systems.
+  12. Lineage/Audit Columns - audit in dimensions or facts. using these value we delete data from dimensions or facts to reload the data.
+  13. Control Table - contains information about ETL start date and ETL completion data and load status.
 
 All ETL systems follow more or less same design patterns. For easy trouble sho
