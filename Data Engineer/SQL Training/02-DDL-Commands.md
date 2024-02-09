@@ -98,3 +98,5 @@ DML allows you to query and modify data and includes statements such as SELECT, 
 It’s a common misunderstanding that DML includes only data modification statements, but as I mentioned, it also includes SELECT. 
 Another common misunderstanding is that TRUNCATE is a DDL statement, but in fact it is a DML statement. 
 DCL deals with permissions and includes statements such as GRANT and REVOKE.
+
+ collation at the database level that will determine language support, case sensitivity, and sort order for character data in that database. If you do not specify a collation for the database when you create it, the new database will use the default collation of the instance (chosen upon installation). 
