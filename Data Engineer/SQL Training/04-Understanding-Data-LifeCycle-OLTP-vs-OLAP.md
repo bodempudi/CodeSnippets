@@ -78,4 +78,3 @@ We will take a look at these implementations later.
   12. Lineage/Audit Columns - audit in dimensions or facts. using these value we delete data from dimensions or facts to reload the data.
   13. Control Table - contains information about ETL start date and ETL completion data and load status.
 
-All ETL systems follow more or less same design patterns. For easy trouble sho
