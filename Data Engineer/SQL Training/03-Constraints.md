@@ -2,7 +2,10 @@
 
 Constraints in SQL Server defines several rules on your table. Rules are nothing but your business specifi rules.
 
-Constraints can be defined at either column level or at table.
+Constraints brings the data integrity or domain integrity to your database. It means that once you define constraints on your table as per your business, you are assured that the data in the table is
+valid as per business.
+
+Constraints can be defined at either column level or at table level.
 
 Primary Key - this is going to be used to uniquely identify each record in a table, it wont allow nulls and duplicates
 
@@ -16,4 +19,4 @@ DEFAULT - This constraint is going to be used to have default values for a colum
 
 CHECK - This contraint is going to be used to make sure the values in the column satisfies a particular condition.
 
-All the syntaxes can be find in internet just make of these concepts.
+All the syntaxes can be find in internet just make understand of these concepts.
