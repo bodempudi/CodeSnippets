@@ -12,3 +12,4 @@ These type of day to day transactions get stored in storage systems such as OLTP
 transactions will get stored in database and here we deal with very recent data of the user. Here read and write are most common operations in OLTP at the same time, we read or write the data of a specific user.
 Since the user waits for the reply from interactive applications, the data storage should happen very quickly. In order to achieve this, we should have normalized database design so that our data is going to inserted or updated only at few places so that the operation is going to be completed quickly and user get updated quickly.
   
+When we have normalized database design we might end with more number joins in query. But it is okay in OLTP systems since we deal with less vollumn of data. Here users of the applications usually generates the data.
