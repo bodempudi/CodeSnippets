@@ -36,19 +36,39 @@ There are few theorietical topics that every ETL developer should be aware of da
 
 They are
   1. **Surrogate Key** 
-      Basically surrogate key will not have a business meaning. It is just a primary key which will be used to uniqely indentify a record in a table. We might get a Question that we load the data from OLTP or any other systems. Such systems already have a primary key, why we need another primary key at data warehouse
- level. The reason for this is for any dimension member, values of that dimension member may change over a period of time. When a value is changed in source system we might have to load again into data warehouse with changed values. Source system primary key value will not change, when we load again the same primary key column into ware house we will have duplicate value in the column and we will end up with an error saying duplicates in column. To avoid this we create our own primary key in data warehouse and when we load the changed values into data warehouse, new surrogate key value will be generated and new source values will be stored with new surrogate key value. This way we load the changed value and we maintain unique value to load the data at data warehouse side as well.
+      Basically surrogate key will not have any business meaning. It is just a primary key which will be used to uniqely indentify a record in a dimension table. We might get a Question that we load the data from OLTP or any other source systems. Such systems already have a primary key then why we need another primary key at data warehouse level. The reason for this is for any dimension member, values of the dimension member may change over a period of time. When a value is changed in source system we might have to load again into data warehouse with changed values. Source system primary key value will not change, when we load again the same primary key column into warehouse we will have duplicate value in the column and we will end up with an error saying duplicates in column. To avoid this we create our own primary key in data warehouse and when we load the changed values into data warehouse, new surrogate key value will be generated and new source values will be stored with new surrogate key value. This way we load the changed value and we maintain unique value to load the data at data warehouse side as well.
 
-2. **Dimensions**
-      
-  4. Facts
-  5. Dimensions
-  6. Star Schema
+2. **Facts**
+      Fact is some number in your business, it means SalesAmount, OrderQuantity, ProductCost etc. These are numbers measures your business. Basically a fact always provides answers to the questions. How many products sold? How much is the sales amount? How many orders ordered this year?
+**3. Dimensions**
+    Dimensions provide descriptive informaion to the facts. Without the dimension, fact does not have any meaning. Dimension provides answers to the following questions.
+    which customer, which product, which date, which location, which country.
+
+Lets take a simple analogy to understand the facts and dimensions in data warehousing.
+
+Venkat went to Lulu Hyder Market, Salmiya on Feb 9th 2024 and he purchased gulf auqa water bottles 1 case at price 0.295 fills and he bought 2 Kg Italy apples at 1.250 fills respectively.
+
+Here the measures(facts) are - 0.295, 1.250. when we take a look at these number we do not understand these values.
+Here dimensions:
+DimCustomer- Venkat
+DimProduct- Gulf-Aqua, Italy Apple
+DimDate- Feb 09 2024
+DimLocation - LuLu Salmiya
+
+Unless you add these dimensions to the facts, 0.295 and 1.250 does not have any meaning.
+
+We will take a look at these implementations later.
+
+  **6. Star Schema**
+    Star Schema is a one of the dimensional modeling design technique. In this dimension modeling design technique each dimension directly connects to facts.
+    Most of the data warehousing systems follows star schema based design to avoid more joins to read data from few places.
+    
   7. Snowflake Schema
-  8. Early arriving Facts or Late Arriving Dimensions.
-  9. Staging Area
-  10. Lineage/Audit Columns
-  11. Control Table
-  12. Slowly Changing Dimensions
+     Snowflake schema is another dimensional modeling design technique. In this dimensional modeling design technique few dimensions connects to facts through a referred dimension. This type of design is used only for POCs.
+  9. Early arriving Facts or Late Arriving Dimensions.
+  10. Staging Area
+  11. Lineage/Audit Columns
+  12. Control Table
+  13. Slowly Changing Dimensions
 
 All ETL systems follow more or less same design patterns. For easy trouble sho
