@@ -91,3 +91,10 @@ adding columns to an existing table, alter columns, altering constraints all the
 
 
 EX: ALTER TABLE SampleApplication ADD IsActive BIT NOT NULL;
+
+SQL has several categories of statements, including Data Definition Language (DDL), Data Manipulation Language (DML), and Data Control Language (DCL). 
+DDL deals with object definitions and includes statements such as CREATE, ALTER, and DROP. 
+DML allows you to query and modify data and includes statements such as SELECT, INSERT, UPDATE, DELETE, TRUNCATE, and MERGE. 
+It’s a common misunderstanding that DML includes only data modification statements, but as I mentioned, it also includes SELECT. 
+Another common misunderstanding is that TRUNCATE is a DDL statement, but in fact it is a DML statement. 
+DCL deals with permissions and includes statements such as GRANT and REVOKE.
