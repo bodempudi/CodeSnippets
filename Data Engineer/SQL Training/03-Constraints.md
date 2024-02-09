@@ -7,7 +7,7 @@ valid as per business.
 
 Constraints can be defined at either column level or at table level.
 
-Primary Key - this is going to be used to uniquely identify each record in a table, it wont allow nulls and duplicates. The correct word about primary key is entity integrity. Entity is nothing but a table, so primary key brings the data integrity in a particular table. It means no duplicates in a column and column always will have a value in it. Candidate key is nothing but a primary key, primary key can be 
+** Primary Key **- this is going to be used to uniquely identify each record in a table, it wont allow nulls and duplicates. The correct word about primary key is entity integrity. Entity is nothing but a table, so primary key brings the data integrity in a particular table. It means no duplicates in a column and column always will have a value in it. Candidate key is nothing but a primary key, primary key can be 
 defined on more than one column. When we define primary key on more than one column, we have to do this at table level.
 
 Below is the example code:
@@ -26,7 +26,9 @@ NOT NULL - it will not allow null values, which means column always should have 
 
 Unique - values in this column should not be duplicate and a single null value is allowed. More than one null value is not allowed.
 
-FOREIGN KEY - This constraint is going to be used define parent and child relationships between tables in database. Technically this is used to maintain referrential integrity in database. You can do on delete cascade and on update cascade as well. on delete cascade is nothing but what should happen in case of parent value is changed is deleted, whether child values also should changed or not can also be defined.
+** FOREIGN KEY **- This constraint is going to be used define parent and child relationships between tables in database. Technically this is used to maintain referrential integrity in database. You can do on delete cascade and on update cascade as well. on delete cascade is nothing but what should happen in case of parent value is changed is deleted, whether child values also should changed or not can also be defined.
+
+Ex: Orders and OrderDetails tables are the best example for defining Primary Key and Foreign Key relationships. Without order there will not be any order details, in such cases the referential integrity is maintained between Orders and OrderDetails using Primary Key and Foreign Key Constraints.
 
 DEFAULT - This constraint is going to be used to have default values for a column.
 
