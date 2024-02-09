@@ -40,7 +40,8 @@ They are
 
 2. **Facts**
       Fact is some number in your business, it means SalesAmount, OrderQuantity, ProductCost etc. These are numbers measures your business. Basically a fact always provides answers to the questions. How many products sold? How much is the sales amount? How many orders ordered this year?
-**3. Dimensions**
+   
+3. **Dimensions**
     Dimensions provide descriptive informaion to the facts. Without the dimension, fact does not have any meaning. Dimension provides answers to the following questions.
     which customer, which product, which date, which location, which country.
 
