@@ -33,3 +33,6 @@ DEFAULT - This constraint is going to be used to have default values for a colum
 CHECK - This contraint is going to be used to make sure the values in the column satisfies a particular condition.
 
 All the syntaxes can be find in internet just make understand of these concepts.
+
+## Normalization
+Normalization is a formal mathematical process to guarantee that each entity will be represented by a single relation. In a normalized database, you avoid anomalies during data modification and keep redundancy to a minimum without sacrificing completeness.
