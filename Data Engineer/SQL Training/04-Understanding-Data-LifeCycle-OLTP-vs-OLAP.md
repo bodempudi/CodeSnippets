@@ -30,8 +30,9 @@ The prime focus of the OLTP is data entry not reporting.
  There few theorietical topics to concepts should aware of data warehousing.
 
  They are
-  1 Surrogate Key
-  2 Facts
-  3 Dimensions
-  4 Star Schema
-  5 Snowflake Schema
+  1. Surrogate Key
+  2. Facts
+  3. Dimensions
+  4. Star Schema
+  5. Snowflake Schema
+  6. Early arriving Facts or Late Arriving Dimensions.
