@@ -44,3 +44,28 @@ BEGIN
 	DROP TABLE dbo.Sampletable;
 END
 </pre>
+In SQL Server Management studio there is a template explorer. It will have all the templates to create all the type of objects in SQL Server.
+
+![Template Explorer](https://github.com/bodempudi/CodeSnippets/assets/2835142/0280cd0e-161f-4433-8367-254325c85957)
+
+Below is the code snippet to create a table in SQL Server.
+<pre>
+	-- =========================================
+-- Create table template
+-- =========================================
+USE [Sample]
+GO
+
+IF OBJECT_ID('dbo.DimProduct', 'U') IS NOT NULL
+  DROP TABLE dbo.DimProduct;
+GO
+
+CREATE TABLE dbo.DimProduct
+(
+	ProductKey INT IDENTITY PRIMARY KEY,
+	ProductName VARCHAR(500),
+	UnitPrice DECIMAL(15,2),
+	ProductCategory VARCHAR(500)
+)
+GO
+</pre>
