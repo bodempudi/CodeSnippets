@@ -47,3 +47,5 @@ Below is the result once you insert the data.
 
 ![image](https://github.com/bodempudi/CodeSnippets/assets/2835142/2971760a-337d-4091-8e3d-51e837255d0e)
 
+when you delete data from a table, idenity value of a column will not reset where as you truncate the table. Identity value of a column will reset and starts with 1 again.
+This is one important different between DELETE vs Truncate.
