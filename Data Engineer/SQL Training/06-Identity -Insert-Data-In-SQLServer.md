@@ -20,7 +20,7 @@ GO
 INSERT INTO  dbo.DimProduct([ProductName], [UnitPrice], [ProductCategory]) VALUES('Aqua Gulf Water Bottles 1.5 Litters',0.295,'Drinking Water');
 
 ```
-when you have identity property defined on top of a column in SQL Server table, you should not pass an explicit value to the column, unless you mention
+when you have identity property defined on top of a column in SQL Server table, you should not or no need to pass an explicit value to the column, unless you mention
 identity property on.
 
 Once you execute the above insert statement, below is the result.
@@ -29,3 +29,6 @@ Once you execute the above insert statement, below is the result.
 
 Automatically value 1 has been added to the ProductKey column in DimProduct table.
 
+when you are using insert statement to insert the data to the table, i recommend you adding all your columns and values also in the same order. When you do not
+mention your column explicitly you should remember the ordinal positions of the column. This might not be feasible in all cases. So, adding columns in the insert
+statement helps you to make sure the values you are inserting into correct columns only. 
