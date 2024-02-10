@@ -36,7 +36,7 @@ BEGIN
 	DROP TABLE dbo.Sampletable;
 END
 </pre>
-In the above query second argument is very important, it differentiates the object type from table to other object types, which means that we telling 
+In the above query second argument is very important, it differentiates the object type from table to other object types, which means that we are telling 
 the SQL Server Query engine that Sampletable is user table object. 
 <pre>
 IF EXISTS(SELECT TOP 1 * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME='Sampletable' and TABLE_SCHEMA='dbo')
