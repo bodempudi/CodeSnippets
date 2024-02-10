@@ -21,3 +21,21 @@ SELECT * from INFORMATION_SCHEMA.TABLES
 Below is the side by side comparison of the both query executions.
 
 ![image](https://github.com/bodempudi/CodeSnippets/assets/2835142/95b46a58-16a1-47b4-9a3a-a8590a9bcf26)
+
+As part of every developer day to day activities, you might need to drop or truncate table if exists. So there are ways of doing it.
+
+SQL Server 2016 ctp3 and all above editons supports the following command.
+
+DROP TABLE IF EXISTS dbo.Sampletable;
+GO
+
+In older versions we have to use the below query.
+
+IF OBJECT_ID('dbo.Sampletable','U') IS NOT NULL
+	DROP TABLE dbo.Sampletable;
+GO
+/* In the above query second argument is very important, it differentiates the object type from table to other object types, which means that we telling 
+the SQL Server Query engine that Sampletable is user table object. */
+
+IF EXISTS(SELECT TOP 1 * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME='Sampletable' and TABLE_SCHEMA='dbo')
+	DROP TABLE dbo.Sampletable;
