@@ -27,7 +27,7 @@ As part of every developer day to day activities, you might need to drop or trun
 SQL Server 2016 ctp3 and all above editons supports the following command.
 <pre>
 DROP TABLE IF EXISTS dbo.Sampletable;
-GO
+
 </pre>
 In older versions we have to use the below query.
 <pre>
@@ -35,7 +35,7 @@ IF OBJECT_ID('dbo.Sampletable','U') IS NOT NULL
 BEGIN
 	DROP TABLE dbo.Sampletable;
 END
-GO</pre>
+</pre>
 /* In the above query second argument is very important, it differentiates the object type from table to other object types, which means that we telling 
 the SQL Server Query engine that Sampletable is user table object. */
 <pre>
