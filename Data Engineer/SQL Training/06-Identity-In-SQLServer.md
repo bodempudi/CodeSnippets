@@ -1,77 +1,19 @@
+## Identity in SQL Server
+
+Identity in SQL Server table is a property that you can use/tag/define to the column in a table. Once you define the identity property, SQL Server automatically assigns the value to the column based on identity property configuration.
 
 
 ```sql
--- Here is the generic syntax for finding identity value gaps in data.
--- The illustrative example starts here.
-SET IDENTITY_INSERT tablename ON;
-
-DECLARE @minidentval column_type;
-DECLARE @maxidentval column_type;
-DECLARE @nextidentval column_type;
-
-SELECT @minidentval = MIN($IDENTITY),
-    @maxidentval = MAX($IDENTITY)
-FROM tablename
-
-IF @minidentval = IDENT_SEED('tablename')
-    SELECT @nextidentval = MIN($IDENTITY) + IDENT_INCR('tablename')
-    FROM tablename t1
-    WHERE $IDENTITY BETWEEN IDENT_SEED('tablename')
-            AND @maxidentval
-        AND NOT EXISTS (
-            SELECT *
-            FROM tablename t2
-            WHERE t2.$IDENTITY = t1.$IDENTITY + IDENT_INCR('tablename')
-            )
-ELSE
-    SELECT @nextidentval = IDENT_SEED('tablename');
-
-SET IDENTITY_INSERT tablename OFF;
-
--- Here is an example to find gaps in the actual data.
--- The table is called img and has two columns: the first column
--- called id_num, which is an increasing identification number, and the
--- second column called company_name.
--- This is the end of the illustration example.
--- Create the img table.
--- If the img table already exists, drop it.
--- Create the img table.
-IF OBJECT_ID('dbo.img', 'U') IS NOT NULL
-    DROP TABLE img;
+IF OBJECT_ID('dbo.DimProduct', 'U') IS NOT NULL
+  DROP TABLE dbo.DimProduct;
 GO
 
-CREATE TABLE img (
-    id_num INT IDENTITY(1, 1),
-    company_name SYSNAME
-);
-
-INSERT img (company_name)
-VALUES ('New Moon Books');
-
-INSERT img (company_name)
-VALUES ('Lucerne Publishing');
-
--- SET IDENTITY_INSERT ON and use in img table.
-SET IDENTITY_INSERT img ON;
-
-DECLARE @minidentval SMALLINT;
-DECLARE @nextidentval SMALLINT;
-
-SELECT @minidentval = MIN($IDENTITY)
-FROM img
-
-IF @minidentval = IDENT_SEED('img')
-    SELECT @nextidentval = MIN($IDENTITY) + IDENT_INCR('img')
-    FROM img t1
-    WHERE $IDENTITY BETWEEN IDENT_SEED('img')
-            AND 32766
-        AND NOT EXISTS (
-            SELECT *
-            FROM img t2
-            WHERE t2.$IDENTITY = t1.$IDENTITY + IDENT_INCR('img')
-            )
-ELSE
-    SELECT @nextidentval = IDENT_SEED('img');
-
-SET IDENTITY_INSERT img OFF;
+CREATE TABLE dbo.DimProduct
+(
+	ProductKey INT IDENTITY(1,1) PRIMARY KEY,
+	ProductName VARCHAR(500),
+	UnitPrice DECIMAL(15,2),
+	ProductCategory VARCHAR(500)
+)
+GO
 ```
