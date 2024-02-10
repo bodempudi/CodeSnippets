@@ -32,3 +32,13 @@ Automatically value 1 has been added to the ProductKey column in DimProduct tabl
 when you are using insert statement to insert the data to the table, i recommend you adding all your columns and values also in the same order. When you do not
 mention your column explicitly you should remember the ordinal positions of the column. This might not be feasible in all cases. So, adding columns in the insert
 statement helps you to make sure the values you are inserting into correct columns only. 
+
+```sql
+
+INSERT INTO  dbo.DimProduct([ProductName], [UnitPrice], [ProductCategory]) 
+VALUES('Aqua Gulf Water Bottles 1.5 Litters',0.295,'Drinking Water'),
+('Italy Apples',0.395,'Fruits'),
+('Paistan Apples',0.495,'Fruits'),
+('Jordan Onions',0.595,'Vegtables'),
+('Indian Watermelon',0.230,'Fruits');
+```
