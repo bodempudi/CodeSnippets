@@ -42,3 +42,6 @@ VALUES('Aqua Gulf Water Bottles 1.5 Litters',0.295,'Drinking Water'),
 ('Jordan Onions',0.595,'Vegtables'),
 ('Indian Watermelon',0.230,'Fruits');
 ```
+Below is the result once you insert the data.
+![image](https://github.com/bodempudi/CodeSnippets/assets/2835142/2971760a-337d-4091-8e3d-51e837255d0e)
+
