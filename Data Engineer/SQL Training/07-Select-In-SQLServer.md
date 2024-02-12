@@ -2,7 +2,7 @@
 
 `Select` is the basic data retrieval operation in `SQL Server`. You might be retrieving data from a table or view.
 
-Let's make our hands dirty now, we will write `SQL` queries using select caluse.
+Let's make our hands dirty now, we will write `SQL` queries using select clause.
 
 Let's create a table first and insert data into it.
 
@@ -38,7 +38,7 @@ VALUES('Adam','Bob',9234127894,'adam.bob@gmail.com','19890321','Houston',1)
 
 ```
 
-Let's start writing the statements.
+Let's start writing the ```select``` statements now.
 
 Below is the basic `SELECT` we write every time.
 
