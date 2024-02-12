@@ -131,30 +131,3 @@ SELECT
 FROM dbo.Customer
 WHERE CustomerID IN (1, 2, 3);
 ```
-
-I hope this helps!
-```sql
-SELECT * FROM dbo.Customer--here * means all/everything.
-```
-
-This is bad practice for writing queries, SQL Server has to do additional work to return the data.
-So avoid using * in queries instead explicitly mention the column name in the ``SELECT`` statement as below.
-```sql
-SELECT
-[CustomerID], [FirstName], [LastName], [PhoneNumber], [EmailAddress], [DateOfBirth], [City], [Priority], [CreateDate]
-FROM dbo.Customer
-```
-When we need to return any specific Customer details based on a filter, we must filter the data using the where clause.
-```sql
-SELECT
-    [CustomerID], [FirstName], [LastName], [PhoneNumber], [EmailAddress], [DateOfBirth], [City], [Priority], [CreateDate]
-FROM dbo.Customer
-WHERE CustomerID=1
-```
-When we need to return multiple customer details.
-```sql
-SELECT
-  [CustomerID], [FirstName], [LastName], [PhoneNumber], [EmailAddress], [DateOfBirth], [City], [Priority], [CreateDate]
-FROM dbo.Customer
-WHERE CustomerID IN (1,2,3) -- HERE CustomerID 1 or 2 or 3
-```
