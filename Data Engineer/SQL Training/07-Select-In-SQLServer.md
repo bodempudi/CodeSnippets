@@ -37,3 +37,5 @@ VALUES('Adam','Bob',9234127894,'adam.bob@gmail.com','19890321','Houston',1)
 ,('Brain','Sure',9434127894,'Sure.bob@gmail.com','19900321','Phoenix',4)
 
 ```
+
+Let's start writing the statements.
