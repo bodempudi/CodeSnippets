@@ -7,9 +7,19 @@ Let's make our hands dirty now, we will write SQL queries using select caluse.
 Let's create a table first and insert data into it.
 
 ```sql
-CREATE TABLE dbo.Product(
-ProductId INT IDENTITY PRIMARY KEY,
-Name NVARCHAR(500),
-UnitPrice DECIMAL(10,3),
-ProductCategory NVARCHAR(500));
+CREATE TABLE dbo.Customer
+(CustomerID INT IDENTITY(1,1) NOT NULL PRIMARY KEY,
+FirstName VARCHAR(25) NOT NULL,
+LastName VARCHAR(25) NOT NULL,
+PhoneNumber VARCHAR(15) NOT NULL,
+EmailAddress VARCHAR(25) NULL,
+Priority INT NOT NULL,
+CreateDate DATETIME NOT NULL)ON [PRIMARY]
+GO
+
+ALTER TABLE [dbo].[Customer] ADD CONSTRAINT [DF_Customer_CreateDate] 
+DEFAULT (getdate()) FOR [CreateDate]
+GO
+
+
 ```
