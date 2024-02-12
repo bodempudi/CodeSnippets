@@ -57,3 +57,8 @@ When we need to return any specific Customer details based on a filter, we have 
 SELECT [CustomerID], [FirstName], [LastName], [PhoneNumber], [EmailAddress], [DateOfBirth], [City], [Priority], [CreateDate] FROM dbo.Customer
 WHERE CustomerID=1
 ```
+When we need to return mutliple customer details.
+```sql
+SELECT [CustomerID], [FirstName], [LastName], [PhoneNumber], [EmailAddress], [DateOfBirth], [City], [Priority], [CreateDate] FROM dbo.Customer
+WHERE CustomerID IN (1,2,3) -- HERE Customer ID 1 or 2 or 3
+```
