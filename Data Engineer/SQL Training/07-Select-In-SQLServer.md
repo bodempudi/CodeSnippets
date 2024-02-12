@@ -24,9 +24,9 @@ DEFAULT (getdate()) FOR [CreateDate]
 GO
 
 --Inserting data into the table
-INSERT INTO dbo.Customer([FirstName], [LastName], [PhoneNumber], [EmailAddress], [DateOfBirth], [City], [Priority])
+INSERT INTO dbo.Customer([FirstName], [LastName], [PhoneNumber], [EmailAddress],[DateOfBirth],  [City], [Priority])
 VALUES('Adam','Bob',9234127894,'adam.bob@gmail.com','19890321','Houston',1)
-,('Susan','Helen',9234137894,'Susan.Helen@gmail.com','198901221','LosAngels',1)
+,('Susan','Helen',9234137894,'Susan.Helen@gmail.com','19891221','LosAngels',1)
 ,('Mary','Kathy',9234147894,'Mary.Kathy@gmail.com','19880221','Ausit',1)
 ,('Karen','Carol',9234157894,'Karen.Carol@gmail.com','19880321','San Diego',0)
 ,('Patracia','Mary',9234167894,'Patracia.Mary@gmail.com','19870321','San Antonio',0)
