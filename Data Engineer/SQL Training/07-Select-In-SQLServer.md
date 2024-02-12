@@ -52,3 +52,8 @@ So avoid using * in queries instead explicity mention column name in ``SELECT`` 
 SELECT [CustomerID], [FirstName], [LastName], [PhoneNumber], [EmailAddress], [DateOfBirth], [City], [Priority], [CreateDate]
 FROM dbo.Customer
 ```
+When we need to return any specific Customer details based on a filter, we have to filter the data using where clause.
+```sql
+SELECT [CustomerID], [FirstName], [LastName], [PhoneNumber], [EmailAddress], [DateOfBirth], [City], [Priority], [CreateDate] FROM dbo.Customer
+WHERE CustomerID=1
+```
