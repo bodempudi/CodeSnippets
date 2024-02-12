@@ -131,3 +131,20 @@ SELECT
 FROM dbo.Customer
 WHERE CustomerID IN (1, 2, 3);
 ```
+Once we understand writing basic ```SQL``` statements filtering with numerical columns, It is time to write queries to filter string/varchar-based columns
+
+```sql
+--Return all the customers from Austin City
+SELECT
+    [CustomerID],
+    [FirstName],
+    [LastName],
+    [PhoneNumber],
+    [EmailAddress],
+    [DateOfBirth],
+    [City],
+    [Priority],
+    [CreateDate]
+FROM dbo.Customer
+WHERE City IN ('Austin')
+```
