@@ -46,8 +46,9 @@ Below is the basic `SELECT` we write every time.
 SELECT * FROM dbo.Customer--here * means all/everything.
 ```
 
-This is bad practise of writing queries, SQL Server has to do an additional work to returnt the data.
+This is bad practise of writing queries, SQL Server has to do an additional work to return the data.
 So avoid using * in queries instead explicity mention column name in ``SELECT`` statement as below.
 ```sql
-SELECT [CustomerID], [FirstName], [LastName], [PhoneNumber], [EmailAddress], [DateOfBirth], [City], [Priority], [CreateDate] FROM dbo.Customer
+SELECT [CustomerID], [FirstName], [LastName], [PhoneNumber], [EmailAddress], [DateOfBirth], [City], [Priority], [CreateDate]
+FROM dbo.Customer
 ```
