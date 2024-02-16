@@ -50,3 +50,12 @@ Below is the result once you insert the data.
 
 when you delete data from a table, the identity value of a column will not reset whereas you truncate the table. The identity value of a column will reset and start with the configured seed.
 This is one important difference between `DELETE and Truncate`.
+
+There are a few important functions available for Identity property, which will be helpful to get the last generated identity value.
+
+```syntaxsql
+SELECT SCOPE_IDENTITY() [SCOPE_IDENTITY],@@IDENTITY [AtAtIdentity],IDENT_CURRENT('Customer') [IDENT_CURRENT];
+GO
+```
+
+Understand each function and the differences among them.
