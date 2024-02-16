@@ -29,3 +29,5 @@ When we apply joins between tables, the same cartesian product will happen first
 
 Joins are required to return the data from multiple tables. These tables should have common functionally similar column to have a join condition
 between tables.
+
+We will understand the joins after taking a look at cross join(cartesian product) first.
