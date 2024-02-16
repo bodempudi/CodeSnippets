@@ -8,4 +8,5 @@
 6. Stored Procedures
 7. Functions
 8. Batch Deletes in SQL Server
-9. Performance Tuning in SQL Server.
+9. Remove duplicate records in SQL Server
+10. Performance Tuning in SQL Server.
