@@ -32,6 +32,24 @@ Here product category is the non-aggregated column and unit price is the aggrega
 
 ![image](https://github.com/bodempudi/CodeSnippets/assets/2835142/4d2f7283-90c9-4137-92da-9f190a0d9db1)
 
-In the above image, SQL Server engine takes all the rows with same value and it groups them. It will find minimum of unit price from those rows and maximum of unit price from those rows and displays the summary result. Here we will loose the remaining columns data.
+In the above image, SQL Server engine takes all the rows with same value and it groups them. It will find the minimum of unit price from those rows and the maximum of unit price from those rows and displays the summary result. Here we will loose the remaining columns data.
 
-Now lets take a look at understanding the difference between WHERE 
+Now lets take a look at understanding the difference between WHERE and HAVING.
+
+where clause is going to be used to filter the individual rows. Having clause is used to filter groups after aggregation.
+Where applies the filter on top an individual row where as having applies filter on top of group(summary)
+
+```sql
+SELECT
+ *
+FROM DimProduct
+ where  ProductCategory='Drinking Water'
+ 
+
+
+SELECT
+ [ProductCategory],MIN( [UnitPrice]) MinUnitPrice,MAX( [UnitPrice]) MaxUnitPrice
+FROM DimProduct
+ GROUP BY [ProductCategory]
+ HAVING MIN(UnitPrice) > 0.200
+```
