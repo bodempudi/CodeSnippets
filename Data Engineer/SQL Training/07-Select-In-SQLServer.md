@@ -150,3 +150,21 @@ SELECT
 FROM DimProduct
 WHERE UnitPrice BETWEEN 0.250 AND 0.450
 ```
+
+The following query is not considered as best practice.
+
+```sql
+SELECT
+    [CustomerID],
+    [FirstName],
+    [LastName],
+    [PhoneNumber],
+    [EmailAddress],
+    [DateOfBirth],
+    [City],
+    [Priority],
+    [CreateDate]
+FROM dbo.Customer
+ WHERE YEAR(DateOfBirth) = 1988
+```
+Writing expression in a where clause is not recommended, any indexes defined on columns used in expressions are going to be ignored by SQL Server query engine
