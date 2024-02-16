@@ -141,3 +141,12 @@ FROM Customer
 WHERE LastName LIKE '%ar'
 ```
 The above query returns all the rows from the customer table where LastName ends with a value **ar**.
+
+Between is another operator can be used to filter the data.
+
+```sql
+SELECT
+[ProductKey], [ProductName], [UnitPrice], [ProductCategory]
+FROM DimProduct
+WHERE UnitPrice BETWEEN 0.250 AND 0.450
+```
