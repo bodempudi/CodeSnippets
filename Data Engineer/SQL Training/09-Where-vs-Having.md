@@ -33,3 +33,5 @@ Here product category is the non-aggregated column and unit price is the aggrega
 ![image](https://github.com/bodempudi/CodeSnippets/assets/2835142/4d2f7283-90c9-4137-92da-9f190a0d9db1)
 
 In the above image, SQL Server engine takes all the rows with same value and it groups them. It will find minimum of unit price from those rows and maximum of unit price from those rows and displays the summary result. Here we will loose the remaining columns data.
+
+Now lets take a look at understanding the difference between WHERE 
