@@ -148,3 +148,13 @@ dbo.Product P ON PC.ProductCategoryId=P.ProductCategoryId
 ![full join in SQL server](https://github.com/bodempudi/CodeSnippets/assets/2835142/9120b524-bfce-4efb-9456-5589afa8f356)
 
 ## SELF JOIN in SQL Server
+```SELF JOIN``` is also an INNER JOIN only. Here in the case of SELF JOIN both left side and right side tables are the same table. When we have a logical relationship between two columns in the same table, we apply inner join.
+
+ex:
+List out all the employees along with their managers.
+
+SELECT E.name EmployeeName, M.Name ManagerName
+FROM Employee E
+INNER JOIN Employee M ON E.ManagerId=M.EmployeeId
+
+In the same way, we can join more than two tables as well. The only thing we need to find out is the common table column between tables and the columns to be returned.
