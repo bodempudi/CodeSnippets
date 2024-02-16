@@ -19,3 +19,4 @@ dev_langs:
   - "TSQL"
 monikerRange: "=sqldb-current || sql-server-2016"
 ---
+# Joins in SQL Server
