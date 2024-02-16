@@ -85,3 +85,8 @@ SELECT * FROM dbo.ProductCategory
 CROSS JOIN
 dbo.Product
 ```
+In general, we refer to the left table as the ProductCategory table and the right table as the Product table. Every row from ProductCategory table will combine each row with each row from the product table.
+
+Below is the one part result of the cross join. Please run the above script to check the full resultset.
+![image](https://github.com/bodempudi/CodeSnippets/assets/2835142/7138f574-377e-41fe-8c1a-afeadf9dec55)
+
