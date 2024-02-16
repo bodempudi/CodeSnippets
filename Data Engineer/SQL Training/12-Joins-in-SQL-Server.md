@@ -238,7 +238,7 @@ Now move the condition from where clause to on clause.
 
 
 See the surprising result.
-So, please note that the condition we write in on clause is matching predicate, it won't filter and data. You have to write your filter conditions always in where clause to filter the data.
+So, please note that the condition we write in on clause is matching predicate, it won't filter the data. You have to write your filter conditions always in where clause to filter the data.
 
 
 
