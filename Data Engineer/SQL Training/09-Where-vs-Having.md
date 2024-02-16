@@ -24,3 +24,5 @@ monikerRange: "=sqldb-current || sql-server-2016"
 
 Let's take the below example to understand the result.
 
+![Group by in SQL Server](https://github.com/bodempudi/CodeSnippets/assets/2835142/2a025292-cd12-46f8-ad8f-5533aefa635e)
+
