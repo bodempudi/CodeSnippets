@@ -34,3 +34,23 @@ We will understand the joins after taking a look at cross-join (cartesian produc
 ***CROSS JOIN***
 When we apply cross join between two tables(TableA and TableB), every row in TableA will have a combination with every row in TableB.
 Let's take an example and look at it.
+
+```sql
+IF OBJECT_ID('dbo.ProductCategory') IS NOT NULL
+	DROP TABLE dbo.ProductCategory;
+
+CREATE TABLE dbo.ProductCategory(
+ProductCategoryId INT PRIMARY KEY IDENTITY,
+CategoryName VARCHAR(500));
+GO
+
+INSERT INTO dbo.ProductCategory(CategoryName) VALUES('Fruits'); 
+INSERT INTO dbo.ProductCategory(CategoryName) VALUES('Vegtables'); 
+INSERT INTO dbo.ProductCategory(CategoryName) VALUES('Water'); 
+INSERT INTO dbo.ProductCategory(CategoryName) VALUES('Dairy Based Food'); 
+INSERT INTO dbo.ProductCategory(CategoryName) VALUES('Meat'); 
+GO
+
+SELECT * FROM dbo.ProductCategory;
+GO
+```
