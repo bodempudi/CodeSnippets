@@ -158,3 +158,22 @@ FROM Employee E
 INNER JOIN Employee M ON E.ManagerId=M.EmployeeId
 
 In the same way, we can join more than two tables as well. The only thing we need to find out is the common table column between tables and the columns to be returned.
+
+There is another important difference to understand between the join condition and the where condition.
+what is the above difference/how the above difference behave incase of inner join and left join.
+
+Two important points here
+	1. Matching Predicate
+ 	2. Filtering Predicate
+  Let's the below query to understand above two points.
+```sql
+SELECT 
+ PC.ProductCategoryId	
+,PC.CategoryName	
+,P.ProductId	
+,P.ProductName	
+ FROM 
+ dbo.ProductCategory PC
+	INNER JOIN dbo.Product P ON PC.ProductCategoryId=P.ProductCategoryId
+ WHERE PC.CategoryName='Meat';
+```
