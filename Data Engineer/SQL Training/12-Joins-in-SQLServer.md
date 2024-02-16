@@ -21,4 +21,4 @@ monikerRange: "=sqldb-current || sql-server-2016"
 ---
 # Joins in SQL Server
 
-As we know ```SQL Server``` has been created based on two mathematical concepts, they are Set Theory and Predicate Logic. In set theory, the cartesian product is the basic operation. Joins in SQL Server also works in the same way as the Cartesian product.
+As we know ```SQL Server``` has been created based on two mathematical concepts, they are ```Set Theory``` and ```Predicate Logic```. In set theory, the cartesian product is the basic operation. Joins in SQL Server also works in the same way as the Cartesian product.
