@@ -18,3 +18,9 @@ dev_langs:
   - "TSQL"
 monikerRange: "=sqldb-current || sql-server-2016"
 ---
+## Group by in SQL Server
+
+```Group by``` in SQL Server groups the rows with same values to generate the summary result. 
+
+Let's take the below example to understand the result.
+
