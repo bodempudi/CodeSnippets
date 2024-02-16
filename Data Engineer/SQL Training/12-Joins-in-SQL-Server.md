@@ -233,7 +233,10 @@ SELECT
 ![image](https://github.com/bodempudi/CodeSnippets/assets/2835142/6a1e4fff-fd45-48f2-8e54-bb4154f4a7d1)
 
 Now move the condition from where clause to on clause.
+
 ![image](https://github.com/bodempudi/CodeSnippets/assets/2835142/5d2da3d8-f224-438b-8090-2e01cb58ef05)
+
+
 See the surprising result.
 So, please note that the condition we write in on clause is matching predicate, it won't filter and data. You have to write your filter conditions always in where clause to filter the data.
 
