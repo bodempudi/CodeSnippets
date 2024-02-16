@@ -1,3 +1,24 @@
+---
+title: "IDENTITY (Property) (Transact-SQL)"
+description: Creates an identity column in a table.
+author: venkat bodempudi
+reviewer: venkat bodempudi
+date: 02/16/2024
+service: sql
+subservice: t-sql
+topic: reference
+f1_keywords:
+  - "IDENTITY_TSQL"
+  - "IDENTITY"
+helpviewer_keywords:
+  - "IDENTITY property"
+  - "columns [SQL Server], creating"
+  - "identity columns [SQL Server], IDENTITY property"
+  - "auto numbers, identity numbers"
+dev_langs:
+  - "TSQL"
+monikerRange: "=sqldb-current || sql-server-2016"
+---
 ## Identity in SQL Server
 
 Identity in an SQL Server table is a column-level property that you can use/tag/define to the column in a table. Once you define the identity property, SQL Server automatically assigns/generates the value to the column based on the identity property configuration(seed and increment).
