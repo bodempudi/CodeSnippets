@@ -23,3 +23,11 @@ dev_langs:
 monikerRange: "=sqldb-current || sql-server-2016"
 ---
 ## Update, Delete in SQL Server
+
+Update and Delete both are DML commands in SQL Server. 
+Becare full with these two commands, once you update or delete the data. There is no way to get the data back unless your transaction is committed yet.
+or you have a backup of your database.
+
+```sql
+
+```
