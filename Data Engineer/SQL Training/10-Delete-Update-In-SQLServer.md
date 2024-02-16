@@ -30,4 +30,8 @@ or you have a backup of your database.
 
 ```sql
 
+DELETE FROM DimProduct;
+
+DELETE FROM DimProduct
+WHERE  ProductCategory='Drinking Water';
 ```
