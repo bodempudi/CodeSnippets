@@ -19,3 +19,9 @@ dev_langs:
   - "TSQL"
 monikerRange: "=sqldb-current || sql-server-2016"
 ---
+## Delete vs Truncate in SQL Server
+
+There are many differences between Delete and Truncate in SQL Server. But very few of them are very important.
+
+1. Delete is a DML command whereas Truncate is a DDL command.
+2. Deletes specific rows or all rows from a table, with individual rows logging into a logfile. Logging individual rows into logfile increases size of the logfile, time and resource consumption operation. Truncate, truncates the whole table without individual row logging. So it completes its operation quickly with less resources. This is an important difference. At summary, where clause with truncate is not possible. where clause with delete is possible.
