@@ -1,6 +1,6 @@
 ## Select in SQL Server
 
-`Select` is the basic data retrieval operation in `SQL Server`. You might be retrieving data from a table or view.
+`Select` is the basic data retrieval operation in `SQL Server`. You may be retrieving data from a table or view.
 
 Let's make our hands dirty now, we will write `SQL` queries using select clause.
 
@@ -49,7 +49,7 @@ To retrieve all the columns in the table, you can use the following `SELECT` sta
 SELECT * FROM dbo.Customer;
 ```
 
-However, it's generally better to explicitly specify the columns you want to retrieve, like below:
+However, it's generally best practice to explicitly specify the columns you want to retrieve, like below:
 
 ```sql
 SELECT
@@ -81,6 +81,7 @@ SELECT
 FROM dbo.Customer
 WHERE CustomerID = 1;
 ```
+```Where``` clause will be used to filter the ***data/rows/records*** based on the given value/condition. We can define any number of conditions/predicates we want.
 
 Finally, if you want to retrieve multiple customers based on a filter, you can use the `IN` operator like this:
 
