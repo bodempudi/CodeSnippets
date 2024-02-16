@@ -178,3 +178,65 @@ SELECT
  WHERE PC.CategoryName='Meat';
 ```
 When we write any condition in ON clause it becomes Matching Predicate.The condition we write in where clause is Filtering Predicate.
+
+Let's modify the above query and try understand what will happen.
+```sql
+SELECT 
+ PC.ProductCategoryId	
+,PC.CategoryName	
+,P.ProductId	
+,P.ProductName	
+ FROM 
+ dbo.ProductCategory PC
+	INNER JOIN dbo.Product P ON PC.ProductCategoryId=P.ProductCategoryId AND PC.CategoryName='Meat';
+```
+In case of inner join it does not make any difference.
+```sql
+SELECT 
+ PC.ProductCategoryId	
+,PC.CategoryName	
+,P.ProductId	
+,P.ProductName	
+ FROM 
+ dbo.ProductCategory PC
+	INNER JOIN dbo.Product P ON PC.ProductCategoryId=P.ProductCategoryId
+ WHERE PC.CategoryName='Meat';
+```
+![image](https://github.com/bodempudi/CodeSnippets/assets/2835142/34554066-999e-4816-8722-dcb1addddd64)
+
+Now move the filter condition from where clause to on as below.
+```sql
+SELECT 
+ PC.ProductCategoryId	
+,PC.CategoryName	
+,P.ProductId	
+,P.ProductName	
+ FROM 
+ dbo.ProductCategory PC
+	INNER JOIN dbo.Product P ON PC.ProductCategoryId=P.ProductCategoryId AND PC.CategoryName='Meat';
+```
+![image](https://github.com/bodempudi/CodeSnippets/assets/2835142/3e3b2d5b-9b22-4f21-bc27-b9ad75d46ca5)
+Now we understand that there is no difference in the case of writing conditions in where clause or on clause when we use inner join.
+
+But in the case of left join, there is an important difference.
+```sql
+SELECT 
+ PC.ProductCategoryId	
+,PC.CategoryName	
+,P.ProductId	
+,P.ProductName	
+ FROM 
+ dbo.ProductCategory PC
+	LEFT JOIN dbo.Product P ON PC.ProductCategoryId=P.ProductCategoryId
+ WHERE PC.CategoryName='Meat';
+```
+![image](https://github.com/bodempudi/CodeSnippets/assets/2835142/6a1e4fff-fd45-48f2-8e54-bb4154f4a7d1)
+
+Now move the condition from where clause to on clause.
+![image](https://github.com/bodempudi/CodeSnippets/assets/2835142/5d2da3d8-f224-438b-8090-2e01cb58ef05)
+See the surprising result.
+So, please note that the condition we write in on clause is matching predicate, it won't filter and data. You have to write your filter conditions always in where clause to filter the data.
+
+
+
+
