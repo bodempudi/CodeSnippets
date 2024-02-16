@@ -80,4 +80,8 @@ GO
 
 SELECT * FROM dbo.Product;
 GO
+
+SELECT * FROM dbo.ProductCategory
+CROSS JOIN
+dbo.Product
 ```
