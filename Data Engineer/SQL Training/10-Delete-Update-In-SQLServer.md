@@ -35,3 +35,9 @@ DELETE FROM DimProduct;
 DELETE FROM DimProduct
 WHERE  ProductCategory='Drinking Water';
 ```
+
+```sql
+UPDATE DimProduct
+SET [UnitPrice]=0.500
+WHERE  ProductCategory='Drinking Water'
+```
