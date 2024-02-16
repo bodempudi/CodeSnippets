@@ -90,4 +90,4 @@ In general, we refer to the left table as the ProductCategory table and the righ
 Below is the one part result of the cross join. Please run the above script to check the full resultset.
 ![image](https://github.com/bodempudi/CodeSnippets/assets/2835142/7138f574-377e-41fe-8c1a-afeadf9dec55)
 
-##Inner Join
+## Inner Join
