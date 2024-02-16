@@ -146,3 +146,5 @@ FULL JOIN
 dbo.Product P ON PC.ProductCategoryId=P.ProductCategoryId
 ```
 ![full join in SQL server](https://github.com/bodempudi/CodeSnippets/assets/2835142/9120b524-bfce-4efb-9456-5589afa8f356)
+
+## SELF JOIN in SQL Server
