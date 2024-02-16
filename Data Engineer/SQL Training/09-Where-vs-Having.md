@@ -53,3 +53,4 @@ FROM DimProduct
  GROUP BY [ProductCategory]
  HAVING MIN(UnitPrice) > 0.200
 ```
+![image](https://github.com/bodempudi/CodeSnippets/assets/2835142/228d85fb-0340-4990-a01d-4d0655e2d2e2)
