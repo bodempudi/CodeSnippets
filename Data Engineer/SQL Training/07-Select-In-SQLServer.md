@@ -115,3 +115,29 @@ SELECT
 FROM dbo.Customer
 WHERE City IN ('Austin')
 ```
+All of the queries mentioned above are exact match queries. It's time to move on to pattern-based match queries.
+
+```sql
+SELECT
+[CustomerID], [FirstName], [LastName], [PhoneNumber], [EmailAddress], [DateOfBirth], [City], [Priority], [CreateDate]
+FROM Customer
+WHERE LastName LIKE '%ar%'
+```
+The above query returns all the rows from the customer table where LastName contains value **ar** anywhere in the lastname column.
+
+
+```sql
+SELECT
+[CustomerID], [FirstName], [LastName], [PhoneNumber], [EmailAddress], [DateOfBirth], [City], [Priority], [CreateDate]
+FROM Customer
+WHERE LastName LIKE 'ar%'
+```
+The above query returns all the rows from the customer table where LastName starts with a value **ar**.
+
+```sql
+SELECT
+[CustomerID], [FirstName], [LastName], [PhoneNumber], [EmailAddress], [DateOfBirth], [City], [Priority], [CreateDate]
+FROM Customer
+WHERE LastName LIKE '%ar'
+```
+The above query returns all the rows from the customer table where LastName ends with a value **ar**.
