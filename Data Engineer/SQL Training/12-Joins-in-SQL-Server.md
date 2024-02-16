@@ -75,7 +75,7 @@ INSERT INTO dbo.Product(ProductName,ProductCategoryId) VALUES('Curd',4);
 INSERT INTO dbo.Product(ProductName,ProductCategoryId) VALUES('Chicken',5); 
 INSERT INTO dbo.Product(ProductName,ProductCategoryId) VALUES('Mutton',5); 
 INSERT INTO dbo.Product(ProductName,ProductCategoryId) VALUES('Pasta',50); 
-INSERT INTO dbo.Product(ProductName,ProductCategoryId) VALUES('Brown Ric',65); 
+INSERT INTO dbo.Product(ProductName,ProductCategoryId) VALUES('Brown Rice',65); 
 GO
 
 SELECT * FROM dbo.Product;
@@ -87,7 +87,7 @@ dbo.Product
 ```
 In general, we refer to the left table as the ProductCategory table and the right table as the Product table. Every row from ProductCategory table will combine each row with each row from the product table.
 
-Below is the one part result of the cross join. Please run the above script to check the full resultset.
+Below is the one-part result of the cross join. Please run the above script to check the full resultset.
 ![image](https://github.com/bodempudi/CodeSnippets/assets/2835142/7138f574-377e-41fe-8c1a-afeadf9dec55)
 
 ## Inner Join
@@ -106,7 +106,7 @@ dbo.Product P ON PC.ProductCategoryId=P.ProductCategoryId
 ![Inner Join](https://github.com/bodempudi/CodeSnippets/assets/2835142/247bce69-0327-4fe1-8c43-dd8d2164440e)
 
 ## LEFT OUTER JOIN / LEFT JOIN
-when we apply ```LEFT JOIN``` between tables, the result is going to be only the rows which are satisfying the given condition plus Non-matching rows from left side table, null values will be returned for the corresponding rows from the right side.
+when we apply ```LEFT JOIN``` between tables, the result is going to be only the rows which are satisfying the given condition plus Non-matching rows from left side table, null values will be returned for the corresponding rows from the right side table.
 ```sql
 SELECT 
  PC.ProductCategoryId	
@@ -118,3 +118,31 @@ LEFT JOIN
 dbo.Product P ON PC.ProductCategoryId=P.ProductCategoryId
 ```
 ![LEFT JOIN in SQL Server](https://github.com/bodempudi/CodeSnippets/assets/2835142/a8ae48e5-c0c7-437e-83cf-86413ab7f362)
+
+## RIGHT OUTER JOIN / RIGHT JOIN
+when we apply ```RIGHT JOIN``` between tables, the result is going to be only the rows which are satisfying the given condition plus Non-matching rows from RIGHT side table, null values will be returned for the corresponding rows from the LEFT side table.
+```sql
+SELECT 
+ PC.ProductCategoryId	
+,PC.CategoryName	
+,P.ProductId	
+,P.ProductName	
+ FROM dbo.ProductCategory PC
+RIGHT JOIN
+dbo.Product P ON PC.ProductCategoryId=P.ProductCategoryId
+```
+![RIGHT JOIN in SQL Server](https://github.com/bodempudi/CodeSnippets/assets/2835142/74f8d2ec-cdfc-4800-aaee-a46fc02f99f4)
+
+## FULL OUTER JOIN / FULL JOIN
+when we apply ```FULL JOIN``` between tables, the result is going to be only the rows which are satisfying the given condition plus Non-matching rows from left side table, plus non-matching rows from right table, null values will be returned for the corresponding rows from the both side tables.
+```sql
+SELECT 
+ PC.ProductCategoryId	
+,PC.CategoryName	
+,P.ProductId	
+,P.ProductName	
+ FROM dbo.ProductCategory PC
+FULL JOIN
+dbo.Product P ON PC.ProductCategoryId=P.ProductCategoryId
+```
+![full join in SQL server](https://github.com/bodempudi/CodeSnippets/assets/2835142/9120b524-bfce-4efb-9456-5589afa8f356)
