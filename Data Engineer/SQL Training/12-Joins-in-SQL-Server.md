@@ -53,4 +53,31 @@ GO
 
 SELECT * FROM dbo.ProductCategory;
 GO
+
+
+
+IF OBJECT_ID('dbo.Product') IS NOT NULL
+	DROP TABLE dbo.Product;
+
+CREATE TABLE dbo.Product(
+ProductId INT PRIMARY KEY IDENTITY,
+ProductName VARCHAR(500),
+ProductCategoryId INT NOT NULL
+);
+GO
+
+INSERT INTO dbo.Product(ProductName,ProductCategoryId) VALUES('Apple',1); 
+INSERT INTO dbo.Product(ProductName,ProductCategoryId) VALUES('Manago',1); 
+INSERT INTO dbo.Product(ProductName,ProductCategoryId) VALUES('Capsicum',2); 
+INSERT INTO dbo.Product(ProductName,ProductCategoryId) VALUES('Tomato',2); 
+INSERT INTO dbo.Product(ProductName,ProductCategoryId) VALUES('Milk',4); 
+INSERT INTO dbo.Product(ProductName,ProductCategoryId) VALUES('Curd',4); 
+INSERT INTO dbo.Product(ProductName,ProductCategoryId) VALUES('Chicken',5); 
+INSERT INTO dbo.Product(ProductName,ProductCategoryId) VALUES('Mutton',5); 
+INSERT INTO dbo.Product(ProductName,ProductCategoryId) VALUES('Pasta',50); 
+INSERT INTO dbo.Product(ProductName,ProductCategoryId) VALUES('Brown Ric',65); 
+GO
+
+SELECT * FROM dbo.Product;
+GO
 ```
