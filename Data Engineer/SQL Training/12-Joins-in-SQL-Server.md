@@ -91,7 +91,7 @@ Below is the one part result of the cross join. Please run the above script to c
 ![image](https://github.com/bodempudi/CodeSnippets/assets/2835142/7138f574-377e-41fe-8c1a-afeadf9dec55)
 
 ## Inner Join
-when we apply ```INNER JOIN``` between two tables, the result is going to be only the rows which are satisfying the given condition. Non-matching rows will be ignored.
+when we apply ```INNER JOIN``` between tables, the result is going to be only the rows which are satisfying the given condition. Non-matching rows will be ignored.
 
 ```sql
 SELECT 
@@ -105,3 +105,16 @@ dbo.Product P ON PC.ProductCategoryId=P.ProductCategoryId
 ```
 ![Inner Join](https://github.com/bodempudi/CodeSnippets/assets/2835142/247bce69-0327-4fe1-8c43-dd8d2164440e)
 
+## LEFT OUTER JOIN / LEFT JOIN
+when we apply ```LEFT JOIN``` between tables, the result is going to be only the rows which are satisfying the given condition plus Non-matching rows from left side table, null values will be returned for the corresponding rows from the right side.
+```sql
+SELECT 
+ PC.ProductCategoryId	
+,PC.CategoryName	
+,P.ProductId	
+,P.ProductName	
+ FROM dbo.ProductCategory PC
+LEFT JOIN
+dbo.Product P ON PC.ProductCategoryId=P.ProductCategoryId
+```
+![LEFT JOIN in SQL Server](https://github.com/bodempudi/CodeSnippets/assets/2835142/a8ae48e5-c0c7-437e-83cf-86413ab7f362)
