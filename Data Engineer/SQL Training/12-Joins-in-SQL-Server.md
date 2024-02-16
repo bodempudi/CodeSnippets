@@ -165,7 +165,7 @@ what is the above difference/how the above difference behave incase of inner joi
 Two important points here
 	1. Matching Predicate
  	2. Filtering Predicate
-  Let's the below query to understand above two points.
+  Let's use the below query to understand above two points.
 ```sql
 SELECT 
  PC.ProductCategoryId	
@@ -177,3 +177,4 @@ SELECT
 	INNER JOIN dbo.Product P ON PC.ProductCategoryId=P.ProductCategoryId
  WHERE PC.CategoryName='Meat';
 ```
+When we write any condition in ON clause it becomes Matching Predicate.The condition we write in where clause is Filtering Predicate.
