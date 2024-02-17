@@ -238,8 +238,8 @@ Now move the condition from where clause to on clause.
 
 
 See the surprising result.
-So, please note that the condition we write in on clause is matching predicate, it won't filter the data, if the there is no match from right side table, it will give null value. You have to write your filter conditions always in where clause to filter the data.
+So, please note that the condition we write in on clause is matching predicate, it won't filter the data, if there is no match from the right side table, it will give a null value. You have to write your filter conditions always in the where clause to filter the data.
 
-
+Joins can be used to update statements and delete statements as well.
 
 
