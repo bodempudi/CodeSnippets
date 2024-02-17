@@ -1,3 +1,4 @@
+<PRE>
 UNION
 UNION ALL
 EXCEPT
@@ -20,3 +21,4 @@ INTERSECT
 TABLE B
 
 all these are self-explanatory. Make sure number of columns same and order of columns also same in two result sets.
+</PRE>
