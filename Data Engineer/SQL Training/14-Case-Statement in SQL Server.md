@@ -57,5 +57,25 @@ SELECT TOP (1000) [CustomerID]
 			WHEN 5 THEN 'Junior Developers'
 			ELSE 'Support Staff' END
   FROM [dbo].[Customer]
+
+USE [Sample];
+GO
+--Simple CASE Statement
+SELECT TOP (1000) [CustomerID]
+      ,[FirstName]
+      ,[LastName]
+      ,[PhoneNumber]
+      ,[EmailAddress]
+      ,[DateOfBirth]
+      ,[City]
+      ,[Priority]
+      ,[CreateDate]
+	  ,[Bonus]=CASE  --see this, this is similar to ELSE IF statement
+			WHEN [Priority] = 0 AND YEAR(DateOfBirth)=1988 THEN 1000+100*0.10
+			WHEN [Priority] = 0 AND YEAR(DateOfBirth)=1987 THEN 1000+100*0.20
+			WHEN [Priority] = 0 AND YEAR(DateOfBirth)=1989 THEN 1000+100*0.30
+			WHEN [Priority] = 1 AND YEAR(DateOfBirth)=1988 THEN 1000+100*0.30
+			ELSE 1000+30.20 END
+  FROM [dbo].[Customer]
 ```
 
