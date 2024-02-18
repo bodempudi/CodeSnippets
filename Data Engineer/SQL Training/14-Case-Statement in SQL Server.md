@@ -32,6 +32,7 @@ Case statement is handy in stored procedures to validate the user input. For exa
           DEFAULT EXPRESSION
       END AS AliasName
 ```
+## Simple Case Statement
 
 Case statement is something similar to a Switch(Simple Case Statement) and if, else if, else(searchable) statement. These two forms of case can be written either in Query or in Stored Procedure.
 
@@ -58,6 +59,8 @@ SELECT TOP (1000) [CustomerID]
 			ELSE 'Support Staff' END
   FROM [dbo].[Customer]
 ```
+## Search Case Statement
+
 ```syntaxsql
 USE [Sample];
 GO
