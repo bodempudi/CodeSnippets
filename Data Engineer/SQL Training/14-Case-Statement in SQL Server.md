@@ -57,7 +57,8 @@ SELECT TOP (1000) [CustomerID]
 			WHEN 5 THEN 'Junior Developers'
 			ELSE 'Support Staff' END
   FROM [dbo].[Customer]
-
+```
+```syntaxsql
 USE [Sample];
 GO
 --Simple CASE Statement
