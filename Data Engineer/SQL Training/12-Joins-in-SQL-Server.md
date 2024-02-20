@@ -190,7 +190,9 @@ SELECT
  dbo.ProductCategory PC
 	INNER JOIN dbo.Product P ON PC.ProductCategoryId=P.ProductCategoryId AND PC.CategoryName='Meat';
 ```
+
 In case of inner join it does not make any difference.
+
 ```sql
 SELECT 
  PC.ProductCategoryId	
@@ -205,6 +207,7 @@ SELECT
 ![image](https://github.com/bodempudi/CodeSnippets/assets/2835142/34554066-999e-4816-8722-dcb1addddd64)
 
 Now move the filter condition from where clause to on as below.
+
 ```sql
 SELECT 
  PC.ProductCategoryId	
@@ -216,9 +219,11 @@ SELECT
 	INNER JOIN dbo.Product P ON PC.ProductCategoryId=P.ProductCategoryId AND PC.CategoryName='Meat';
 ```
 ![image](https://github.com/bodempudi/CodeSnippets/assets/2835142/3e3b2d5b-9b22-4f21-bc27-b9ad75d46ca5)
+
 Now we understand that there is no difference in the case of writing conditions in where clause or on clause when we use inner join.
 
 But in the case of left join, there is an important difference.
+
 ```sql
 SELECT 
  PC.ProductCategoryId	
