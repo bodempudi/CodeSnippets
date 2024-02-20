@@ -247,4 +247,6 @@ So, please note that the condition we write in on clause is matching predicate, 
 
 Joins can be used to update statements and delete statements as well.
 
+When you write update/delete statements based on left join be careful. Please test your query to understand whether it is giving correct result or not.
+
 
