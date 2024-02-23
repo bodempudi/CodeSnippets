@@ -8,7 +8,7 @@ We have numerous datatypes available in SQL Server.
   5. blob based datatypes.
 
 ```
-*** Data type *** defines the type of data that column/variable/parameter can contain/hold permanently in the table,
+** Data type ** defines the type of data that column/variable/parameter can contain/hold permanently in the table,
 temporarily in stored procedure/functions as a parameter, temporarily in a variable in SQL Server.
 ```
 
