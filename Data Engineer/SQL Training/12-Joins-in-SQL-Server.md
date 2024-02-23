@@ -148,7 +148,8 @@ dbo.Product P ON PC.ProductCategoryId=P.ProductCategoryId
 ![full join in SQL server](https://github.com/bodempudi/CodeSnippets/assets/2835142/9120b524-bfce-4efb-9456-5589afa8f356)
 
 ## SELF JOIN in SQL Server
-```SELF JOIN``` is also an INNER JOIN only. Here in the case of SELF JOIN both left side and right side tables are the same table. When we have a logical relationship between two columns in the same table, we apply inner join.
+
+When we join a table with itself, it is called a "self join". It is essentially an inner join where both the left and right tables are the same table. We use a self join when a logical relationship exists between two columns within the same table.
 
 ex:
 List out all the employees along with their managers.
@@ -160,12 +161,12 @@ INNER JOIN Employee M ON E.ManagerId=M.EmployeeId
 In the same way, we can join more than two tables as well. The only thing we need to find out is the common table column between tables and the columns to be returned.
 
 There is another important difference to understand between the join condition and the where condition.
-what is the above difference/how the above difference behave incase of inner join and left join.
+what is the above difference/how does the above difference behave in the case of inner join and left join?
 
 Two important points here
 	1. Matching Predicate
  	2. Filtering Predicate
-  Let's use the below query to understand above two points.
+  Let's use the below query to understand the above two points.
 ```sql
 SELECT 
  PC.ProductCategoryId	
@@ -177,9 +178,9 @@ SELECT
 	INNER JOIN dbo.Product P ON PC.ProductCategoryId=P.ProductCategoryId
  WHERE PC.CategoryName='Meat';
 ```
-When we write any condition in ON clause it becomes Matching Predicate.The condition we write in where clause is Filtering Predicate.
+When we write any condition in the ON clause it becomes a Matching Predicate. The condition we write in where clause is Filtering Predicate.
 
-Let's modify the above query and try understand what will happen.
+Let's modify the above query and try to understand what will happen.
 ```sql
 SELECT 
  PC.ProductCategoryId	
@@ -247,6 +248,6 @@ So, please note that the condition we write in on clause is matching predicate, 
 
 Joins can be used to update statements and delete statements as well.
 
-When you write update/delete statements based on left join be careful. Please test your query to understand whether it is giving correct result or not.
+When you write update/delete statements based on left join be careful. Please test your query to understand whether it is giving the correct result or not.
 
 
