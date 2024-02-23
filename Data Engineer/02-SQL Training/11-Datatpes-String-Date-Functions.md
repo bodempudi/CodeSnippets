@@ -8,12 +8,12 @@ We have numerous datatypes available in SQL Server.
   5. blob based datatypes.
 
 ```
-Data type defines the type of data that column/variable/parameter can contain/hold permanently in the table,
+**Data type** defines the type of data that column/variable/parameter can contain/hold permanently in the table,
 temporarily in stored procedure/functions as a parameter, temporarily in a variable in SQL Server.
 ```
 
 ## BIT
-This data type is similar to the boolean data type in programming languages. In most cases, this data type will used for the status of the record/row in a table.
+This data type is similar to the boolean data type in programming languages. In most cases, this data type will used to define the status of the record/row in a table.
 Either 1 or 0 will be the values for this data type that it can hold. 1 is similar to true and 0 is similar to false.
 
   Let's take an example 
@@ -32,6 +32,9 @@ DateOfBirth DATE,
 IsActive BIT--1 - Active Employees in the organization, 0 - inactive employees in the organization
 );
 ```
+
+## string 
+
 
 ## string functions in SQL Server
 We have numerous string functions available in SQL Server, which we can use based on our requirements. In this lesson, we will cover the most important functions.
