@@ -7,6 +7,8 @@ We have numerous datatypes available in SQL Server.
   4. datetime based datatypes
   5. blob based datatypes.
 
+In every data model(One Specific business problem), we will have many entities(tables), and each entity(table) will have many attributes (columns)/fields(columns). Each field/column can hold different types of data. Let's take the Employee entity as an example, it will have many attributes(columns) like EmployeID, FirstName, LastName, MiddleName, DateOfBirth, Salary, ContactNumber, IsActive, etc. In the data model for every attribute, we will define the specific data type.
+
 ```
 Data type defines the type of data that a column/variable/parameter can contain/hold permanently in the table,
 temporarily in stored procedure/functions as a parameter, temporarily in a variable in SQL Server in the defined scope.
