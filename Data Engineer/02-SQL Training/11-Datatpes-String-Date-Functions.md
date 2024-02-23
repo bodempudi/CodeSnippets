@@ -7,7 +7,9 @@ We have numerous datatypes available in SQL Server.
   4. datetime based datatypes
   5. blob based datatypes.
 
-#BIT
+```Data type``` defines the type of data that column/variable/parameter can contain in SQL Server.
+
+## BIT
 This data type is similar to the boolean data type in programming languages. In most cases, this data type will used for the status of the record/row in a table.
 Either 1 or 0 will be the values for this data type that it can hold. 1 is similar to true and 0 is similar to false.
 
