@@ -1,7 +1,7 @@
 ## Datatypes in SQL Server
 
 We have numerous datatypes available in SQL Server. 
-  1. string/unicode-based datatypes
+  1. string/unicode-based string datatypes
   2. exact number based datatypes
   3. approximate number based datatypes
   4. datetime based datatypes
@@ -18,6 +18,14 @@ IF OBJECT_ID('dbo.Employee') IS NOT NULL
   DROP TABLE dbo.Employee;
 
 CREATE TABLE dbo.Employee(
+EmployeeId INT PRIMARY KEY IDENTITY,
+FirstName NVARCHAR(500),
+MiddleName NVARCHAR(500),
+LastName NVARCHAR(500),
+Salary DECIMAL(10,3),
+DateOfBirth DATE,
+IsActive BIT//1 - Active Employees in the organization, 0 - inactive employees in the organization
+);
 ```
 
 ## string functions in SQL Server
