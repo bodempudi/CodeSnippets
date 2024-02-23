@@ -26,7 +26,7 @@ MiddleName NVARCHAR(500),
 LastName NVARCHAR(500),
 Salary DECIMAL(10,3),
 DateOfBirth DATE,
-IsActive BIT//1 - Active Employees in the organization, 0 - inactive employees in the organization
+IsActive BIT--1 - Active Employees in the organization, 0 - inactive employees in the organization
 );
 ```
 
