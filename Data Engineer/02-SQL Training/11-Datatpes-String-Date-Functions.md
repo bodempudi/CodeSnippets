@@ -16,7 +16,7 @@ temporarily in stored procedure/functions as a parameter, temporarily in a varia
 
 ## BIT
 This data type is similar to the boolean data type in programming languages. In most cases, this data type will used to define the status of the record/row in a table.
-Either 1 or 0 will be the possible values for this data type that it can hold. 1 is similar to true and 0 is similar to false. It accepts other numerical values as its values, try inserting other than 1 and 0 and verify yourself how it works.
+Either 1 or 0 will be the possible values for this data type that it can hold. 1 is similar to true and 0 is similar to false. It accepts other numerical values as its values, try inserting other than 1 and 0 and verify how it works.
 
   Let's take an example 
 
