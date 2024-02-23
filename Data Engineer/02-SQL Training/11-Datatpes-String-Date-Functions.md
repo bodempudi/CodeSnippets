@@ -36,10 +36,52 @@ IsActive BIT--1 - Active Employees in the organization, 0 - inactive employees i
 ```
 
 ## string 
+We use these datatypes(char/nchar/varchar/nvarchar) to store text-based values in the columns. Like Names, Gender, Address, Description, etc. 
+
+Char - fixed-length representation
+Varchar - variable length representation
+NCHAR/NVARCHAR - these types we will use to store any local language text descriptions in the columns. Ex: Arabic Description, Chinese Description. When we add data to the NVARCHAR columns
+make sure of using N'yourvalue'. N is nothing but national.
+
+CREATE TABLE dbo.Employee(
+EmployeeId INT PRIMARY KEY IDENTITY,
+FirstName NVARCHAR(500),
+MiddleName NVARCHAR(500),
+LastName NVARCHAR(500),
+Address NVARCHAR(500),
+AddressInArabic NVARCHAR(500),
+Salary DECIMAL(10,3),
+DateOfBirth DATE,
+IsActive BIT--1 - Active Employees in the organization, 0 - inactive employees in the organization
+);
+```
 
 
 ## string functions in SQL Server
 We have numerous string functions available in SQL Server, which we can use based on our requirements. In this lesson, we will cover the most important functions.
+
+```sql
+INSERT INTO dbo.Employee( [FirstName], [MiddleName], [LastName], [Address], AddressInLocalLanguage, [Salary], [DateOfBirth], [IsActive]) 
+VALUES('Venkat',NULL,'Bodempudi','Hyderabad',N'హైదరాబాద్',10000,'1990-10-16',1);
+GO
+
+SELECT * from Employee
+```
+
+![image](https://github.com/bodempudi/CodeSnippets/assets/2835142/3ee28e5b-81ce-44c6-a061-31b38d1e7572)
+
+Now see what will happen without N.
+
+```sql
+
+INSERT INTO dbo.Employee( [FirstName], [MiddleName], [LastName], [Address], AddressInLocalLanguage, [Salary], [DateOfBirth], [IsActive]) 
+VALUES('Kiran',NULL,'Aruri','Hyderabad','హైదరాబాద్',10000,'1991-10-16',1);
+GO
+
+SELECT * from Employee
+
+```
+![image](https://github.com/bodempudi/CodeSnippets/assets/2835142/cac8fa15-fe3d-4213-9fe4-80674dfc2fd1)
 
 
 
