@@ -1,4 +1,4 @@
-## Datatypes in SQL Server
+## Data types in SQL Server
 
 We have numerous datatypes available in SQL Server. 
   1. string/unicode-based string datatypes
