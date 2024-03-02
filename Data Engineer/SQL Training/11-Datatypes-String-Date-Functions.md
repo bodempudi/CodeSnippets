@@ -36,13 +36,14 @@ IsActive BIT--1 - Active Employees in the organization, 0 - inactive employees i
 ```
 
 ## string 
-We use these datatypes(char/nchar/varchar/nvarchar) to store text-based values in the columns. Like Names, Gender, Address, Description, etc. 
+We use these datatypes (char/nchar/varchar/nvarchar) to store text-based values in the columns. Like Names, Gender, Address, Description, etc. 
 
 Char - fixed-length representation
 Varchar - variable length representation
 NCHAR/NVARCHAR - these types we will use to store any local language text descriptions in the columns. Ex: Arabic Description, Chinese Description. When we add data to the NVARCHAR columns
 make sure of using N'yourvalue'. N is nothing but national.
 
+```sql
 CREATE TABLE dbo.Employee(
 EmployeeId INT PRIMARY KEY IDENTITY,
 FirstName NVARCHAR(500),
@@ -56,6 +57,25 @@ IsActive BIT--1 - Active Employees in the organization, 0 - inactive employees i
 );
 ```
 
+## Exact Numbers
+
+We use these datatypes (smallint/int/bigint) to store the exact numbers, which means the numbers without any decimal places. For example, numbers like age, phone numbers, Pincode(postal code), etc.
+
+```sql
+CREATE TABLE dbo.Employee(
+EmployeeId INT PRIMARY KEY IDENTITY,
+FirstName NVARCHAR(500),
+MiddleName NVARCHAR(500),
+LastName NVARCHAR(500),
+Address NVARCHAR(500),
+AddressInArabic NVARCHAR(500),
+Age SMALLINT,
+ContactNumber BIGINT,
+Salary DECIMAL(10,3),
+DateOfBirth DATE,
+IsActive BIT--1 - Active Employees in the organization, 0 - inactive employees in the organization
+);
+```
 
 ## string functions in SQL Server
 We have numerous string functions available in SQL Server, which we can use based on our requirements. In this lesson, we will cover the most important functions.
