@@ -43,7 +43,8 @@ We use these datatypes (char/nchar/varchar/nvarchar) to store text-based values 
 
 Char - fixed-length representation
 Varchar - variable length representation
-NCHAR/NVARCHAR - these types we will use to store any local language text descriptions in the columns. Ex: Arabic Description, Chinese Description. When we add data to the NVARCHAR columns
+NCHAR/NVARCHAR - these types we will use to store any local language text descriptions in the columns. 
+Ex: Arabic Description, Chinese Description. When we add data to the NVARCHAR columns
 make sure of using N'yourvalue'. N is nothing but national.
 
 ```sql
@@ -61,7 +62,8 @@ IsActive BIT--1 - Active Employees in the organization, 0 - inactive employees i
 ```
 
 ```sql
-INSERT INTO dbo.Employee( [FirstName], [MiddleName], [LastName], [Address], AddressInLocalLanguage, [Salary], [DateOfBirth], [IsActive]) 
+INSERT INTO dbo.Employee( [FirstName], [MiddleName], [LastName], [Address],
+AddressInLocalLanguage, [Salary], [DateOfBirth], [IsActive]) 
 VALUES('Venkat',NULL,'Bodempudi','Hyderabad',N'హైదరాబాద్',10000,'1990-10-16',1);
 GO
 
@@ -74,7 +76,8 @@ Now see what will happen without N.
 
 ```sql
 
-INSERT INTO dbo.Employee( [FirstName], [MiddleName], [LastName], [Address], AddressInLocalLanguage, [Salary], [DateOfBirth], [IsActive]) 
+INSERT INTO dbo.Employee( [FirstName], [MiddleName], [LastName], [Address],
+AddressInLocalLanguage, [Salary], [DateOfBirth], [IsActive]) 
 VALUES('Kiran',NULL,'Aruri','Hyderabad','హైదరాబాద్',10000,'1991-10-16',1);
 GO
 
