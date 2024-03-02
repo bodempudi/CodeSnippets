@@ -60,6 +60,7 @@ IsActive BIT--1 - Active Employees in the organization, 0 - inactive employees i
 ## Exact Numbers
 
 We use these datatypes (smallint/int/bigint) to store the exact numbers, which means the numbers without any decimal places. For example, numbers like age, phone numbers, Pincode(postal code), etc.
+    Ex: Primary Key Columns, Foreign Key Columns, Audit Columns, Records Counts, Order Quantity.
 
 ```sql
 CREATE TABLE dbo.Employee(
@@ -76,6 +77,10 @@ DateOfBirth DATE,
 IsActive BIT--1 - Active Employees in the organization, 0 - inactive employees in the organization
 );
 ```
+
+## Approximate Numbers
+
+We 
 
 ## string functions in SQL Server
 We have numerous string functions available in SQL Server, which we can use based on our requirements. In this lesson, we will cover the most important functions.
