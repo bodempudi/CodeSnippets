@@ -139,6 +139,11 @@ BLOB/image datatypes will be used to store images in the database.
 
 ## Date / TIME / DATETIME / SMALLDATETIME / DATETIME2 data types
 
+Whenever it is required to store Date, Time, Datetime, and datetime with required fractional time(milliseconds), We can consider using these datatypes
+appropriately for columns in tables.
+
+Ex: AddedDate, ModifiedDate, BirthDate, JoiningDate, DueDate, OrderDate, ShipDate, SwipeInTime, SwipeOutTime etc.
+
 ## string functions in SQL Server
 We have numerous string functions available in SQL Server, which we can use based on our requirements. We will cover the most important functions.
 
@@ -152,3 +157,4 @@ We have numerous DATE functions available in SQL Server, which we can use based 
 
 YEAR(), MONTH(), DATE(), DATETIMEFROMPARTS(), GETDATE(), EOMONTH(), DATEADD(), DATEPART(), GETUTCDATE(), DATENAME(), DATEDIFF(), ISDATE(), FORMAT()
 other functions as well. All these functions are self-explanatory and can find the syntaxes on the Microsoft website.
+
