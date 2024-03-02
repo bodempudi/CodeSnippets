@@ -60,6 +60,32 @@ IsActive BIT--1 - Active Employees in the organization, 0 - inactive employees i
 );
 ```
 
+```sql
+INSERT INTO dbo.Employee( [FirstName], [MiddleName], [LastName], [Address], AddressInLocalLanguage, [Salary], [DateOfBirth], [IsActive]) 
+VALUES('Venkat',NULL,'Bodempudi','Hyderabad',N'హైదరాబాద్',10000,'1990-10-16',1);
+GO
+
+SELECT * from Employee
+```
+
+![image](https://github.com/bodempudi/CodeSnippets/assets/2835142/3ee28e5b-81ce-44c6-a061-31b38d1e7572)
+
+Now see what will happen without N.
+
+```sql
+
+INSERT INTO dbo.Employee( [FirstName], [MiddleName], [LastName], [Address], AddressInLocalLanguage, [Salary], [DateOfBirth], [IsActive]) 
+VALUES('Kiran',NULL,'Aruri','Hyderabad','హైదరాబాద్',10000,'1991-10-16',1);
+GO
+
+SELECT * from Employee
+
+```
+![image](https://github.com/bodempudi/CodeSnippets/assets/2835142/cac8fa15-fe3d-4213-9fe4-80674dfc2fd1)
+
+
+
+
 ## Exact Numbers
 
 We use these datatypes (smallint/int/bigint) to store the exact numbers, which means the numbers without any decimal places. For example, numbers like age, phone numbers, Pincode(postal code), etc.
@@ -104,30 +130,5 @@ IsActive BIT--1 - Active Employees in the organization, 0 - inactive employees i
 
 ## string functions in SQL Server
 We have numerous string functions available in SQL Server, which we can use based on our requirements. In this lesson, we will cover the most important functions.
-
-```sql
-INSERT INTO dbo.Employee( [FirstName], [MiddleName], [LastName], [Address], AddressInLocalLanguage, [Salary], [DateOfBirth], [IsActive]) 
-VALUES('Venkat',NULL,'Bodempudi','Hyderabad',N'హైదరాబాద్',10000,'1990-10-16',1);
-GO
-
-SELECT * from Employee
-```
-
-![image](https://github.com/bodempudi/CodeSnippets/assets/2835142/3ee28e5b-81ce-44c6-a061-31b38d1e7572)
-
-Now see what will happen without N.
-
-```sql
-
-INSERT INTO dbo.Employee( [FirstName], [MiddleName], [LastName], [Address], AddressInLocalLanguage, [Salary], [DateOfBirth], [IsActive]) 
-VALUES('Kiran',NULL,'Aruri','Hyderabad','హైదరాబాద్',10000,'1991-10-16',1);
-GO
-
-SELECT * from Employee
-
-```
-![image](https://github.com/bodempudi/CodeSnippets/assets/2835142/cac8fa15-fe3d-4213-9fe4-80674dfc2fd1)
-
-
 
 ## Date functions in SQL Server
