@@ -128,7 +128,17 @@ IsActive BIT--1 - Active Employees in the organization, 0 - inactive employees i
 );
 ```
 
+We mostly use DECIMAL datatype to store the approximate numbers in an SQL Server. 
+
+There is a data type called VARCHAR(MAX)/NVARCHAR(MAX) to store text/string where we do not know the size of the incoming text (Ex: Comments). Ensure the usage of this data type because there are some performance issues with this data type as it consumes more memory to store the provided text.
+
+BLOB/image datatypes will be used to store images in the database.
+
 ## string functions in SQL Server
-We have numerous string functions available in SQL Server, which we can use based on our requirements. In this lesson, we will cover the most important functions.
+We have numerous string functions available in SQL Server, which we can use based on our requirements. We will cover the most important functions.
+
+UPPER, LOWER, CHARINDEX, LTRIM, RTRIM, LEFT, RIGHT, REPLACE, REVERSE, STUFF.
+
+All these functions are self-explanatory and can find the syntaxes on the Microsoft website.
 
 ## Date functions in SQL Server
