@@ -142,3 +142,8 @@ UPPER, LOWER, CHARINDEX, LTRIM, RTRIM, LEFT, RIGHT, REPLACE, REVERSE, STUFF.
 All these functions are self-explanatory and can find the syntaxes on the Microsoft website.
 
 ## Date functions in SQL Server
+
+We have numerous DATE functions available in SQL Server, which we can use based on our requirements. We will cover the most important functions.
+
+YEAR(), MONTH(), DATE(), DATETIMEFROMPARTS(), GETDATE(), EOMONTH(), DATEADD(), DATEPART(), GETUTCDATE(), DATENAME(), DATEDIFF(), ISDATE(), FORMAT()
+other functions as well. All these functions are self-explanatory and can find the syntaxes on the Microsoft website.
