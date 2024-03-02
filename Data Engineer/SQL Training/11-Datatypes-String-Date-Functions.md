@@ -134,6 +134,8 @@ There is a data type called VARCHAR(MAX)/NVARCHAR(MAX) to store text/string wher
 
 BLOB/image datatypes will be used to store images in the database.
 
+## Date / TIME / DATETIME / SMALLDATETIME / DATETIME2 data types
+
 ## string functions in SQL Server
 We have numerous string functions available in SQL Server, which we can use based on our requirements. We will cover the most important functions.
 
