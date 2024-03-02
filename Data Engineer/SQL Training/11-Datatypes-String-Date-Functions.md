@@ -80,7 +80,24 @@ IsActive BIT--1 - Active Employees in the organization, 0 - inactive employees i
 
 ## Approximate Numbers
 
-We 
+We use these data types(decimal/money/float) to store numbers with fractional values (SalesAmount, ProductionCost, UnitPrice, Balance etc.)
+
+
+```sql
+CREATE TABLE dbo.Employee(
+EmployeeId INT PRIMARY KEY IDENTITY,
+FirstName NVARCHAR(500),
+MiddleName NVARCHAR(500),
+LastName NVARCHAR(500),
+Address NVARCHAR(500),
+AddressInArabic NVARCHAR(500),
+Age SMALLINT,
+ContactNumber BIGINT,
+Salary DECIMAL(10,3),
+DateOfBirth DATE,
+IsActive BIT--1 - Active Employees in the organization, 0 - inactive employees in the organization
+);
+```
 
 ## string functions in SQL Server
 We have numerous string functions available in SQL Server, which we can use based on our requirements. In this lesson, we will cover the most important functions.
