@@ -1,7 +1,7 @@
 ## Data types in SQL Server
 
 We have numerous datatypes available in SQL Server. 
-  1. string/unicode-based string datatypes
+  1. string/Unicode-based string datatypes
   2. exact number based datatypes
   3. approximate number based datatypes
   4. datetime based datatypes
@@ -9,8 +9,11 @@ We have numerous datatypes available in SQL Server.
 
 In every data model(One Specific business problem), we will have many entities(tables), and each entity(table) will have many attributes (columns)/fields(columns). Each field/column can hold different types of data. Let's take the Employee entity as an example, it will have many attributes(columns) like EmployeID, FirstName, LastName, MiddleName, DateOfBirth, Salary, ContactNumber, IsActive, etc. In the data model for every attribute, we will define the specific data type.
 
+When you are learning/understanding the concepts in SQL Server, there are a few model databases(AdventureWorks) available from Microsoft. We can download the
+backup file of the database and restore it locally. Go through the table columns and observe the defined datatypes. You will understand the exact usage of the datatypes.
+
 ```
-Data type defines the type of data that a column/variable/parameter can contain/hold permanently in the table,
+Datatype defines the type of data that a column/variable/parameter can contain/hold permanently in the table,
 temporarily in stored procedure/functions as a parameter, temporarily in a variable in SQL Server in the defined scope.
 ```
 
