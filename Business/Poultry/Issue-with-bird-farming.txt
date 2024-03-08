@@ -1,0 +1,4 @@
+1. virus attack to the bird
+2. increasing the life of the bird
+3. making good environment for the bird
+4. only required air, wind, light to the bird, filter the extra.
