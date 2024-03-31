@@ -1,0 +1,30 @@
+SELECT A.*,B.CardNumber
+,CardNumberMasked = (
+	CASE 
+	WHEN B.CardNumber IS NOT NULL AND b.MASKINGSTATUS IN (0,2) THEN RIGHT(REPLICATE('0',40)+CAST(A.CARDid AS VARCHAR(40)),40)
+	WHEN B.CardNumber IS NULL  THEN RIGHT(REPLICATE('0',40)+CAST(A.CARDid AS VARCHAR(40)),40)
+	ELSE RIGHT(REPLICATE('0',40)+CAST(A.CardNumber AS VARCHAR(40)),40)
+	END
+),PreviousCardNumberMasked = (
+	CASE 
+	WHEN B.CardNumber IS NOT NULL AND b.MASKINGSTATUS IN (0) THEN RIGHT(REPLICATE('0',40)+CAST(A.CardNumber AS VARCHAR(40)),40)
+	WHEN B.CardNumber IS NOT NULL AND b.MASKINGSTATUS IN (2) THEN RIGHT(REPLICATE('0',40)+CAST(A.CardNumber AS VARCHAR(40)),40)-- RIGHT(REPLICATE(' ',40),40)
+	WHEN B.CardNumber IS NULL  THEN RIGHT(REPLICATE('0',40)+CAST(A.CardNumber AS VARCHAR(40)),40)
+	ELSE RIGHT(REPLICATE(' ',40),40)
+	END
+)
+,
+ b.MASKINGSTATUS 
+
+FROM CardMaster A
+LEFT JOIN UnMaskedList B ON A.CardNumber=B.CardNumber 
+WHERE ISNULL(B.MASKINGSTATUS,0) NOT IN (1)
+
+--StatusListTable
+--Two Views(Nol Cols) changes
+--add cols to old tables(null constraint only)
+--change ssis package(one dft)
+--change ch cc card DFTs as well
+
+--update list table masking status to Masked(which are in progress) or UnMasked(which are in progress and exclude already masked) once you receive the response file
+--account is response file are going to rejected and remaining accounts for which are not masked yet will be updated as masked.
