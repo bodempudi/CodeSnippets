@@ -17,3 +17,12 @@ begin
 	print 'proc2'
 end
 
+
+object_id
+object_name
+db_id
+db_name
+schema_name
+schema_id
+
+
