@@ -1,4 +1,3 @@
-
 drop table if exists #main;
 
 select *
@@ -22,8 +21,9 @@ from
 	union all select 'D','Y'
 ) aa
 
-update a
-set a.IsActive = ISNULL(b.IsActive,'N')
-,a.IsActive = ISNULL(a.IsActive,'Y')
+select name = isnull(a.name,b.name),IsActive = case when b.IsActive is null then 'N'
+when a.IsActive is null then 'Y' else a.IsActive end
 from #main a
-full join #Sub b on a.name=b.name
+full join #Sub b on a.name = b.name
+
+--select * from #main
