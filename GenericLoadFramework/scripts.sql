@@ -1,3 +1,6 @@
+--User::Name,User::Names
+--https://www.techbrothersit.com/2013/07/ssis-how-to-read-object-type-variable.html
+
 drop table if exists #main;
 
 select *
