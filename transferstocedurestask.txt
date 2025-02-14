@@ -1,0 +1,453 @@
+// Decompiled with JetBrains decompiler
+// Type: Microsoft.SqlServer.Dts.Tasks.TransferStoredProceduresTask.TransferStoredProceduresTask
+// Assembly: Microsoft.SqlServer.TransferStoredProceduresTask, Version=16.100.0.0, Culture=neutral, PublicKeyToken=89845dcd8080cc91
+// MVID: 21C27BCE-FE4E-47D2-BD14-1AF3B8EEDA89
+// Assembly location: C:\Program Files\Microsoft Visual Studio\2022\Community\Common7\IDE\CommonExtensions\Microsoft\SSIS\160\Tasks\Microsoft.SqlServer.TransferStoredProceduresTask.dll
+// XML documentation location: C:\Program Files\Microsoft Visual Studio\2022\Community\Common7\IDE\CommonExtensions\Microsoft\SSIS\160\Tasks\en\Microsoft.SqlServer.TransferStoredProceduresTask.xml
+
+using Microsoft.SqlServer.Dts.ManagedMsg;
+using Microsoft.SqlServer.Dts.Runtime;
+using Microsoft.SqlServer.Dts.Tasks.TransferSqlObjects;
+using Microsoft.SqlServer.IntegrationServices.TasksCommon;
+using Microsoft.SqlServer.Management.Smo;
+using System;
+using System.Collections.Specialized;
+using System.ComponentModel;
+using System.Runtime.InteropServices;
+using System.Threading;
+using System.Xml;
+
+#nullable disable
+namespace Microsoft.SqlServer.Dts.Tasks.TransferStoredProceduresTask
+{
+  /// <summary>Contains the methods, properties, and enumerations that allow you to copy stored procedures from the master database located on one instance of SQL Server to another. This class cannot be inherited. </summary>
+  [DtsTask(LocalizationType = typeof (Localized), TaskType = "DTS90", HelpKeyword = "sql13.dts.designer.transfermasterspstask.F1", SamplesTag = "SsisTransferMasterStoredProceduresTask", UITypeName = "Microsoft.SqlServer.Dts.Tasks.TransferStoredProceduresTaskUI.TransferStoredProceduresTaskUI, Microsoft.SqlServer.TransferStoredProceduresTaskUI, Version=16.0.0.0, Culture=Neutral, PublicKeyToken=89845dcd8080cc91", TaskContact = "Transfer Stored Procedures Task; Microsoft Corporation; SQL Server 2022; © 2022 Microsoft Corporation; All Rights Reserved;http://www.microsoft.com/sql/support/default.asp;1")]
+  [Guid("7A78E062-4CC2-474A-A932-C3145ADF2C99")]
+  public sealed class TransferStoredProceduresTask : 
+    Task,
+    ITransferStoredProceduresTask,
+    IDTSBreakpointSite,
+    IDTSSuspend,
+    IDTSComponentPersist
+  {
+    private int SPsAtDestBeforeTransfer;
+    private int SPsAtDestAfterTransfer;
+    private int NumberOfSPsActuallyTransfered;
+    private int numOperationsAttempted;
+    private int m_NumberOfDeleted;
+    private IDTSComponentEvents m_Events;
+    private Connections m_Connections;
+    private ErrorSupport m_ErrorSupport;
+    private TransferSqlObjectsHelper TransBase = new TransferSqlObjectsHelper(Localized.TaskDisplayName, Localized.ConnectionTypeIsNotSMOServer, Localized.ErrorReadingSPNames, Localized.InvalidStoredProcName, Localized.InvalidSourceDatabase, Localized.InvalidDestinationDatabase, Localized.InvalidServer, Localized.CantGetProcedurNameList);
+    private const string DBNAME = "master";
+    private static string LOG_EVENT_STARTTRANSFERINGOBJECTS = "TransferStoredProceduresTaskStartTransferringObjects";
+    private static string LOG_EVENT_FINISHTRANSFERINGOBJECTS = "TransferStoredProceduresTaskFinishedTransferringObjects";
+    private bool m_TransferAllStoredProcedures;
+    private StringCollection m_StoredProceduresList = new StringCollection();
+    private IfObjectExists m_IfObjectExists;
+    private string m_SourceConnectionID = "";
+    private string m_DestinationConnectionID = "";
+    private const string PERSIST_CONST_ELEMENT = "TransferStoredProceduresTaskData";
+    private const string PERSIST_CONST_TRANSALLSPS = "TransferAllStoredProcedures";
+    private const string PERSIST_CONST_STOREDPROCS = "StoredProceduresList";
+    private const string PERSIST_CONST_IFOBJECTEXISTS = "IfObjectExists";
+    private const string PERSIST_CONST_SRCSRVRCONNAME = "SourceConnection";
+    private const string PERSIST_CONST_DESTSRVRCONNAME = "m_DestinationConnectionID";
+    private BreakpointManager m_bpManager;
+    private int m_debugMode;
+    private int m_suspendRequired;
+    private ManualResetEvent m_suspended = new ManualResetEvent(true);
+    private ManualResetEvent m_canExecute = new ManualResetEvent(true);
+
+    /// <summary>A Boolean indicating whether all stored procedures in the master database of the source SQL Server are transferred, or only the specified stored procedures.</summary>
+    /// <returns>true if all stored procedures in the master database are transferred. false if only those stored procedures named in the <see cref="P:Microsoft.SqlServer.Dts.Tasks.TransferStoredProceduresTask.TransferStoredProceduresTask.StoredProceduresList" /> are transferred.</returns>
+    public bool TransferAllStoredProcedures
+    {
+      get => this.m_TransferAllStoredProcedures;
+      set => this.m_TransferAllStoredProcedures = value;
+    }
+
+    /// <summary>Gets or sets a StringCollection containing a comma-delimited list of stored procedure names.</summary>
+    /// <returns>A StringCollection that contains a comma-delimited list of stored procedure names.</returns>
+    [Editor("Microsoft.DataTransformationServices.Controls.StringCollectionEditor, Microsoft.DataTransformationServices.Controls, Version=16.0.0.0, Culture=Neutral, PublicKeyToken=89845dcd8080cc91", "System.Drawing.Design.UITypeEditor,System.Drawing, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a")]
+    public StringCollection StoredProceduresList
+    {
+      get => this.m_StoredProceduresList;
+      set => this.m_StoredProceduresList = value;
+    }
+
+    /// <summary>Gets or sets a value from the <see cref="T:Microsoft.SqlServer.Dts.Tasks.TransferStoredProceduresTask.IfObjectExists" /> enumeration indicating if the task should fail, overwrite the existing stored procedure, or skip the transfer of the stored procedureif a stored procedurewith the same name exists at the destination. </summary>
+    /// <returns>A value from the <see cref="T:Microsoft.SqlServer.Dts.Tasks.TransferStoredProceduresTask.IfObjectExists" /> enumeration indicating whether the task should fail, ignore the existing stored procedure, or skip the transfer of the stored procedure, if a stored procedureof the same name exists at the destination.</returns>
+    public IfObjectExists IfObjectExists
+    {
+      get => this.m_IfObjectExists;
+      set => this.m_IfObjectExists = value;
+    }
+
+    /// <summary>Gets or sets a String containing the name of the SMO connection manager for the source/destination database.</summary>
+    /// <returns>A String that contains the connection string of the SMO connection manager.</returns>
+    public string SourceConnection
+    {
+      get => this.GetConnectionName(this.m_Connections, this.m_SourceConnectionID);
+      set => this.m_SourceConnectionID = this.GetConnectionID(this.m_Connections, value);
+    }
+
+    /// <summary>Gets or sets a String containing the name of the SMO connection manager for the source/destination database.</summary>
+    /// <returns>A String that contains the SMO connection manager.</returns>
+    public string DestinationConnection
+    {
+      get => this.GetConnectionName(this.m_Connections, this.m_DestinationConnectionID);
+      set => this.m_DestinationConnectionID = this.GetConnectionID(this.m_Connections, value);
+    }
+
+    /// <summary>This method is not callable by your application code. To save a package as .xml, use the <see cref="M:Microsoft.SqlServer.Dts.Runtime.Application.SaveToXml(System.String,Microsoft.SqlServer.Dts.Runtime.Package,Microsoft.SqlServer.Dts.Runtime.IDTSEvents)" /> method.</summary>
+    /// <param name="doc">The XML document to which to save the information.</param>
+    /// <param name="events">An object that implements the <see cref="T:Microsoft.SqlServer.Dts.Runtime.IDTSInfoEvents" /> interface for raising events (errors, warnings, and so on) during persistence.</param>
+    public void SaveToXML(XmlDocument doc, IDTSInfoEvents events)
+    {
+      TaskXmlWriter taskXmlWriter = new TaskXmlWriter(doc, "TransferStoredProceduresTaskData");
+      taskXmlWriter.AddAttribute("TransferAllStoredProcedures", false, this.m_TransferAllStoredProcedures);
+      if (this.m_StoredProceduresList.Count > 0)
+        taskXmlWriter.AddAttributeForNullOrEmptyString("StoredProceduresList", this.TransBase.GetObjectNameList(this.m_StoredProceduresList, events));
+      taskXmlWriter.AddAttributeForEnum("IfObjectExists", typeof (IfObjectExists), 0, (int) this.m_IfObjectExists);
+      taskXmlWriter.AddAttributeForNullOrEmptyString("SourceConnection", this.m_SourceConnectionID);
+      taskXmlWriter.AddAttributeForNullOrEmptyString("m_DestinationConnectionID", this.m_DestinationConnectionID);
+      taskXmlWriter.SaveChangesToXmlDocument();
+    }
+
+    /// <summary>This method is not callable by your application code. To load a package saved as .xml, use the <see cref="M:Microsoft.SqlServer.Dts.Runtime.Application.LoadPackage(System.String,Microsoft.SqlServer.Dts.Runtime.IDTSEvents)" /> method.</summary>
+    /// <param name="rootNode">The node that contains the information to be loaded.</param>
+    /// <param name="events">An object that implements the <see cref="T:Microsoft.SqlServer.Dts.Runtime.IDTSInfoEvents" /> interface for raising events (errors, warnings, and so on) during persistence.</param>
+    public void LoadFromXML(XmlElement rootNode, IDTSInfoEvents events)
+    {
+      this.m_TransferAllStoredProcedures = false;
+      this.m_StoredProceduresList.Clear();
+      this.m_IfObjectExists = IfObjectExists.FailTask;
+      this.m_SourceConnectionID = "";
+      this.m_DestinationConnectionID = "";
+      if (rootNode == null)
+        return;
+      TaskXmlReader taskXmlReader = !(rootNode.Name != "TransferStoredProceduresTaskData") ? new TaskXmlReader(rootNode) : throw new Microsoft.SqlServer.Dts.Tasks.TransferStoredProceduresTask.TransferStoredProceduresTask.DtsTransferSPException(Localized.InvalidDataNode);
+      bool flag;
+      if (taskXmlReader.TryGetAttributeValue("TransferAllStoredProcedures", out flag))
+        this.m_TransferAllStoredProcedures = flag;
+      string strValue;
+      if (taskXmlReader.TryGetAttributeValue("StoredProceduresList", out strValue))
+        this.TransBase.ExtractObjectNameListFromXml(strValue, ref this.m_StoredProceduresList, events);
+      IfObjectExists ifObjectExists;
+      if (taskXmlReader.TryGetAttributeValue<IfObjectExists>("IfObjectExists", out ifObjectExists))
+        this.m_IfObjectExists = ifObjectExists;
+      if (taskXmlReader.TryGetAttributeValue("SourceConnection", out strValue))
+        this.m_SourceConnectionID = strValue;
+      if (!taskXmlReader.TryGetAttributeValue("m_DestinationConnectionID", out strValue))
+        return;
+      this.m_DestinationConnectionID = strValue;
+    }
+
+    /// <summary>Initializes the properties associated with the task. This method is called by the runtime and is not used in code.</summary>
+    /// <param name="connections">A collection of connections used by the task.</param>
+    /// <param name="variableDispenser">A <see cref="T:Microsoft.SqlServer.Dts.Runtime.VariableDispenser" /> object for locking variables.</param>
+    /// <param name="events">An object that implements the <see cref="T:Microsoft.SqlServer.Dts.Runtime.IDTSInfoEvents" /> interface.</param>
+    /// <param name="log">An object that implements the <see cref="T:Microsoft.SqlServer.Dts.Runtime.IDTSLogging" /> interface.</param>
+    /// <param name="eventInfos">A collection that contains events to be raised during execution of the task.</param>
+    /// <param name="logEntryInfos">A collection of log entries.</param>
+    /// <param name="refTracker">An object reference tracker.</param>
+    public override void InitializeTask(
+      Connections connections,
+      VariableDispenser variableDispenser,
+      IDTSInfoEvents events,
+      IDTSLogging log,
+      EventInfos eventInfos,
+      LogEntryInfos logEntryInfos,
+      ObjectReferenceTracker refTracker)
+    {
+      this.m_Connections = connections;
+      if (logEntryInfos == null)
+        return;
+      logEntryInfos.Add(Microsoft.SqlServer.Dts.Tasks.TransferStoredProceduresTask.TransferStoredProceduresTask.LOG_EVENT_STARTTRANSFERINGOBJECTS, Localized.LogEntryStartTransferObjects, DTSLogEntryFrequency.Consistent);
+      logEntryInfos.Add(Microsoft.SqlServer.Dts.Tasks.TransferStoredProceduresTask.TransferStoredProceduresTask.LOG_EVENT_FINISHTRANSFERINGOBJECTS, Localized.LogEntryDoneTransferringObjects, DTSLogEntryFrequency.Consistent);
+    }
+
+    /// <summary>Verifies that the component is properly configured.</summary>
+    /// <param name="connections">A collection of connections used by the task.</param>
+    /// <param name="variableDispenser">A <see cref="T:Microsoft.SqlServer.Dts.Runtime.VariableDispenser" /> object for locking variables.</param>
+    /// <param name="events">An object that implements the <see cref="T:Microsoft.SqlServer.Dts.Runtime.IDTSComponentEvents" /> interface.</param>
+    /// <param name="log">An object that implements the <see cref="T:Microsoft.SqlServer.Dts.Runtime.IDTSLogging" /> interface.</param>
+    /// <returns>A value from the <see cref="T:Microsoft.SqlServer.Dts.Runtime.DTSExecResult" /> enumeration.</returns>
+    public override DTSExecResult Validate(
+      Connections connections,
+      VariableDispenser variableDispenser,
+      IDTSComponentEvents events,
+      IDTSLogging log)
+    {
+      DTSExecResult dtsExecResult = DTSExecResult.Success;
+      if (events != null)
+        this.m_ErrorSupport = new ErrorSupport(DtsConvert.GetExtendedInterface(events), Localized.TaskDisplayName, string.Empty, 0);
+      SameConnections sameConnections = this.TransBase.ConnectionsAreTheSame(this.m_SourceConnectionID, this.m_DestinationConnectionID, connections, events);
+      bool bCancel;
+      if (sameConnections == SameConnections.Same)
+      {
+        if (events != null)
+          this.m_ErrorSupport.FireError(-1073548523, out bCancel);
+        dtsExecResult = DTSExecResult.Failure;
+      }
+      else if (SameConnections.Error == sameConnections)
+        dtsExecResult = DTSExecResult.Failure;
+      if (!this.TransBase.VerifyDatabase(true, true, this.m_SourceConnectionID, "master", connections, events))
+        dtsExecResult = DTSExecResult.Failure;
+      if (!this.TransBase.VerifyDatabase(true, false, this.m_DestinationConnectionID, "master", connections, events))
+        dtsExecResult = DTSExecResult.Failure;
+      if (!this.TransferAllStoredProcedures)
+      {
+        if (this.StoredProceduresList.Count == 0)
+        {
+          if (events != null)
+            this.m_ErrorSupport.FireError(-1073548464, out bCancel);
+          dtsExecResult = DTSExecResult.Failure;
+        }
+        if (!this.TransBase.VerifyStoredProcedures(this.m_StoredProceduresList, this.m_SourceConnectionID, "master", connections, events))
+          dtsExecResult = DTSExecResult.Failure;
+      }
+      return dtsExecResult;
+    }
+
+    /// <summary>Runs the task.</summary>
+    /// <param name="connections">A collection of connections used by the task.</param>
+    /// <param name="variableDispenser">A <see cref="T:Microsoft.SqlServer.Dts.Runtime.VariableDispenser" /> object for locking variables.</param>
+    /// <param name="events">An object that implements the <see cref="T:Microsoft.SqlServer.Dts.Runtime.IDTSComponentEvents" /> interface.</param>
+    /// <param name="log">An object that implements the <see cref="T:Microsoft.SqlServer.Dts.Runtime.IDTSLogging" /> interface.</param>
+    /// <param name="transaction">The transaction object that the container is a part of. This value can be null.</param>
+    /// <returns>A value from the <see cref="T:Microsoft.SqlServer.Dts.Runtime.DTSExecResult" /> enumeration.</returns>
+    public override DTSExecResult Execute(
+      Connections connections,
+      VariableDispenser variableDispenser,
+      IDTSComponentEvents events,
+      IDTSLogging log,
+      object transaction)
+    {
+      if (events != null)
+        this.m_ErrorSupport = new ErrorSupport(DtsConvert.GetExtendedInterface(events), Localized.TaskDisplayName, string.Empty, 0);
+      if (transaction != null)
+      {
+        if (events != null)
+          this.m_ErrorSupport.FireError(-1073548519, out bool _);
+        return DTSExecResult.Failure;
+      }
+      this.m_Events = events;
+      this.m_Connections = connections;
+      this.TransBase.FireEvent(Microsoft.SqlServer.Dts.Tasks.TransferSqlObjects.EventType.Progress, Localized.TransferringSPObjects, events, 0, 0, 1);
+      this.TransBase.WriteLog(log, Microsoft.SqlServer.Dts.Tasks.TransferStoredProceduresTask.TransferStoredProceduresTask.LOG_EVENT_STARTTRANSFERINGOBJECTS, Localized.LogEntryStartTransferObjects);
+      bool bCancel;
+      try
+      {
+        this.TransBase.SourceConnection = this.m_SourceConnectionID;
+        this.TransBase.DestinationConnection = this.m_DestinationConnectionID;
+        this.TransBase.SourceDatabaseName = "master";
+        this.TransBase.DestinationDatabaseName = "master";
+        this.TransBase.ObjectType = SqlServerObjectType.StoredProcedures;
+        if (!this.TransBase.SetGenericProperties(connections, events))
+        {
+          if (events != null)
+            this.m_ErrorSupport.FireError(-1073548475, out bCancel);
+          return DTSExecResult.Failure;
+        }
+        if (!this.TransBase.CheckServer(this.TransBase.SourceServer, true, events) || !this.TransBase.CheckServer(this.TransBase.DestinationServer, false, events) || !this.TransBase.CheckDatabase(this.TransBase.SourceDatabase, true, events) || !this.TransBase.CheckDatabase(this.TransBase.DestinationDatabase, false, events))
+          return DTSExecResult.Failure;
+        this.SPsAtDestBeforeTransfer = this.TransBase.DestinationDatabase.StoredProcedures.Count;
+        int progressCountHigh;
+        if (this.m_TransferAllStoredProcedures)
+        {
+          int count = this.TransBase.SourceDatabase.StoredProcedures.Count;
+          foreach (StoredProcedure storedProcedure1 in (SmoCollectionBase) this.TransBase.SourceDatabase.StoredProcedures)
+          {
+            if (!storedProcedure1.IsSystemObject)
+            {
+              StoredProcedure storedProcedure2 = this.TransBase.DestinationDatabase.StoredProcedures[storedProcedure1.Name];
+              if (storedProcedure2 != null)
+              {
+                if (this.m_IfObjectExists == IfObjectExists.FailTask)
+                {
+                  if (events != null)
+                    this.m_ErrorSupport.FireErrorWithArgs(-1073548471, out bCancel, (object) storedProcedure1.Name);
+                  return DTSExecResult.Failure;
+                }
+                if (this.m_IfObjectExists == IfObjectExists.Overwrite)
+                {
+                  storedProcedure2.Drop();
+                  ++this.m_NumberOfDeleted;
+                  if (events != null)
+                    this.m_ErrorSupport.FireWarningWithArgs(-2147290297, (object) storedProcedure1.Name);
+                }
+                else if (this.m_IfObjectExists == IfObjectExists.Skip)
+                  continue;
+              }
+              this.TransBase.DestinationServer.ConnectionContext.ExecuteNonQuery(storedProcedure1.Script());
+              ++this.numOperationsAttempted;
+              this.TransBase.FireEvent(Microsoft.SqlServer.Dts.Tasks.TransferSqlObjects.EventType.Progress, Localized.TransferringStoredProcedures, events, this.numOperationsAttempted * 100 / count, 0, count);
+              if (events.FireQueryCancel())
+                return DTSExecResult.Canceled;
+            }
+          }
+          progressCountHigh = this.TransBase.NumberOfElements;
+        }
+        else
+        {
+          progressCountHigh = this.m_StoredProceduresList.Count;
+          foreach (string storedProcedures in this.m_StoredProceduresList)
+          {
+            StoredProcedure storedProcedure3 = this.TransBase.SourceDatabase.StoredProcedures[storedProcedures];
+            if (storedProcedure3 == null)
+            {
+              if (events != null)
+                this.m_ErrorSupport.FireErrorWithArgs(-1073548474, out bCancel, (object) storedProcedures);
+              return DTSExecResult.Failure;
+            }
+            if (!storedProcedure3.IsSystemObject)
+            {
+              StoredProcedure storedProcedure4 = this.TransBase.DestinationDatabase.StoredProcedures[storedProcedures];
+              if (storedProcedure4 != null)
+              {
+                if (this.m_IfObjectExists == IfObjectExists.FailTask)
+                {
+                  if (events != null)
+                    this.m_ErrorSupport.FireErrorWithArgs(-1073548471, out bCancel, (object) storedProcedures);
+                  return DTSExecResult.Failure;
+                }
+                if (this.m_IfObjectExists == IfObjectExists.Overwrite)
+                {
+                  storedProcedure4.Drop();
+                  ++this.m_NumberOfDeleted;
+                  if (events != null)
+                    this.m_ErrorSupport.FireWarningWithArgs(-2147290297, (object) storedProcedures);
+                }
+                else if (this.m_IfObjectExists == IfObjectExists.Skip)
+                  continue;
+              }
+              this.TransBase.DestinationServer.ConnectionContext.ExecuteNonQuery(storedProcedure3.Script());
+              ++this.numOperationsAttempted;
+              this.TransBase.FireEvent(Microsoft.SqlServer.Dts.Tasks.TransferSqlObjects.EventType.Progress, Localized.TransferringStoredProcedures, events, this.numOperationsAttempted * 100 / progressCountHigh, 0, progressCountHigh);
+              if (events.FireQueryCancel())
+                return DTSExecResult.Canceled;
+            }
+          }
+        }
+        this.TransBase.DestinationDatabase.StoredProcedures.Refresh();
+        this.SPsAtDestAfterTransfer = this.TransBase.DestinationDatabase.StoredProcedures.Count;
+        this.NumberOfSPsActuallyTransfered = this.m_NumberOfDeleted + this.SPsAtDestAfterTransfer - this.SPsAtDestBeforeTransfer;
+        bool bFireAgain = false;
+        if (events != null)
+          this.m_ErrorSupport.FireInformationWithArgs(1073935185, ref bFireAgain, (object) this.NumberOfSPsActuallyTransfered.ToString());
+        // ISSUE: reference to a compiler-generated method
+        // ISSUE: reference to a compiler-generated method
+        this.TransBase.FireEvent(Microsoft.SqlServer.Dts.Tasks.TransferSqlObjects.EventType.Progress, this.NumberOfSPsActuallyTransfered == progressCountHigh ? Localized.TaskCompletedSuccessfully(this.NumberOfSPsActuallyTransfered.ToString()) : Localized.TaskCompletedWithFailure(this.NumberOfSPsActuallyTransfered.ToString(), progressCountHigh.ToString()), events, 100, 0, 1);
+      }
+      catch (Exception ex)
+      {
+        if (events != null)
+        {
+          this.m_ErrorSupport.FireErrorWithArgs(-1073548507, out bCancel, (object) ex.Message);
+          if (ex.InnerException != null && !string.IsNullOrEmpty(ex.InnerException.Message))
+            this.m_ErrorSupport.FireErrorWithArgs(-1073548507, out bCancel, (object) ex.InnerException.Message);
+        }
+        return DTSExecResult.Failure;
+      }
+      finally
+      {
+        Microsoft.SqlServer.Dts.Tasks.TransferStoredProceduresTask.TransferStoredProceduresTask.ChangeEvent(this.m_suspended, true);
+      }
+      this.TransBase.WriteLog(log, Microsoft.SqlServer.Dts.Tasks.TransferStoredProceduresTask.TransferStoredProceduresTask.LOG_EVENT_FINISHTRANSFERINGOBJECTS, Localized.LogEntryDoneTransferringObjects);
+      return DTSExecResult.Success;
+    }
+
+    /// <summary>Returns an object containing a count of the number of stored procedures that were transferred.</summary>
+    /// <returns>An object that contains the number of stored procedures that were transferred.</returns>
+    public override object ExecutionValue => (object) this.NumberOfSPsActuallyTransfered;
+
+    /// <summary>Indicates that the executable needs to suspend. This method is called by the run-time engine. </summary>
+    public void SuspendExecution()
+    {
+      lock (this)
+      {
+        if (this.m_suspendRequired != 0)
+          Microsoft.SqlServer.Dts.Tasks.TransferStoredProceduresTask.TransferStoredProceduresTask.ChangeEvent(this.m_canExecute, false);
+      }
+      WaitHandle.WaitAny(new WaitHandle[2]
+      {
+        (WaitHandle) this.m_suspended,
+        (WaitHandle) this.m_canExecute
+      });
+    }
+
+    /// <summary>Resumes execution of the task after pausing. The task or container is resumed by the run-time engine. </summary>
+    public void ResumeExecution()
+    {
+      Microsoft.SqlServer.Dts.Tasks.TransferStoredProceduresTask.TransferStoredProceduresTask.ChangeEvent(this.m_canExecute, true);
+    }
+
+    /// <summary>Gets or sets a Boolean indicating whether the task should suspend when it encounters a breakpoint. This value is set by the run-time engine for the task or container when a breakpoint is encountered.</summary>
+    /// <returns>true if the task suspends; false if the task can ignore the breakpoint.</returns>
+    public bool SuspendRequired
+    {
+      get => this.m_suspendRequired != 0;
+      set
+      {
+        lock (this)
+        {
+          Interlocked.Exchange(ref this.m_suspendRequired, value ? 1 : 0);
+          if (value)
+            return;
+          this.ResumeExecution();
+        }
+      }
+    }
+
+    /// <summary>Passes a <see cref="T:Microsoft.SqlServer.Dts.Runtime.BreakpointManager" /> to a task. This method is called by the runtime and is not used in code.</summary>
+    /// <param name="manager">The breakpoint manager specific for this task.</param>
+    public void AcceptBreakpointManager(BreakpointManager manager) => this.m_bpManager = manager;
+
+    /// <summary>Gets or sets a Boolean indicating whether a task should determine whether breakpoints are enabled. </summary>
+    /// <returns>true if the task should determine whether breakpoints are enabled; false if the task can ignore all breakpoints.</returns>
+    public bool DebugMode
+    {
+      get => this.m_debugMode != 0;
+      set => Interlocked.Exchange(ref this.m_debugMode, value ? 1 : 0);
+    }
+
+    private void CheckAndSuspend()
+    {
+      while (!this.m_canExecute.WaitOne(0, false))
+      {
+        Microsoft.SqlServer.Dts.Tasks.TransferStoredProceduresTask.TransferStoredProceduresTask.ChangeEvent(this.m_suspended, true);
+        this.m_canExecute.WaitOne();
+        Microsoft.SqlServer.Dts.Tasks.TransferStoredProceduresTask.TransferStoredProceduresTask.ChangeEvent(this.m_suspended, false);
+      }
+    }
+
+    private void CheckAndFireBreakpoint(IDTSComponentEvents events, int breakpointID)
+    {
+      if (this.m_debugMode != 0 && this.m_bpManager.IsBreakpointTargetEnabled(breakpointID))
+      {
+        Microsoft.SqlServer.Dts.Tasks.TransferStoredProceduresTask.TransferStoredProceduresTask.ChangeEvent(this.m_suspended, true);
+        events.FireBreakpointHit(this.m_bpManager.GetBreakpointTarget(breakpointID));
+        Microsoft.SqlServer.Dts.Tasks.TransferStoredProceduresTask.TransferStoredProceduresTask.ChangeEvent(this.m_suspended, false);
+      }
+      this.CheckAndSuspend();
+    }
+
+    private static void ChangeEvent(ManualResetEvent e, bool shouldSet)
+    {
+      if (!(!shouldSet ? e.Reset() : e.Set()))
+        throw new Exception(Localized.SyncObjectFailed);
+    }
+
+    /// <summary>The exception that is thrown at load time if the persisted name of the XML root node of the task is corrupt.</summary>
+    [Serializable]
+    public class DtsTransferSPException : Exception
+    {
+      internal DtsTransferSPException(string strMessage)
+        : base(strMessage)
+      {
+      }
+    }
+  }
+}
