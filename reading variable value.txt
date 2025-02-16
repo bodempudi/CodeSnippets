@@ -1,0 +1,15 @@
+
+          Variables variables = (Variables) null;
+          try
+          {
+            variableDispenser.LockForRead(this.SqlStatementSource);
+            variableDispenser.GetVariables(ref variables);
+            if (variables[(object) this.SqlStatementSource].DataType != TypeCode.String)
+            {
+              if (events != null)
+                this.m_ErrorSupport.FireErrorWithArgs(-1073573399, out bCancel, (object) this.SqlStatementSource);
+              variables.Unlock();
+              return Microsoft.SqlServer.Dts.Runtime.DTSExecResult.Failure;
+            }
+            theString = variables[(object) this.SqlStatementSource].Value.ToString();
+            variables.Unlock();
