@@ -1,4 +1,19 @@
+DECLARE @Input NVARCHAR(100) = '2024-12-25 14:30:00'; -- Change input as needed
 
+SELECT 
+    CASE 
+        WHEN ISNUMERIC(@Input) = 1 AND TRY_CAST(@Input AS BIGINT) IS NOT NULL THEN CAST(@Input AS BIGINT)
+        WHEN TRY_CAST(@Input AS DATE) IS NOT NULL THEN CAST(@Input AS DATE)
+        WHEN TRY_CAST(@Input AS DATETIME) IS NOT NULL THEN CAST(@Input AS DATETIME)
+        ELSE 'INVALID'
+    END AS ParsedValue,
+    
+    CASE 
+        WHEN ISNUMERIC(@Input) = 1 AND TRY_CAST(@Input AS BIGINT) IS NOT NULL THEN 'BIGINT'
+        WHEN TRY_CAST(@Input AS DATE) IS NOT NULL THEN 'DATE'
+        WHEN TRY_CAST(@Input AS DATETIME) IS NOT NULL THEN 'DATETIME'
+        ELSE 'INVALID'
+    END AS DetectedType;
 using System;
 using System.Globalization;
 using System.Xml;
