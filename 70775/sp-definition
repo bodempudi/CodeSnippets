@@ -1,0 +1,657 @@
+USE [SampleDB]
+GO
+/****** Object:  Schema [InMem]    Script Date: 5/24/2025 3:42:58 PM ******/
+CREATE SCHEMA [InMem]
+GO
+/****** Object:  Table [dbo].[Audit_BrandType]    Script Date: 5/24/2025 3:42:58 PM ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[Audit_BrandType](
+	[AuditID] [bigint] IDENTITY(1,1) NOT NULL,
+	[AuditDateTime] [datetime] NOT NULL,
+	[AuditUserID] [varchar](20) NOT NULL,
+	[ActionType] [varchar](20) NOT NULL,
+	[BrandTypeID] [bigint] NULL,
+	[BrandTypeCode] [varchar](32) NULL,
+	[BrandTypeNameEN] [varchar](128) NULL,
+	[IsCategoryApplicable] [char](1) NULL,
+	[UserNote] [varchar](2048) NULL,
+	[CreatedUserID] [varchar](20) NULL,
+	[CreatedDateTime] [datetime] NULL,
+	[UpdatedUserID] [varchar](20) NULL,
+	[UpdatedDateTime] [datetime] NULL
+) ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[GeneratedProcedureLog]    Script Date: 5/24/2025 3:42:58 PM ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[GeneratedProcedureLog](
+	[GeneratedProcedureLogID] [int] IDENTITY(1,1) NOT NULL,
+	[StoredProcedureSchemaName] [varchar](512) NULL,
+	[StoredProcedureName] [varchar](512) NULL,
+	[GeneratedScript] [nvarchar](max) NULL,
+	[GeneratedDateTime] [datetime] NULL,
+PRIMARY KEY CLUSTERED 
+(
+	[GeneratedProcedureLogID] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY] TEXTIMAGE_ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[MaintainProcedureColumnMetadata]    Script Date: 5/24/2025 3:42:58 PM ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[MaintainProcedureColumnMetadata](
+	[MaintainProcedureMetadataID] [int] NOT NULL,
+	[ColumnName] [varchar](128) NOT NULL,
+	[IsInsertMandatory] [char](1) NOT NULL,
+	[IsUpdateMandatory] [char](1) NOT NULL,
+	[IsDeleteMandatory] [char](1) NOT NULL,
+	[IsUpsertMandatory] [char](1) NOT NULL,
+	[CreatedUserID] [varchar](50) NOT NULL,
+	[CreatedDateTime] [datetime] NOT NULL
+) ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[MaintainProcedureTableMetadata]    Script Date: 5/24/2025 3:42:58 PM ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[MaintainProcedureTableMetadata](
+	[MaintainProcedureMetadataID] [int] IDENTITY(1,1) NOT NULL,
+	[TableSchema] [varchar](128) NOT NULL,
+	[TableName] [varchar](128) NOT NULL,
+	[AuditTableName] [varchar](128) NULL,
+	[IsInsertApplicable] [char](1) NOT NULL,
+	[IsUpdateApplicable] [char](1) NOT NULL,
+	[IsDeleteApplicable] [char](1) NOT NULL,
+	[IsUpsertApplicable] [char](1) NOT NULL,
+	[PrimaryKeyColumn] [varchar](128) NOT NULL,
+	[UserIDColumn] [varchar](128) NOT NULL,
+	[CreatedUserID] [varchar](50) NOT NULL,
+	[CreatedDateTime] [datetime] NOT NULL,
+	[DeleteOperationTypeCode] [char](1) NULL,
+PRIMARY KEY CLUSTERED 
+(
+	[MaintainProcedureMetadataID] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY]
+GO
+/****** Object:  Table [InMem].[BrandType]    Script Date: 5/24/2025 3:42:58 PM ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [InMem].[BrandType](
+	[BrandTypeID] [bigint] IDENTITY(1,1) NOT NULL,
+	[BrandTypeCode] [varchar](32) NULL,
+	[BrandTypeNameEN] [varchar](128) NULL,
+	[IsCategoryApplicable] [char](1) NULL,
+	[UserNote] [varchar](2048) NULL,
+	[IsActive] [char](1) NULL,
+	[CreateUserID] [varchar](20) NULL,
+	[CreateDateTime] [datetime] NULL,
+	[UpdateUserID] [varchar](20) NULL,
+	[UpdateDateTime] [datetime] NULL
+) ON [PRIMARY]
+GO
+ALTER TABLE [dbo].[Audit_BrandType] ADD  DEFAULT (getdate()) FOR [AuditDateTime]
+GO
+ALTER TABLE [dbo].[GeneratedProcedureLog] ADD  DEFAULT (getdate()) FOR [GeneratedDateTime]
+GO
+ALTER TABLE [dbo].[MaintainProcedureColumnMetadata] ADD  DEFAULT ('N') FOR [IsInsertMandatory]
+GO
+ALTER TABLE [dbo].[MaintainProcedureColumnMetadata] ADD  DEFAULT ('N') FOR [IsUpdateMandatory]
+GO
+ALTER TABLE [dbo].[MaintainProcedureColumnMetadata] ADD  DEFAULT ('N') FOR [IsDeleteMandatory]
+GO
+ALTER TABLE [dbo].[MaintainProcedureColumnMetadata] ADD  DEFAULT ('N') FOR [IsUpsertMandatory]
+GO
+ALTER TABLE [dbo].[MaintainProcedureColumnMetadata] ADD  DEFAULT (getdate()) FOR [CreatedDateTime]
+GO
+ALTER TABLE [dbo].[MaintainProcedureTableMetadata] ADD  DEFAULT ('Y') FOR [IsInsertApplicable]
+GO
+ALTER TABLE [dbo].[MaintainProcedureTableMetadata] ADD  DEFAULT ('Y') FOR [IsUpdateApplicable]
+GO
+ALTER TABLE [dbo].[MaintainProcedureTableMetadata] ADD  DEFAULT ('Y') FOR [IsDeleteApplicable]
+GO
+ALTER TABLE [dbo].[MaintainProcedureTableMetadata] ADD  DEFAULT ('Y') FOR [IsUpsertApplicable]
+GO
+ALTER TABLE [dbo].[MaintainProcedureTableMetadata] ADD  DEFAULT (getdate()) FOR [CreatedDateTime]
+GO
+ALTER TABLE [dbo].[MaintainProcedureColumnMetadata]  WITH CHECK ADD  CONSTRAINT [FK_MaintainProcedureColumnMetadata_TableMetadata] FOREIGN KEY([MaintainProcedureMetadataID])
+REFERENCES [dbo].[MaintainProcedureTableMetadata] ([MaintainProcedureMetadataID])
+ON DELETE CASCADE
+GO
+ALTER TABLE [dbo].[MaintainProcedureColumnMetadata] CHECK CONSTRAINT [FK_MaintainProcedureColumnMetadata_TableMetadata]
+GO
+/****** Object:  StoredProcedure [dbo].[usp_Create_MaintenanceProcedure]    Script Date: 5/24/2025 3:42:58 PM ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+
+CREATE   PROCEDURE [dbo].[usp_Create_MaintenanceProcedure]
+(
+	@I_SourceTableSchemaName VARCHAR(512)
+    ,@I_SourceTableName VARCHAR(512)
+    ,@I_AuditTableSchemaName VARCHAR(512)
+    ,@I_AuditTableName VARCHAR(512)
+    ,@I_StoredProcedureSchemaName VARCHAR(512)
+    ,@I_StoredProcedureName VARCHAR(512)
+	,@I_UserID VARCHAR(512)
+)
+AS
+/*****************************************************************************************
+    Name      : usp_Create_MaintenanceProcedure
+    Purpose   : To generate Maintain Procedure for any given table
+    Author    : Venkat Bodempudi
+    Date      : 22-May-2025
+
+    Sample Execution:
+
+    EXEC dbo.usp_Create_MaintenanceProcedure 
+        @I_SourceTableSchemaName = 'InMem',
+        @I_SourceTableName = 'BrandType',
+        @I_AuditTableSchemaName = 'dbo',
+        @I_AuditTableName = 'Audit_BrandType',
+        @I_StoredProcedureSchemaName = 'dbo',
+		@I_StoredProcedureName = 'usp_Maintain_BrandType'
+        @I_UserID = 'venkat';
+
+******************************************************************************************
+    Change History:
+******************************************************************************************
+    Date         Author              Description                         Status
+    -----------  ------------------  ----------------------------------  ----------------
+    22-May-2025  Venkat Bodempudi    Created with audit logging             Development Phase
+*****************************************************************************************/
+BEGIN
+    SET NOCOUNT ON;
+	/*----------------------------------------------------------------------------------------------------------------------------------*/
+    DECLARE
+	    @PrimaryKeyColumnName NVARCHAR(1024)
+        ,@PrimaryKeyColumnDataType NVARCHAR(128)
+        ,@DeleteOperationTypeCode  CHAR(1)
+        ,@InputParametersList NVARCHAR(MAX) = ''
+        ,@ColumnNames    NVARCHAR(MAX) = ''
+        ,@ColumnValues     NVARCHAR(MAX) = ''
+        ,@UpdateSetList      NVARCHAR(MAX) = ''
+        ,@AuditColumnNames       NVARCHAR(MAX) = ''
+        ,@AuditValues_Insert NVARCHAR(MAX) = ''
+        ,@AuditValues_Update NVARCHAR(MAX) = ''
+        ,@INSERT_ValidationScript NVARCHAR(MAX) = ''
+        ,@UPSERT_ValidationScript NVARCHAR(MAX) = ''
+        ,@DELETE_ValidationScript NVARCHAR(MAX) = ''
+        ,@UPDATE_ValidationScript NVARCHAR(MAX) = ''
+        ,@UPDATE_ActionScript NVARCHAR(MAX) = ''
+        ,@DELETE_ActionScript NVARCHAR(MAX) = ''
+        ,@UPSERT_ActionScript NVARCHAR(MAX) = ''
+        ,@CREATE_ActionScript NVARCHAR(MAX) = ''
+        ,@ActionTypeScript NVARCHAR(MAX) = ''
+        ,@Full_ValidationScript NVARCHAR(MAX) = ''
+        ,@StoredProcedureFullName NVARCHAR(512)
+        ,@StoredProcedureDefinition NVARCHAR(MAX) = ''
+        ,@CurrentDatetime DATETIME = GETDATE()
+		,@ErrorMessage VARCHAR(1024) = '';
+	/*----------------------------------------------------------------------------------------------------------------------------------*/	
+    SELECT
+        @PrimaryKeyColumnName = PrimaryKeyColumn
+        ,@DeleteOperationTypeCode = DeleteOperationTypeCode
+    FROM dbo.MaintainProcedureTableMetadata (NOLOCK)
+    WHERE 
+		TableSchema = @I_SourceTableSchemaName
+		AND TableName = @I_SourceTableName;
+	/*----------------------------------------------------------------------------------------------------------------------------------*/
+    SELECT 
+		@PrimaryKeyColumnDataType = DATA_TYPE 
+    FROM INFORMATION_SCHEMA.COLUMNS
+    WHERE 
+		TABLE_SCHEMA = @I_SourceTableSchemaName
+		AND TABLE_NAME = @I_SourceTableName
+		AND COLUMN_NAME = @PrimaryKeyColumnName;
+	/*----------------------------------------------------------------------------------------------------------------------------------*/
+	IF @PrimaryKeyColumnDataType NOT IN ('INT','BIGINT')
+	BEGIN
+	
+		SELECT 
+			@ErrorMessage = 'Unsupported Primary Key Column ("' + @PrimaryKeyColumnName + '") datatype ("' + @PrimaryKeyColumnDataType +'").!';
+	
+		RAISERROR(@ErrorMessage,15,1);
+		
+		RETURN
+	END
+	/*----------------------------------------------------------------------------------------------------------------------------------*/
+    SELECT 
+		@InputParametersList = 
+			STRING_AGG
+			(
+				CHAR(10) + ', @I_' + COLUMN_NAME + ' ' +
+				DATA_TYPE +
+				CASE
+					WHEN DATA_TYPE IN ('varchar', 'char', 'nvarchar', 'nchar') 
+						THEN '(' +
+							CASE 
+								WHEN CHARACTER_MAXIMUM_LENGTH = -1 
+									THEN 'MAX'
+								ELSE 
+									CAST(CHARACTER_MAXIMUM_LENGTH AS VARCHAR) 
+							END + ')'
+					WHEN DATA_TYPE IN ('decimal', 'numeric') 
+						THEN '(' + CAST(NUMERIC_PRECISION AS VARCHAR) + ',' + CAST(NUMERIC_SCALE AS VARCHAR) + ')'
+					ELSE 
+						''
+				END + ' = NULL'
+        , '')
+    FROM INFORMATION_SCHEMA.COLUMNS
+    WHERE 
+		TABLE_SCHEMA = @I_SourceTableSchemaName
+		AND TABLE_NAME = @I_SourceTableName
+		AND COLUMN_NAME NOT IN (@PrimaryKeyColumnName, 'CreateDateTime', 'CreateUserID', 'UpdateDateTime', 'UpdateUserID');
+
+    SELECT
+		@InputParametersList += CHAR(10) + ', @I_UserID VARCHAR(128)';
+		
+	PRINT @InputParametersList;
+	/*----------------------------------------------------------------------------------------------------------------------------------*/
+    SELECT
+        @ColumnNames = STRING_AGG(CHAR(10) + ', ' + QUOTENAME(COLUMN_NAME), ''),
+        @ColumnValues = STRING_AGG(CHAR(10) + ', ' +
+            CASE
+                WHEN COLUMN_NAME IN ('CreatedUserID', 'UpdatedUserID') THEN '@I_UserID'
+                WHEN COLUMN_NAME IN ('CreatedDateTime', 'UpdatedDateTime') THEN 'GETDATE()'
+                ELSE '@I_' + COLUMN_NAME
+            END, ''),
+        @UpdateSetList = STRING_AGG(CHAR(10) + ', ' + QUOTENAME(COLUMN_NAME) + ' = ' +
+            CASE
+                WHEN COLUMN_NAME = 'UpdatedUserID' THEN '@I_UserID'
+                WHEN COLUMN_NAME = 'UpdatedDateTime' THEN 'GETDATE()'
+                ELSE '@I_' + COLUMN_NAME
+            END, '')
+    FROM INFORMATION_SCHEMA.COLUMNS
+    WHERE 
+		TABLE_SCHEMA = @I_SourceTableSchemaName
+		AND TABLE_NAME = @I_SourceTableName
+		AND COLUMN_NAME <> @PrimaryKeyColumnName;
+	
+	PRINT @ColumnNames;
+	PRINT @ColumnValues;	
+	/*----------------------------------------------------------------------------------------------------------------------------------*/
+	SELECT 
+		@AuditColumnNames = '
+		AuditDateTime
+		, AuditUserID
+		, ActionType' 
+		+ @ColumnNames;
+	/*----------------------------------------------------------------------------------------------------------------------------------*/
+    SET @AuditValues_Insert = '
+      GETDATE()
+    , @I_UserID
+    , ''CREATE-CREATE''' + @ColumnValues;
+	/*----------------------------------------------------------------------------------------------------------------------------------*/
+    SET @AuditValues_Update = '
+      GETDATE()
+    , @I_UserID
+    , ''UPDATE-UPDATE''' + @ColumnValues;
+
+    SELECT @StoredProcedureFullName = QUOTENAME(@I_StoredProcedureSchemaName) + '.' + QUOTENAME(@I_StoredProcedureName);
+	/*----------------------------------------------------------------------------------------------------------------------------------*/
+	PRINT '------------------------------------------'
+	PRINT @AuditColumnNames
+	PRINT @AuditValues_Insert
+	PRINT @AuditValues_Update
+	/*----------------------------------------------------------------------------------------------------------------------------------*/
+	SELECT @INSERT_ValidationScript =
+    STRING_AGG(
+        '    IF @I_ActionType = ''CREATE'' AND (@I_' + c.COLUMN_NAME + ' IS NULL' +
+        CASE 
+            WHEN c.DATA_TYPE IN ('char', 'nchar', 'varchar', 'nvarchar') THEN 
+                ' OR LTRIM(RTRIM(@I_' + c.COLUMN_NAME + ')) = ''''' 
+            ELSE '' 
+        END + ')' +
+        '    BEGIN' + CHAR(10) +
+        '        RAISERROR(''' + c.COLUMN_NAME + ' is mandatory for INSERT'', 16, 1)' + CHAR(10) +
+        '        RETURN' + CHAR(10) +
+        '    END' + CHAR(10)
+    , CHAR(10))
+	FROM INFORMATION_SCHEMA.COLUMNS c
+		INNER JOIN dbo.MaintainProcedureColumnMetadata mc
+			ON mc.ColumnName = c.COLUMN_NAME
+		INNER JOIN dbo.MaintainProcedureTableMetadata md
+			ON md.MaintainProcedureMetadataID = mc.MaintainProcedureMetadataID
+	WHERE 
+		ISNULL(mc.IsInsertMandatory, 'N') = 'Y'  
+		AND md.TableSchema = @I_SourceTableSchemaName
+		AND md.TableName = @I_SourceTableName
+		AND c.TABLE_SCHEMA = md.TableSchema
+		AND c.TABLE_NAME = md.TableName;
+	/*----------------------------------------------------------------------------------------------------------------------------------*/
+	SELECT @UPSERT_ValidationScript =
+    STRING_AGG(
+        '    IF @I_ActionType = ''UPSERT'' AND (@I_' + c.COLUMN_NAME + ' IS NULL' +
+        CASE 
+            WHEN c.DATA_TYPE IN ('char', 'nchar', 'varchar', 'nvarchar') THEN 
+                ' OR LTRIM(RTRIM(@I_' + c.COLUMN_NAME + ')) = ''''' 
+            ELSE '' 
+        END + ')' +
+        '    BEGIN' + CHAR(10) +
+        '        RAISERROR(''' + c.COLUMN_NAME + ' is mandatory for UPSERT'', 16, 1)' + CHAR(10) +
+        '        RETURN' + CHAR(10) +
+        '    END' + CHAR(10)
+    , CHAR(10))
+	FROM INFORMATION_SCHEMA.COLUMNS c
+		INNER JOIN dbo.MaintainProcedureColumnMetadata mc
+			ON mc.ColumnName = c.COLUMN_NAME
+		INNER JOIN dbo.MaintainProcedureTableMetadata md
+			ON md.MaintainProcedureMetadataID = mc.MaintainProcedureMetadataID
+	WHERE 
+		ISNULL(mc.IsUpsertMandatory, 'N') = 'Y'  
+		AND md.TableSchema = @I_SourceTableSchemaName
+		AND md.TableName = @I_SourceTableName
+		AND c.TABLE_SCHEMA = md.TableSchema
+		AND c.TABLE_NAME = md.TableName;
+	/*----------------------------------------------------------------------------------------------------------------------------------*/
+	SELECT @DELETE_ValidationScript =
+    STRING_AGG(
+        '    IF @I_ActionType = ''DELETE'' AND (@I_' + c.COLUMN_NAME + ' IS NULL' +
+        CASE 
+            WHEN c.DATA_TYPE IN ('char', 'nchar', 'varchar', 'nvarchar') THEN 
+                ' OR LTRIM(RTRIM(@I_' + c.COLUMN_NAME + ')) = ''''' 
+            ELSE '' 
+        END + ')' +
+        '    BEGIN' + CHAR(10) +
+        '        RAISERROR(''' + c.COLUMN_NAME + ' is mandatory for DELETE'', 16, 1)' + CHAR(10) +
+        '        RETURN' + CHAR(10) +
+        '    END' + CHAR(10)
+    , CHAR(10))
+	FROM INFORMATION_SCHEMA.COLUMNS c
+		INNER JOIN dbo.MaintainProcedureColumnMetadata mc
+			ON mc.ColumnName = c.COLUMN_NAME
+		INNER JOIN dbo.MaintainProcedureTableMetadata md
+			ON md.MaintainProcedureMetadataID = mc.MaintainProcedureMetadataID
+	WHERE 
+		ISNULL(mc.IsDeleteMandatory, 'N') = 'Y'  
+		AND md.TableSchema = @I_SourceTableSchemaName
+		AND md.TableName = @I_SourceTableName
+		AND c.TABLE_SCHEMA = md.TableSchema
+		AND c.TABLE_NAME = md.TableName;
+	/*----------------------------------------------------------------------------------------------------------------------------------*/
+	SELECT @UPDATE_ValidationScript =
+    STRING_AGG(
+        '    IF @I_ActionType = ''UPDATE'' AND (@I_' + c.COLUMN_NAME + ' IS NULL' +
+        CASE 
+            WHEN c.DATA_TYPE IN ('char', 'nchar', 'varchar', 'nvarchar') THEN 
+                ' OR LTRIM(RTRIM(@I_' + c.COLUMN_NAME + ')) = ''''' 
+            ELSE '' 
+        END + ')' +
+        '    BEGIN' + CHAR(10) +
+        '        RAISERROR(''' + c.COLUMN_NAME + ' is mandatory for UPDATE'', 16, 1)' + CHAR(10) +
+        '        RETURN' + CHAR(10) +
+        '    END' + CHAR(10)
+    , CHAR(10))
+	FROM INFORMATION_SCHEMA.COLUMNS c
+		INNER JOIN dbo.MaintainProcedureColumnMetadata mc
+			ON mc.ColumnName = c.COLUMN_NAME
+		INNER JOIN dbo.MaintainProcedureTableMetadata md
+			ON md.MaintainProcedureMetadataID = mc.MaintainProcedureMetadataID
+	WHERE 
+		ISNULL(mc.IsUPDATEMandatory, 'N') = 'Y'  
+		AND md.TableSchema = @I_SourceTableSchemaName
+		AND md.TableName = @I_SourceTableName
+		AND c.TABLE_SCHEMA = md.TableSchema
+		AND c.TABLE_NAME = md.TableName;
+	
+	/*----------------------------------------------------------------------------------------------------------------------------------*/
+	SELECT 
+		@Full_ValidationScript =
+			@UPSERT_ValidationScript
+			+ CHAR(10) + @UPDATE_ValidationScript
+			+ CHAR(10) + @INSERT_ValidationScript
+			+ CHAR(10) + @DELETE_ValidationScript
+	
+	PRINT @Full_ValidationScript;
+	
+	/*----------------------------------------------------------------------------------------------------------------------------------*/
+	SELECT 
+		@UPSERT_ActionScript = 
+			'			
+			DECLARE 
+				@ErrorMessage VARCHAR(1024)
+				,@CurrentDatetime DATETIME = GETDATE()
+			
+			IF @I_ActionType = ''UPSERT''
+			BEGIN
+				IF EXISTS (
+					SELECT 1 
+					FROM [' + @I_SourceTableSchemaName + '].[' + @I_SourceTableName + '] WITH (NOLOCK)
+					WHERE 
+						[' + @PrimaryKeyColumnName + '] = @I_' + @PrimaryKeyColumnName + '
+				)
+				BEGIN
+					SELECT @I_ActionType = ''UPDATE-UPSERT'';
+				END
+				ELSE
+				BEGIN
+					SELECT @I_ActionType = ''CREATE-UPSERT'';
+				END
+			END
+			';
+	PRINT @UPSERT_ActionScript
+
+	/*----------------------------------------------------------------------------------------------------------------------------------*/
+	SELECT
+		@CREATE_ActionScript = 
+			'
+				IF @I_ActionType = ''CREATE'' OR @I_ActionType = ''CREATE-UPSERT''
+				BEGIN
+					BEGIN TRY
+						BEGIN TRANSACTION
+							INSERT INTO [' + @I_SourceTableSchemaName + '].[' + @I_SourceTableName + ']
+							(
+								' + @ColumnNames + '
+							)
+							SELECT
+							' + @ColumnValues + '
+								;
+							
+							INSERT INTO [' + @I_AuditTableSchemaName + '].[' + @I_AuditTableName + ']
+							(
+								' + @AuditColumnNames + '
+							)
+							SELECT
+								' + @AuditValues_Insert + '
+						COMMIT TRANSACTION
+						
+						SELECT 
+							STATUSCODE = CONVERT(BIT,0)
+							,STATUSMESSAGE = CONVERT(VARCHAR(1024),''SUCCESS'')
+						
+					END TRY
+					BEGIN CATCH
+						IF @@TRANCOUNT > 1
+							ROLLBACK TRANSACTION
+						
+						SELECT 
+							@ErrorMessage = ''Failed - '' + ISNULL(Error_Message(),'''')
+							
+						SELECT 
+							STATUSCODE = CONVERT(BIT,1)
+							,STATUSMESSAGE = CONVERT(VARCHAR(1024),@ErrorMessage)
+					END CATCH
+				END
+			'
+			PRINT @CREATE_ActionScript
+	/*----------------------------------------------------------------------------------------------------------------------------------*/
+	SELECT
+		@UPDATE_ActionScript = 
+	'
+	IF @I_ActionType = ''UPDATE'' OR @I_ActionType = ''UPDATE-UPSERT''
+	BEGIN
+		BEGIN TRY
+			BEGIN TRANSACTION;
+	
+			UPDATE [' + @I_SourceTableSchemaName + '].[' + @I_SourceTableName + ']
+			SET
+	' + @UpdateSetList + '
+			WHERE [' + @PrimaryKeyColumnName + '] = @I_' + @PrimaryKeyColumnName + ';
+	
+			INSERT INTO [' + @I_AuditTableSchemaName + '].[' + @I_AuditTableName + ']
+			(
+	' + @AuditColumnNames + '
+			)
+			SELECT
+	' + @AuditValues_Update + ';
+	
+			COMMIT TRANSACTION;
+	
+			SELECT 
+				StatusCode = CONVERT(BIT, 0),
+				StatusMessage = CONVERT(VARCHAR(1024), ''SUCCESS'');
+		END TRY
+		BEGIN CATCH
+			IF @@TRANCOUNT > 0
+				ROLLBACK TRANSACTION;
+	
+			SELECT 
+				@ErrorMessage = ''Failed - '' + ISNULL(ERROR_MESSAGE(), '''');
+	
+			SELECT 
+				StatusCode = CONVERT(BIT, 1),
+				StatusMessage = CONVERT(VARCHAR(1024), @ErrorMessage);
+		END CATCH
+	END
+	';
+	PRINT @UPDATE_ActionScript 	 
+	/*----------------------------------------------------------------------------------------------------------------------------------*/
+	IF @DeleteOperationTypeCode = 'S'
+	BEGIN
+		SELECT 
+			@DELETE_ActionScript =
+				'
+	IF @I_ActionType = ''DELETE'' 
+	BEGIN
+		BEGIN TRY
+			BEGIN TRANSACTION;
+	
+			UPDATE [' + @I_SourceTableSchemaName + '].[' + @I_SourceTableName + ']
+			SET IsActive = ''N''
+			WHERE [' + @PrimaryKeyColumnName + '] = @I_' + @PrimaryKeyColumnName + ';
+	
+			INSERT INTO [' + @I_AuditTableSchemaName + '].[' + @I_AuditTableName + ']
+			(
+	' + @AuditColumnNames + '
+			)
+			SELECT
+	' + @AuditValues_Update + ';
+	
+			COMMIT TRANSACTION;
+	
+			SELECT 
+				StatusCode = CONVERT(BIT, 0),
+				StatusMessage = CONVERT(VARCHAR(1024), ''SUCCESS'');
+		END TRY
+		BEGIN CATCH
+			IF @@TRANCOUNT > 0
+				ROLLBACK TRANSACTION;
+	
+			SELECT 
+				@ErrorMessage = ''Failed - '' + ISNULL(ERROR_MESSAGE(), '''');
+	
+			SELECT 
+				StatusCode = CONVERT(BIT, 1),
+				StatusMessage = CONVERT(VARCHAR(1024), @ErrorMessage);
+		END CATCH
+	END
+	';
+	END
+	ELSE
+	BEGIN 
+		SELECT 
+			@DELETE_ActionScript =
+				'
+	IF @I_ActionType = ''DELETE'' 
+	BEGIN
+		BEGIN TRY
+			BEGIN TRANSACTION;
+	
+	
+			INSERT INTO [' + @I_AuditTableSchemaName + '].[' + @I_AuditTableName + ']
+			(
+	' + @AuditColumnNames + '
+			)
+			SELECT
+	' + @AuditValues_Update + ';
+	
+	
+			DELETE FROM [' + @I_SourceTableSchemaName + '].[' + @I_SourceTableName + ']
+			WHERE [' + @PrimaryKeyColumnName + '] = @I_' + @PrimaryKeyColumnName + ';
+			
+			COMMIT TRANSACTION;
+	
+			SELECT 
+				StatusCode = CONVERT(BIT, 0),
+				StatusMessage = CONVERT(VARCHAR(1024), ''SUCCESS'');
+		END TRY
+		BEGIN CATCH
+			IF @@TRANCOUNT > 0
+				ROLLBACK TRANSACTION;
+	
+			SELECT 
+				@ErrorMessage = ''Failed - '' + ISNULL(ERROR_MESSAGE(), '''');
+	
+			SELECT 
+				StatusCode = CONVERT(BIT, 1),
+				StatusMessage = CONVERT(VARCHAR(1024), @ErrorMessage);
+		END CATCH
+	END
+	';
+	END
+	PRINT @DELETE_ActionScript
+	/*----------------------------------------------------------------------------------------------------------------------------------*/
+	SELECT 
+		@ActionTypeScript = 
+			@UPSERT_ActionScript 
+			+ @CREATE_ActionScript 
+			+ @UPDATE_ActionScript 
+			+ @DELETE_ActionScript 
+			
+	PRINT @ActionTypeScript
+	/*----------------------------------------------------------------------------------------------------------------------------------*/
+	SELECT 
+		@StoredProcedureDefinition = 
+		'CREATE OR ALTER PROC ' + @StoredProcedureFullName
+		+ '(' + 
+		@InputParametersList
+		+ ')'
+		+' BEGIN '
+		+ ' SET NOCOUNT ON; '
+		+ @Full_ValidationScript
+		+ @ActionTypeScript
+		+' END '
+	
+	SELECT
+		StoredProcedureDefinition = @StoredProcedureDefinition
+	
+END
+GO
+-------------------------------------------------------------------------
+USE [SampleDB]
+GO
+ 
+EXEC	  [dbo].[usp_Create_MaintenanceProcedure]
+		
+		@I_SourceTableSchemaName = 'InMem',
+		@I_SourceTableName = 'BrandType',
+		@I_AuditTableSchemaName = 'dbo',
+		@I_AuditTableName = 'Audit_BrandType',
+		@I_StoredProcedureSchemaName = 'dbo',
+		@I_StoredProcedureName = 'usp_Maintain_BrandType',
+		@I_UserID = 'venkat'
+		 
+
+GO
