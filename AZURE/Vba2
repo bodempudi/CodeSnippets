@@ -1,0 +1,35 @@
+Sub ExportRangeToPDF()
+    Dim ws As Worksheet
+    Dim startCol As String, endCol As String
+    Dim startRow As Long, endRow As Long
+    Dim exportRange As Range
+    Dim pdfPath As String
+    Dim addressRange As String
+
+    Set ws = ActiveSheet
+
+    ' Get values from control cells
+    startCol = ws.Range("A1").Value
+    endCol = ws.Range("B1").Value
+    startRow = ws.Range("C1").Value
+    endRow = ws.Range("D1").Value
+
+    ' Form the address string like B3:E15
+    addressRange = startCol & startRow & ":" & endCol & endRow
+
+    ' Set the export range
+    Set exportRange = ws.Range(addressRange)
+
+    ' Ask user for where to save the PDF
+    pdfPath = Application.GetSaveAsFilename( _
+                InitialFileName:="ExportedRange.pdf", _
+                FileFilter:="PDF Files (*.pdf), *.pdf", _
+                Title:="Save As PDF")
+
+    If pdfPath = "False" Then Exit Sub
+
+    ' Export only the selected range
+    exportRange.ExportAsFixedFormat Type:=xlTypePDF, Filename:=pdfPath, Quality:=xlQualityStandard
+
+    MsgBox "Exported range " & addressRange & " as PDF!", vbInformation
+End Sub
