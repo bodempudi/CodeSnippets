@@ -1,27 +1,46 @@
-Derived Sales = 
-VAR _Target = SELECTEDVALUE(Targetsales[Targetsales], 0)
-VAR _Yr     = MAX(SalesByMonth[year])
+Derived Sales :=
+VAR _HasOneMonth = HASONEVALUE(SalesByMonth[MO])
 
--- Year-level aggregates
-VAR _ActualYear =
+-- Row logic (scoped to current Category–Description–Year)
+VAR _Cat  = SELECTEDVALUE(SalesByMonth[Category])
+VAR _Desc = SELECTEDVALUE(SalesByMonth[Description])
+VAR _Yr   = SELECTEDVALUE(SalesByMonth[YR])
+
+VAR _Target =
     CALCULATE(
-        SUM(SalesByMonth[sales]),
-        FILTER(ALL(SalesByMonth), SalesByMonth[year] = _Yr)
-    )
-VAR _WD_Zero_Total =
-    CALCULATE(
-        SUM(SalesByMonth[numberofworkingdays]),
-        FILTER(
-            ALL(SalesByMonth),
-            SalesByMonth[year] = _Yr &&
-            COALESCE(SalesByMonth[sales], 0) = 0
+        MAX(SalesByMonth[TotalForecast]),
+        FILTER(ALL(SalesByMonth),
+            SalesByMonth[Category]=_Cat &&
+            SalesByMonth[Description]=_Desc &&
+            SalesByMonth[YR]=_Yr
         )
     )
-VAR _Leftover = _Target - _ActualYear
 
--- Row value (safe for month rows)
-VAR _SalesThisMonth = SUM(SalesByMonth[sales])
-VAR _WD_ThisMonth   = MAX(SalesByMonth[numberofworkingdays])
+VAR _ActualYear =
+    CALCULATE(
+        SUM(SalesByMonth[Actual]),
+        FILTER(ALL(SalesByMonth),
+            SalesByMonth[Category]=_Cat &&
+            SalesByMonth[Description]=_Desc &&
+            SalesByMonth[YR]=_Yr
+        )
+    )
+
+VAR _WD_Zero_Total =
+    CALCULATE(
+        SUM(SalesByMonth[MonthWorkingDays]),
+        FILTER(ALL(SalesByMonth),
+            SalesByMonth[Category]=_Cat &&
+            SalesByMonth[Description]=_Desc &&
+            SalesByMonth[YR]=_Yr &&
+            COALESCE(SalesByMonth[Actual],0)=0
+        )
+    )
+
+VAR _Leftover = _Target - _ActualYear
+VAR _SalesThisMonth = SUM(SalesByMonth[Actual])
+VAR _WD_ThisMonth   = MAX(SalesByMonth[MonthWorkingDays])
+
 VAR _RowValue =
     IF(
         _SalesThisMonth > 0,
@@ -29,19 +48,9 @@ VAR _RowValue =
         DIVIDE(_Leftover * _WD_ThisMonth, _WD_Zero_Total, 0)
     )
 
--- Month table with context transition (for totals)
-VAR _MonthTable =
-    ADDCOLUMNS(
-        VALUES(SalesByMonth[monthnumber]),
-        "Sales", CALCULATE(SUM(SalesByMonth[sales])),              -- CTX transition
-        "WD",    CALCULATE(MAX(SalesByMonth[numberofworkingdays])) -- CTX transition
-    )
 RETURN
 IF(
-    HASONEVALUE(SalesByMonth[monthnumber]),
+    _HasOneMonth,
+    -- row level
     _RowValue,
-    SUMX(
-        _MonthTable,
-        IF([Sales] > 0, [Sales], DIVIDE(_Leftover * [WD], _WD_Zero_Total, 0))
-    )
-)
+    -- totals: explicitly sum month rows in current filte
