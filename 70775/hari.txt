@@ -1,50 +1,47 @@
-;WITH SalesCTE AS (
-    SELECT *,
-           ROW_NUMBER() OVER (PARTITION BY Category, [Description] ORDER BY MonthNumber) AS RowID
-    FROM #SalesData
-),
-RunningTotals AS (
-    SELECT
-        s1.MonthNumber,
-        s1.Category,
-        s1.[Description],
-        s1.Sales,
-        s1.NumberOfWorkingDays,
-        s1.TotalForecast,
-        SUM(s2.Sales) AS PriorSales
-    FROM SalesCTE s1
-    LEFT JOIN SalesCTE s2
-        ON s1.Category = s2.Category
-        AND s1.[Description] = s2.[Description]
-        AND s2.RowID < s1.RowID
-    GROUP BY s1.MonthNumber, s1.Category, s1.[Description],
-             s1.Sales, s1.NumberOfWorkingDays, s1.TotalForecast, s1.RowID
-),
-RemainingWorkDays AS (
-    SELECT
-        r.MonthNumber,
-        r.Category,
-        r.[Description],
-        r.Sales,
-        r.NumberOfWorkingDays,
-        r.TotalForecast,
-        r.PriorSales,
-        SUM(CASE WHEN r.Sales = 0 THEN r.NumberOfWorkingDays ELSE 0 END)
-            OVER (PARTITION BY r.Category, r.[Description]) AS TotalRemainingDays
-    FROM RunningTotals r
-)
-SELECT
-    MonthNumber,
-    Category,
-    [Description],
-    Sales,
-    NumberOfWorkingDays,
-    TotalForecast,
-    CASE
-        WHEN Sales > 0 THEN Sales
-        ELSE CAST((TotalForecast - PriorSales)
-                  * (NumberOfWorkingDays * 1.0 / NULLIF(TotalRemainingDays,0)) AS DECIMAL(18,4))
-    END AS DerivedSales
-FROM RemainingWorkDays
-ORDER BY Category, [Description], MonthNumber;
+Derived Sales = 
+VAR _Target = SELECTEDVALUE(Targetsales[Targetsales], 0)
+VAR _Yr     = MAX(SalesByMonth[year])
 
+-- Year-level aggregates
+VAR _ActualYear =
+    CALCULATE(
+        SUM(SalesByMonth[sales]),
+        FILTER(ALL(SalesByMonth), SalesByMonth[year] = _Yr)
+    )
+VAR _WD_Zero_Total =
+    CALCULATE(
+        SUM(SalesByMonth[numberofworkingdays]),
+        FILTER(
+            ALL(SalesByMonth),
+            SalesByMonth[year] = _Yr &&
+            COALESCE(SalesByMonth[sales], 0) = 0
+        )
+    )
+VAR _Leftover = _Target - _ActualYear
+
+-- Row value (safe for month rows)
+VAR _SalesThisMonth = SUM(SalesByMonth[sales])
+VAR _WD_ThisMonth   = MAX(SalesByMonth[numberofworkingdays])
+VAR _RowValue =
+    IF(
+        _SalesThisMonth > 0,
+        _SalesThisMonth,
+        DIVIDE(_Leftover * _WD_ThisMonth, _WD_Zero_Total, 0)
+    )
+
+-- Month table with context transition (for totals)
+VAR _MonthTable =
+    ADDCOLUMNS(
+        VALUES(SalesByMonth[monthnumber]),
+        "Sales", CALCULATE(SUM(SalesByMonth[sales])),              -- CTX transition
+        "WD",    CALCULATE(MAX(SalesByMonth[numberofworkingdays])) -- CTX transition
+    )
+RETURN
+IF(
+    HASONEVALUE(SalesByMonth[monthnumber]),
+    _RowValue,
+    SUMX(
+        _MonthTable,
+        IF([Sales] > 0, [Sales], DIVIDE(_Leftover * [WD], _WD_Zero_Total, 0))
+    )
+)
