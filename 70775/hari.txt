@@ -53,4 +53,15 @@ IF(
     _HasOneMonth,
     -- row level
     _RowValue,
-    -- totals: explicitly sum month rows in current filte
+    -- totals: explicitly sum month rows in current filters
+    SUMX(
+        SUMMARIZE(
+            ALLSELECTED(SalesByMonth),
+            SalesByMonth[Category],
+            SalesByMonth[Description],
+            SalesByMonth[YR],
+            SalesByMonth[MO]
+        ),
+        CALCULATE([Derived Sales])   -- evaluates this measure per-month context
+    )
+)
