@@ -36,7 +36,7 @@ WITH Base AS
         c.ResultSetName,
         c.ResultSetHeaders,
         c.ResultSetValues,
-        Delim = ISNULL(NULLIF(c.ResultSetColumnsDelimiter, N''), N'~||~')  -- default to ~||~, in case of single column, no delimiter
+        Delimiter = ISNULL(NULLIF(c.ResultSetColumnsDelimiter, N''), N'~||~')  -- default to ~||~, in case of single column, no delimiter
     FROM dbo.Configurations AS c
 ),
 Hdr AS 
@@ -63,7 +63,7 @@ Val AS
     FROM Base AS b
     CROSS APPLY OPENJSON
 	(
-        N'["' + REPLACE(STRING_ESCAPE(b.ResultSetValues, N'json'), b.Delim, N'","') + N'"]'
+        N'["' + REPLACE(STRING_ESCAPE(b.ResultSetValues, N'json'), b.Delimiter, N'","') + N'"]'
 		--Delimited JSON Conversion after " based text qualifier
     ) AS v
 )
@@ -80,20 +80,42 @@ FROM Hdr
 		AND Val.Ordinal       = Hdr.Ordinal;
 GO
 --Generic View Completed.
+-----------------------------------------------------------------------------------------------------------
+--Now seed the configurations table
 
-
---Seeding single column result set data
 INSERT INTO dbo.Configurations
 ( ResultSetName, ResultSetHeaders, ResultSetValues, ResultSetColumnsDelimiter, ResultSetColumnsDatatypes )
 VALUES
 (N'IsActiveY',N'yescode',N'y',N'~||~',N'nvarchar(10)');
 GO
 
+INSERT INTO dbo.Configurations
+( ResultSetName,ResultSetHeaders,ResultSetValues,ResultSetColumnsDelimiter,ResultSetColumnsDatatypes )
+VALUES
+(N'ExecutionStatusCodes',N'InProgress~||~Success',N'101-InProgress~||~202-Success',N'~||~',N'int~||~int' );
+GO
+
+INSERT INTO dbo.Configurations
+(ResultSetName,ResultSetHeaders,ResultSetValues,ResultSetColumnsDelimiter,ResultSetColumnsDatatypes)
+VALUES
+(N'TransactionNumberPromoCodeChannel',N'TransactionNumber~||~PromoCode~||~Channel',N'1001~||~AP~||~Web',N'~||~',N'int~||~nvarchar(20)~||~nvarchar(20)'),
+(N'TransactionNumberPromoCodeChannel',N'TransactionNumber~||~PromoCode~||~Channel',N'1002~||~BX~||~Branch',N'~||~',N'int~||~nvarchar(20)~||~nvarchar(20)'),
+(N'TransactionNumberPromoCodeChannel',N'TransactionNumber~||~PromoCode~||~Channel',N'1003~||~CZ~||~Mobile',N'~||~',N'int~||~nvarchar(20)~||~nvarchar(20)');
+GO
+----------------------------------------------------------------------------------------------------------------------
+--Let's Check view data
+SELECT 
+	* 
+FROM dbo.vw_Configurations_Resultset
+WHERE 
+	ResultSetName IN (N'IsActiveY', N'ExecutionStatusCodes', N'TransactionPromoCodeChannel');
+----------------------------------------------------------------------------------------------------------------------
 ;WITH IsActiveY AS
 (
     SELECT 
 		TOP (1)
-        ActiveCode = TRY_CONVERT(char(1),[Value])
+        RowID
+		,ActiveCode = TRY_CONVERT(char(1),[Value])
     FROM dbo.vw_Configurations_Resultset
     WHERE 
 		ResultSetName = N'IsActiveY' 
@@ -102,13 +124,7 @@ GO
 )
 SELECT * FROM IsActiveY;  
 go
- 
-INSERT INTO dbo.Configurations
-( ResultSetName,ResultSetHeaders,ResultSetValues,ResultSetColumnsDelimiter,ResultSetColumnsDatatypes )
-VALUES
-(N'ExecutionStatusCodes',N'inprogress~||~success',N'101~||~202',N'~||~',N'int~||~int' );
-GO
-
+----------------------------------------------------------------------------------------------------------------------- 
 ;WITH kv AS 
 (
   SELECT 
@@ -128,7 +144,7 @@ FinalExecutionStatusCodes AS
 			(
 				CASE 
 					WHEN Ordinal = 0 
-						THEN TRY_CONVERT(int, [Value]) 
+						THEN TRY_CONVERT(VARCHAR(128), [Value]) 
 				END
 			) -- here max and group by required for pivoting purpose.
 		,Success = 
@@ -136,7 +152,7 @@ FinalExecutionStatusCodes AS
 			(
 				CASE 
 					WHEN Ordinal = 1 
-						THEN TRY_CONVERT(int, [Value]) 
+						THEN TRY_CONVERT(VARCHAR(128), [Value]) 
 				END
 			)
   FROM kv
@@ -144,15 +160,7 @@ FinalExecutionStatusCodes AS
 )
 SELECT * FROM FinalExecutionStatusCodes;
 GO
-
-INSERT INTO dbo.Configurations
-(ResultSetName,ResultSetHeaders,ResultSetValues,ResultSetColumnsDelimiter,ResultSetColumnsDatatypes)
-VALUES
-(N'TransactionPromoCodeChannel',N'transactionnumber~||~promocode~||~channel',N'1001~||~ap~||~web',N'~||~',N'int~||~nvarchar(20)~||~nvarchar(20)'),
-(N'TransactionPromoCodeChannel',N'transactionnumber~||~promocode~||~channel',N'1002~||~bx~||~branch',N'~||~',N'int~||~nvarchar(20)~||~nvarchar(20)'),
-(N'TransactionPromoCodeChannel',N'transactionnumber~||~promocode~||~channel',N'1003~||~cz~||~mobile',N'~||~',N'int~||~nvarchar(20)~||~nvarchar(20)');
-GO
-
+----------------------------------------------------------------------------------------------------------------------------------
 ;WITH kv AS 
 (
 	SELECT 
@@ -161,7 +169,7 @@ GO
 		,[Value]
 	FROM dbo.vw_Configurations_Resultset
 	WHERE 
-		ResultSetName = N'TransactionPromoCodeChannel'
+		ResultSetName = N'TransactionNumberPromoCodeChannel'
 ),
 RequiredTransactionPromoCodeChannel AS 
 (
@@ -197,5 +205,5 @@ RequiredTransactionPromoCodeChannel AS
 )
 SELECT * FROM RequiredTransactionPromoCodeChannel;
 GO
-
+-----------------------------------------------------------------------------------------------------------------------------------------------
  
