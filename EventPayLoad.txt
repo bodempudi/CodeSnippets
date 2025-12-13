@@ -1,0 +1,24 @@
+EventPayLoad =
+(
+    SELECT
+        kv.[Key]   AS [@name],
+        kv.[Value] AS [text()]
+    FROM (VALUES
+          (src.EventDataKey01, src.EventDataValue01),
+          (src.EventDataKey02, src.EventDataValue02),
+          (src.EventDataKey03, src.EventDataValue03),
+          (src.EventDataKey04, src.EventDataValue04),
+          (src.EventDataKey05, src.EventDataValue05),
+          (src.EventDataKey06, src.EventDataValue06),
+          (src.EventDataKey07, src.EventDataValue07),
+          (src.EventDataKey08, src.EventDataValue08),
+          (src.EventDataKey09, src.EventDataValue09),
+          (src.EventDataKey10, src.EventDataValue10),
+          (src.EventDataKey11, src.EventDataValue11),
+          (src.EventDataKey12, src.EventDataValue12)
+    ) kv([Key],[Value])
+    WHERE kv.[Key] IS NOT NULL
+      AND LTRIM(RTRIM(kv.[Key])) <> ''
+      AND kv.[Value] IS NOT NULL
+    FOR XML PATH('Field'), ROOT('Payload'), TYPE
+).value('.', 'nvarchar(max)')
