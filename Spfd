@@ -1,0 +1,398 @@
+/*==================================================================================================
+  dbo.usp_PFM_CategorizeTransaction_SQL2025
+  - SQL Server 2025 (compat 170+) native regex via REGEXP_LIKE
+  - Supports expression types:
+        IsSqlOrReg = 'S'  --> SQL LIKE
+        IsSqlOrReg = 'R'  --> REGEXP_LIKE
+  - Case sensitivity:
+        IsExpressionCaseSensitive = 1 --> case-sensitive
+        IsExpressionCaseSensitive = 0 --> case-insensitive
+  - Always returns CategoryID (default on miss/error)
+
+  PRECEDENCE:
+    MerchantOther -> Merchant -> Brand -> MerchantExpression -> CategoryExpression -> MCC -> Default
+==================================================================================================*/
+CREATE OR ALTER PROCEDURE dbo.usp_PFM_CategorizeTransaction_SQL2025
+(
+      @I_TenantID               INT
+    , @I_LineOfBusinessID       INT
+
+    , @I_IsMerchantTransaction  CHAR(1)            -- 'Y'/'N'
+
+    , @I_MerchantCode           NVARCHAR(50) = NULL
+    , @I_MerchantName           NVARCHAR(200) = NULL
+    , @I_SubMerchantName        NVARCHAR(200) = NULL
+
+    , @I_BankCode               NVARCHAR(50) = NULL       -- MerchantOtherType = Bank_Code
+    , @I_EbillServiceCode       NVARCHAR(50) = NULL       -- MerchantOtherType = Ebill
+
+    , @I_MCC                    NVARCHAR(10)  = NULL
+    , @I_TransactionTypeCode    NVARCHAR(50)  = NULL
+
+    , @I_Narration              NVARCHAR(4000) = NULL
+
+    , @O_CategoryID             INT OUTPUT
+    , @O_ResultJson             NVARCHAR(MAX) OUTPUT
+)
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    DECLARE
+          @V_CategoryID          INT = NULL
+        , @V_WinningStep         NVARCHAR(80) = NULL
+        , @V_WinningEntityID     INT = NULL
+        , @V_Reason              NVARCHAR(4000) = NULL;
+
+    BEGIN TRY
+        /*------------------------------------------------------------------------------
+          (Optional but recommended) enforce compat-level expectation
+          If you cannot ALTER DATABASE here, at least detect and fail-over to LIKE.
+        ------------------------------------------------------------------------------*/
+        -- DECLARE @compat INT = (SELECT d.compatibility_level FROM sys.databases d WHERE d.name = DB_NAME());
+        -- IF @compat < 170 THROW 51000, 'DB compatibility level must be 170+ for REGEXP_LIKE in SQL Server 2025.', 1;
+
+        /*------------------------------------------------------------------------------
+          Normalize text
+        ------------------------------------------------------------------------------*/
+        DECLARE
+              @V_MerchantName     NVARCHAR(200)  = LTRIM(RTRIM(ISNULL(@I_MerchantName, N'')))
+            , @V_SubMerchantName  NVARCHAR(200)  = LTRIM(RTRIM(ISNULL(@I_SubMerchantName, N'')))
+            , @V_Narration        NVARCHAR(4000) = ISNULL(@I_Narration, N'');
+
+        /*------------------------------------------------------------------------------
+          STEP 0: MerchantOther (typed identity)
+          Expected schema (adjust names to your actual):
+            MerchantOther(MerchantOtherID, TenantID, LineOfBusinessID, MerchantOtherTypeID,
+                          MerchantOtherKey, MerchantOtherName, CategoryID, IsActive)
+            MerchantOtherType(MerchantOtherTypeID, MerchantOtherTypeCode)
+        ------------------------------------------------------------------------------*/
+        IF @V_CategoryID IS NULL
+        BEGIN
+            DECLARE @V_MerchantOtherID INT = NULL;
+            DECLARE @V_MerchantOtherTypeCode NVARCHAR(50) = NULL;
+
+            -- A) Ebill by service code
+            IF @V_MerchantOtherID IS NULL AND NULLIF(LTRIM(RTRIM(@I_EbillServiceCode)), N'') IS NOT NULL
+            BEGIN
+                SELECT TOP (1)
+                      @V_MerchantOtherID = MO.MerchantOtherID
+                    , @V_MerchantOtherTypeCode = MOT.MerchantOtherTypeCode
+                    , @V_CategoryID = MO.CategoryID
+                FROM dbo.MerchantOther MO
+                INNER JOIN dbo.MerchantOtherType MOT
+                    ON MOT.MerchantOtherTypeID = MO.MerchantOtherTypeID
+                WHERE MO.TenantID = @I_TenantID
+                  AND MO.LineOfBusinessID = @I_LineOfBusinessID
+                  AND MO.IsActive = 'Y'
+                  AND MOT.MerchantOtherTypeCode = N'Ebill'
+                  AND MO.MerchantOtherKey = @I_EbillServiceCode;
+            END
+
+            -- B) Bank by code
+            IF @V_MerchantOtherID IS NULL AND NULLIF(LTRIM(RTRIM(@I_BankCode)), N'') IS NOT NULL
+            BEGIN
+                SELECT TOP (1)
+                      @V_MerchantOtherID = MO.MerchantOtherID
+                    , @V_MerchantOtherTypeCode = MOT.MerchantOtherTypeCode
+                    , @V_CategoryID = MO.CategoryID
+                FROM dbo.MerchantOther MO
+                INNER JOIN dbo.MerchantOtherType MOT
+                    ON MOT.MerchantOtherTypeID = MO.MerchantOtherTypeID
+                WHERE MO.TenantID = @I_TenantID
+                  AND MO.LineOfBusinessID = @I_LineOfBusinessID
+                  AND MO.IsActive = 'Y'
+                  AND MOT.MerchantOtherTypeCode = N'Bank_Code'
+                  AND MO.MerchantOtherKey = @I_BankCode;
+            END
+
+            -- C) Strict name match fallback
+            IF @V_MerchantOtherID IS NULL AND NULLIF(@V_MerchantName, N'') <> N''
+            BEGIN
+                SELECT TOP (1)
+                      @V_MerchantOtherID = MO.MerchantOtherID
+                    , @V_MerchantOtherTypeCode = MOT.MerchantOtherTypeCode
+                    , @V_CategoryID = MO.CategoryID
+                FROM dbo.MerchantOther MO
+                INNER JOIN dbo.MerchantOtherType MOT
+                    ON MOT.MerchantOtherTypeID = MO.MerchantOtherTypeID
+                WHERE MO.TenantID = @I_TenantID
+                  AND MO.LineOfBusinessID = @I_LineOfBusinessID
+                  AND MO.IsActive = 'Y'
+                  AND MO.MerchantOtherName = @V_MerchantName;
+            END
+
+            IF @V_MerchantOtherID IS NOT NULL AND @V_CategoryID IS NOT NULL
+            BEGIN
+                SET @V_WinningStep = CONCAT(N'MERCHANT_OTHER:', ISNULL(@V_MerchantOtherTypeCode, N''));
+                SET @V_WinningEntityID = @V_MerchantOtherID;
+                SET @V_Reason = N'Category resolved from MerchantOther.CategoryID.';
+                GOTO Finalize;
+            END
+        END
+
+        /*------------------------------------------------------------------------------
+          STEP 1: Merchant then Brand (merchant spending identity)
+          Expected:
+            Merchant(MerchantID, TenantID, LineOfBusinessID, MerchantCode, BrandID, CategoryID, IsActive)
+            Brand(BrandID, TenantID, LineOfBusinessID, CategoryID, IsActive)
+        ------------------------------------------------------------------------------*/
+        IF @V_CategoryID IS NULL AND @I_IsMerchantTransaction = 'Y'
+        BEGIN
+            DECLARE @V_MerchantID INT = NULL;
+            DECLARE @V_BrandID INT = NULL;
+
+            IF NULLIF(LTRIM(RTRIM(@I_MerchantCode)), N'') IS NOT NULL
+            BEGIN
+                SELECT TOP (1)
+                      @V_MerchantID = M.MerchantID
+                    , @V_BrandID = M.BrandID
+                    , @V_CategoryID = M.CategoryID
+                FROM dbo.Merchant M
+                WHERE M.TenantID = @I_TenantID
+                  AND M.LineOfBusinessID = @I_LineOfBusinessID
+                  AND M.MerchantCode = @I_MerchantCode
+                  AND M.IsActive = 'Y';
+
+                IF @V_CategoryID IS NOT NULL
+                BEGIN
+                    SET @V_WinningStep = N'MERCHANT';
+                    SET @V_WinningEntityID = @V_MerchantID;
+                    SET @V_Reason = N'Category resolved from Merchant.CategoryID.';
+                    GOTO Finalize;
+                END
+            END
+
+            IF @V_CategoryID IS NULL AND @V_BrandID IS NOT NULL
+            BEGIN
+                SELECT TOP (1)
+                      @V_CategoryID = B.CategoryID
+                FROM dbo.Brand B
+                WHERE B.TenantID = @I_TenantID
+                  AND B.LineOfBusinessID = @I_LineOfBusinessID
+                  AND B.BrandID = @V_BrandID
+                  AND B.IsActive = 'Y';
+
+                IF @V_CategoryID IS NOT NULL
+                BEGIN
+                    SET @V_WinningStep = N'BRAND';
+                    SET @V_WinningEntityID = @V_BrandID;
+                    SET @V_Reason = N'Category resolved from Brand.CategoryID.';
+                    GOTO Finalize;
+                END
+            END
+        END
+
+        /*------------------------------------------------------------------------------
+          STEP 2: MerchantExpression (SQL LIKE + REGEX)
+          Expected:
+            MerchantExpression(
+              MerchantExpressionID, TenantID, LineOfBusinessID,
+              Expression, IsSqlOrReg, IsExpressionCaseSensitive,
+              ExecutionOrder, CategoryID, IsActive
+            )
+          - For regex flags: use 'c' for case-sensitive, 'i' for case-insensitive.
+            (SQL Server regex flags support i/m/s/c). 2
+        ------------------------------------------------------------------------------*/
+        IF @V_CategoryID IS NULL
+        BEGIN
+            DECLARE @V_MerchantExpressionID INT = NULL;
+
+            SELECT TOP (1)
+                  @V_MerchantExpressionID = ME.MerchantExpressionID
+                , @V_CategoryID = ME.CategoryID
+            FROM dbo.MerchantExpression ME
+            WHERE ME.TenantID = @I_TenantID
+              AND ME.LineOfBusinessID = @I_LineOfBusinessID
+              AND ME.IsActive = 'Y'
+              AND
+              (
+                    -- SQL LIKE
+                    (ME.IsSqlOrReg = 'S' AND
+                        (
+                            (@V_SubMerchantName <> N'' AND @V_SubMerchantName LIKE ME.Expression)
+                         OR (@V_MerchantName    <> N'' AND @V_MerchantName    LIKE ME.Expression)
+                         OR (@V_Narration       <> N'' AND @V_Narration       LIKE ME.Expression)
+                        )
+                    )
+                 OR -- REGEX
+                    (ME.IsSqlOrReg = 'R' AND
+                        (
+                            (@V_SubMerchantName <> N'' AND REGEXP_LIKE(@V_SubMerchantName, ME.Expression,
+                                CASE WHEN CAST(ME.IsExpressionCaseSensitive AS BIT) = 1 THEN 'c' ELSE 'i' END
+                            ) = 1)
+                         OR (@V_MerchantName <> N'' AND REGEXP_LIKE(@V_MerchantName, ME.Expression,
+                                CASE WHEN CAST(ME.IsExpressionCaseSensitive AS BIT) = 1 THEN 'c' ELSE 'i' END
+                            ) = 1)
+                         OR (@V_Narration <> N'' AND REGEXP_LIKE(@V_Narration, ME.Expression,
+                                CASE WHEN CAST(ME.IsExpressionCaseSensitive AS BIT) = 1 THEN 'c' ELSE 'i' END
+                            ) = 1)
+                        )
+                    )
+              )
+            ORDER BY ME.ExecutionOrder ASC, ME.MerchantExpressionID ASC;
+
+            IF @V_CategoryID IS NOT NULL
+            BEGIN
+                SET @V_WinningStep = N'MERCHANT_EXPRESSION';
+                SET @V_WinningEntityID = @V_MerchantExpressionID;
+                SET @V_Reason = N'Category resolved via MerchantExpression (SQL LIKE / REGEX).';
+                GOTO Finalize;
+            END
+        END
+
+        /*------------------------------------------------------------------------------
+          STEP 3: CategoryExpression (SQL LIKE + REGEX)
+          Expected:
+            CategoryExpression(
+              CategoryExpressionID, TenantID, LineOfBusinessID,
+              Expression, IsSqlOrReg, IsExpressionCaseSensitive,
+              ExecutionOrder, CategoryID, IsActive
+            )
+        ------------------------------------------------------------------------------*/
+        IF @V_CategoryID IS NULL
+        BEGIN
+            DECLARE @V_CategoryExpressionID INT = NULL;
+
+            SELECT TOP (1)
+                  @V_CategoryExpressionID = CE.CategoryExpressionID
+                , @V_CategoryID = CE.CategoryID
+            FROM dbo.CategoryExpression CE
+            WHERE CE.TenantID = @I_TenantID
+              AND CE.LineOfBusinessID = @I_LineOfBusinessID
+              AND CE.IsActive = 'Y'
+              AND
+              (
+                    (CE.IsSqlOrReg = 'S' AND
+                        (
+                            (@V_SubMerchantName <> N'' AND @V_SubMerchantName LIKE CE.Expression)
+                         OR (@V_MerchantName    <> N'' AND @V_MerchantName    LIKE CE.Expression)
+                         OR (@V_Narration       <> N'' AND @V_Narration       LIKE CE.Expression)
+                        )
+                    )
+                 OR
+                    (CE.IsSqlOrReg = 'R' AND
+                        (
+                            (@V_SubMerchantName <> N'' AND REGEXP_LIKE(@V_SubMerchantName, CE.Expression,
+                                CASE WHEN CAST(CE.IsExpressionCaseSensitive AS BIT) = 1 THEN 'c' ELSE 'i' END
+                            ) = 1)
+                         OR (@V_MerchantName <> N'' AND REGEXP_LIKE(@V_MerchantName, CE.Expression,
+                                CASE WHEN CAST(CE.IsExpressionCaseSensitive AS BIT) = 1 THEN 'c' ELSE 'i' END
+                            ) = 1)
+                         OR (@V_Narration <> N'' AND REGEXP_LIKE(@V_Narration, CE.Expression,
+                                CASE WHEN CAST(CE.IsExpressionCaseSensitive AS BIT) = 1 THEN 'c' ELSE 'i' END
+                            ) = 1)
+                        )
+                    )
+              )
+            ORDER BY CE.ExecutionOrder ASC, CE.CategoryExpressionID ASC;
+
+            IF @V_CategoryID IS NOT NULL
+            BEGIN
+                SET @V_WinningStep = N'CATEGORY_EXPRESSION';
+                SET @V_WinningEntityID = @V_CategoryExpressionID;
+                SET @V_Reason = N'Category resolved/refined via CategoryExpression (SQL LIKE / REGEX).';
+                GOTO Finalize;
+            END
+        END
+
+        /*------------------------------------------------------------------------------
+          STEP 4: MCC mapping (near-default)
+          Expected:
+            CategoryMerchantCategory(CategoryMerchantCategoryID, TenantID, LineOfBusinessID, MCC, CategoryID, IsActive)
+        ------------------------------------------------------------------------------*/
+        IF @V_CategoryID IS NULL AND NULLIF(LTRIM(RTRIM(@I_MCC)), N'') IS NOT NULL
+        BEGIN
+            DECLARE @V_MccMapID INT = NULL;
+
+            SELECT TOP (1)
+                  @V_MccMapID = CMC.CategoryMerchantCategoryID
+                , @V_CategoryID = CMC.CategoryID
+            FROM dbo.CategoryMerchantCategory CMC
+            WHERE CMC.TenantID = @I_TenantID
+              AND CMC.LineOfBusinessID = @I_LineOfBusinessID
+              AND CMC.MCC = @I_MCC
+              AND CMC.IsActive = 'Y';
+
+            IF @V_CategoryID IS NOT NULL
+            BEGIN
+                SET @V_WinningStep = N'MCC';
+                SET @V_WinningEntityID = @V_MccMapID;
+                SET @V_Reason = N'Category resolved via MCC mapping.';
+                GOTO Finalize;
+            END
+        END
+
+        /*------------------------------------------------------------------------------
+          STEP 5: Default (never null)
+          Expected:
+            DefaultCategoryParameter(TenantID, LineOfBusinessID, CategoryID, Priority, IsActive)
+        ------------------------------------------------------------------------------*/
+        IF @V_CategoryID IS NULL
+        BEGIN
+            SELECT TOP (1)
+                  @V_CategoryID = DCP.CategoryID
+            FROM dbo.DefaultCategoryParameter DCP
+            WHERE DCP.TenantID = @I_TenantID
+              AND DCP.LineOfBusinessID = @I_LineOfBusinessID
+              AND DCP.IsActive = 'Y'
+            ORDER BY DCP.Priority ASC;
+
+            SET @V_WinningStep = N'DEFAULT';
+            SET @V_Reason = N'Default category applied (no match).';
+        END
+
+Finalize:
+        SET @O_CategoryID = @V_CategoryID;
+
+        SET @O_ResultJson =
+        (
+            SELECT
+                  @O_CategoryID              AS CategoryID
+                , @V_WinningStep             AS WinningStep
+                , @V_WinningEntityID         AS WinningEntityID
+                , @V_Reason                  AS Reason
+                , @I_TenantID                AS TenantID
+                , @I_LineOfBusinessID        AS LineOfBusinessID
+                , @I_IsMerchantTransaction   AS IsMerchantTransaction
+                , @I_MerchantCode            AS MerchantCode
+                , @I_MerchantName            AS MerchantName
+                , @I_SubMerchantName         AS SubMerchantName
+                , @I_TransactionTypeCode     AS TransactionTypeCode
+                , @I_MCC                     AS MCC
+            FOR JSON PATH, WITHOUT_ARRAY_WRAPPER
+        );
+
+        RETURN 0;
+    END TRY
+    BEGIN CATCH
+        -- Guarantee a CategoryID even on failure
+        IF @V_CategoryID IS NULL
+        BEGIN
+            SELECT TOP (1)
+                  @V_CategoryID = DCP.CategoryID
+            FROM dbo.DefaultCategoryParameter DCP
+            WHERE DCP.TenantID = @I_TenantID
+              AND DCP.LineOfBusinessID = @I_LineOfBusinessID
+              AND DCP.IsActive = 'Y'
+            ORDER BY DCP.Priority ASC;
+        END
+
+        SET @O_CategoryID = @V_CategoryID;
+
+        SET @O_ResultJson =
+        (
+            SELECT
+                  @O_CategoryID        AS CategoryID
+                , N'ERROR_DEFAULT'     AS WinningStep
+                , ERROR_NUMBER()       AS ErrorNumber
+                , ERROR_MESSAGE()      AS ErrorMessage
+                , @I_TenantID          AS TenantID
+                , @I_LineOfBusinessID  AS LineOfBusinessID
+            FOR JSON PATH, WITHOUT_ARRAY_WRAPPER
+        );
+
+        RETURN 1;
+    END CATCH
+END;
+GO
