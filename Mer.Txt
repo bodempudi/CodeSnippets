@@ -1,0 +1,96 @@
+SELECT
+      input.ID
+    , input.IsBulkUpdate
+
+    , MerchantID      = mPick.MerchatID
+    , MerchantOtherID = NULL
+
+    , CategoryID =
+        COALESCE(
+              mPick.CategoryID
+            , CASE WHEN bt.IsCategoryApplicable = 'Y' THEN b.CategoryID END
+            , cmc.CategoryID
+            , NULL
+        )
+
+    , CategorizationPathMerchant =
+        CONCAT(
+            'SP02 -> ',
+            CASE
+                WHEN mPick.MerchatID IS NULL THEN 'NoMerchant'
+                ELSE CONCAT('MerchatID=',mPick.MerchatID,'|KeyType=',mPick.KeyType,'|MerchatCode=',mPick.MerchatCode)
+            END
+        )
+
+    , CategorizationPathCategory =
+        CASE
+            WHEN mPick.CategoryID IS NOT NULL THEN 'Merchant.CategoryID'
+            WHEN b.CategoryID IS NOT NULL AND bt.IsCategoryApplicable='Y' THEN 'Brand.CategoryID'
+            WHEN cmc.CategoryID IS NOT NULL THEN 'MCC.CategoryID'
+            ELSE 'NONE'
+        END
+
+    , StageTypeID       = 1
+    , IsDefaultCategory = 'N'
+
+FROM @I_InputTabularSet input
+INNER JOIN InMem.Tennant t (NOLOCK)
+    ON  t.TennantID = input.TennantID
+    AND t.IsActive  = 'Y'
+
+/* MCC mapping (last before default) */
+LEFT JOIN InMem.CategoryMerchantCategory cmc (NOLOCK)
+    ON  cmc.TennantID           = t.TennantID
+    AND cmc.MerchatCategoryCode = input.MerchantCategoryCode
+    AND cmc.IsActive            = 'Y'
+
+/* Build BOTH possible merchant keys (your design) */
+OUTER APPLY
+(
+    SELECT
+          MerchantKeyFI     = CONCAT(input.MerchantCode,'-',input.MerchantNameEN)
+        , MerchantKeyNonFI  = CONCAT(input.MerchantCode,'-',input.MerchantNameEN,'-',ISNULL(input.SubMerchantNameEN,''))
+) mk
+
+/* Pick EXACTLY ONE merchant row deterministically */
+OUTER APPLY
+(
+    SELECT TOP (1)
+          m.MerchatID
+        , m.MerchatCode
+        , m.CategoryID
+        , m.BrandID
+        , m.IsFinancialInstitution
+        , KeyType =
+            CASE
+                WHEN m.MerchatCode = mk.MerchantKeyFI THEN 'FI'
+                WHEN m.MerchatCode = mk.MerchantKeyNonFI THEN 'NONFI'
+                ELSE 'UNKNOWN'
+            END
+    FROM InMem.Merchat m (NOLOCK)
+    WHERE m.TennantID             = t.TennantID
+      AND m.MerchatISOCountryCode = input.TransactionISOCountryCode
+      AND m.IsActive              = 'Y'
+      AND m.MerchatCode IN (mk.MerchantKeyFI, mk.MerchantKeyNonFI)
+    /* prefer NONFI match (more specific); swap if you want FI first */
+    ORDER BY
+          CASE WHEN m.MerchatCode = mk.MerchantKeyNonFI THEN 0 ELSE 1 END
+        , m.MerchatID
+) mPick
+
+/* Brand from picked merchant */
+LEFT JOIN InMem.Brand b (NOLOCK)
+    ON  b.TennantID = t.TennantID
+    AND b.BrandID   = mPick.BrandID
+    AND b.IsActive  = 'Y'
+
+/* BrandType controls applicability of Brand.CategoryID */
+LEFT JOIN InMem.BrandType bt (NOLOCK)
+    ON  bt.BrandTypeID = b.BrandTypeID
+    AND bt.IsActive    = 'Y'
+
+WHERE
+       input.TransactionISOCountryCode = 'KW'
+   AND ISNUMERIC(input.MerchantCode) = 1
+   AND ISNULL(input.MerchantCode,'') <> ''
+   AND ISNULL(input.IsMerchantTransaction,'N') = 'Y';
