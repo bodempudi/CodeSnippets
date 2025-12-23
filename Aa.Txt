@@ -1,0 +1,121 @@
+/* Core SELECT for usp_Categorization_GetCategoryIDFromMerchant
+   Input  : @I_InputTabularSet (table type) as input
+   Output : insert into @V_OutputTabularSet
+*/
+
+SELECT
+      input.ID
+    , input.IsBulkUpdate
+
+    /* 1) Derived FI flag from MerchantCategory mapping (if present) */
+    , DerivedIsFinancialInstitution =
+        CASE WHEN ISNULL(cmc.IsFinancialInstitution, 'N') = 'Y' THEN 'Y' ELSE 'N' END
+
+    /* 2) Merchant chosen (best match) */
+    , MerchantID = sel.MerchantID
+
+    /* 3) Category precedence (your rule: Brand overrides MerchantCategoryMap when Merchant.CategoryID is NULL) */
+    , CategoryID =
+        CASE
+            WHEN sel.MerchantCategoryID IS NOT NULL THEN sel.MerchantCategoryID
+            WHEN brand.BrandID IS NOT NULL AND brand.CategoryID IS NOT NULL THEN brand.CategoryID
+            WHEN cmc.CategoryID IS NOT NULL THEN cmc.CategoryID
+            ELSE NULL
+        END
+
+    , IsDefaultCategory = 'N'
+
+    /* Debug paths */
+    , CategorizationPathMerchant =
+        CONCAT(
+            'usp_Categorization_GetCategoryIDFromMerchant',
+            ' | FI=', CASE WHEN ISNULL(cmc.IsFinancialInstitution,'N')='Y' THEN 'Y' ELSE 'N' END,
+            ' | KeyUsed=', sel.MerchantKeyUsed,
+            ' | MerchantID=', COALESCE(CONVERT(varchar(20), sel.MerchantID), 'NULL')
+        )
+
+    , CategorizationPathCategory =
+        CASE
+            WHEN sel.MerchantCategoryID IS NOT NULL
+                THEN CONCAT('Merchant.CategoryID -> MerchantID=', sel.MerchantID)
+            WHEN brand.BrandID IS NOT NULL AND brand.CategoryID IS NOT NULL
+                THEN CONCAT('Brand.CategoryID -> BrandID=', brand.BrandID, ' (via MerchantID=', sel.MerchantID, ')')
+            WHEN cmc.CategoryID IS NOT NULL
+                THEN CONCAT('CategoryMerchantCategory.CategoryID -> MerchantCategoryCode=', input.MerchantCategoryCode)
+            ELSE NULL
+        END
+
+FROM @I_InputTabularSet input
+
+INNER JOIN InMem.Tenant t WITH (NOLOCK)
+    ON  t.TenantID = input.TenantID
+    AND t.IsActive = 'Y'
+
+/* MerchantCategory mapping (also tells FI vs Non-FI) */
+LEFT JOIN InMem.CategoryMerchantCategory cmc WITH (NOLOCK)
+    ON  cmc.TenantID = input.TenantID
+    AND cmc.MerchantCategoryCode = input.MerchantCategoryCode
+    AND cmc.IsActive = 'Y'
+
+/* Build both keys once */
+OUTER APPLY
+(
+    SELECT
+          FinancialKey    = CONCAT(input.MerchantCode, '-', input.MerchantNameEN)
+        , NonFinancialKey = CONCAT(input.MerchantCode, '-', input.MerchantNameEN, '-', input.SubMerchantNameEN)
+) mk
+
+/* Pick best merchant match using FI rule */
+OUTER APPLY
+(
+    SELECT TOP (1)
+          m.MerchantID
+        , m.BrandID
+        , MerchantCategoryID = m.CategoryID
+        , MerchantKeyUsed =
+            CASE
+                WHEN ISNULL(cmc.IsFinancialInstitution,'N')='Y' THEN mk.FinancialKey
+                ELSE
+                    CASE
+                        WHEN m.MerchantCode = mk.NonFinancialKey THEN mk.NonFinancialKey
+                        ELSE mk.FinancialKey
+                    END
+            END
+    FROM InMem.Merchant m WITH (NOLOCK)
+    WHERE
+            m.TenantID = input.TenantID
+        AND m.MerchantISOCountryCode = input.TransactionISOCountryCode
+        AND m.IsActive = 'Y'
+        AND
+        (
+            /* FI => only FinancialKey is considered */
+            (ISNULL(cmc.IsFinancialInstitution,'N')='Y' AND m.MerchantCode = mk.FinancialKey)
+
+            /* Non-FI => allow both; prefer NonFinancialKey if it matches */
+            OR
+            (ISNULL(cmc.IsFinancialInstitution,'N')<>'Y' AND m.MerchantCode IN (mk.NonFinancialKey, mk.FinancialKey))
+        )
+    ORDER BY
+        CASE
+            WHEN ISNULL(cmc.IsFinancialInstitution,'N')='Y' AND m.MerchantCode = mk.FinancialKey THEN 1
+            WHEN ISNULL(cmc.IsFinancialInstitution,'N')<>'Y' AND m.MerchantCode = mk.NonFinancialKey THEN 1
+            WHEN ISNULL(cmc.IsFinancialInstitution,'N')<>'Y' AND m.MerchantCode = mk.FinancialKey THEN 2
+            ELSE 9
+        END
+) sel
+
+/* Brand + BrandType (you said we must join BrandType also) */
+LEFT JOIN InMem.Brand brand WITH (NOLOCK)
+    ON  brand.TenantID = input.TenantID
+    AND brand.BrandID = sel.BrandID
+    AND brand.IsActive = 'Y'
+
+LEFT JOIN InMem.BrandType bt WITH (NOLOCK)
+    ON  bt.BrandTypeID = brand.BrandTypeID
+    AND bt.IsActive = 'Y'
+
+WHERE
+        input.TransactionISOCountryCode = 'KW'
+    AND ISNULL(input.IsMerchantTransaction,'N') = 'Y'
+    AND ISNULL(input.MerchantCode,'') <> ''
+    AND ISNUMERIC(input.MerchantCode) = 1;
