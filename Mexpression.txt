@@ -1,0 +1,292 @@
+/*========================================================================================================================
+    File  : 08_usp_Categorization_GetMerchantExpressionMatch.sql
+    Date  : 2025-12-24 (Asia/Kuwait)
+
+    PURPOSE
+    - Execute MerchantExpression rules against transaction input rows.
+    - Uses ExpressionField.IsApplicableForMerchantExpression = 'Y' as a whitelist of allowed fields.
+    - Supports SQL (LIKE) and Regex (via dbo.fn_IsRegexMatch wrapper).
+    - First match wins; returns one JSON row per input transaction with troubleshooting path.
+
+    ASSUMPTIONS / REQUIRED OBJECTS
+    - TVP type: dbo.CategorizationInputTabularSet
+      Must contain at least: ID, TennantID, TransactionISOCountryCode,
+      Narration, MerchantNameEN, SubMerchantNameEN, MerchantNameAR, SubMerchantNameAR
+    - Table: InMem.ExpressionField
+      Columns used: TennantID, ExpressionFieldName, IsApplicableForMerchantExpression, IsActive
+    - Table: InMem.MerchatExpression
+      Columns used: MerchantExpressionID, TennantID, ExpressionNameEN, Expression,
+                    IsExpressionCaseSensitive, IsSQLORRegEx, ExecutionOrder, MerchatOtherID, IsActive
+    - Function: dbo.fn_IsRegexMatch(@Text, @Pattern, @IsCaseSensitive) returns bit (0/1)
+========================================================================================================================*/
+
+CREATE OR ALTER PROCEDURE dbo.usp_Categorization_GetMerchantExpressionMatch
+(
+      @I_InputTabularSet     dbo.CategorizationInputTabularSet READONLY
+    , @I_UserID              int
+    , @O_OutputJSON          nvarchar(max) OUTPUT
+)
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    BEGIN TRY
+
+        /*--------------------------------------------------------------------------------------------------------------
+            1) Allowed fields for MerchantExpression (governance whitelist)
+        --------------------------------------------------------------------------------------------------------------*/
+        DECLARE @T_AllowedFields TABLE
+        (
+              ExpressionFieldName  sysname PRIMARY KEY
+            , FieldPriority        int NOT NULL
+        );
+
+        INSERT INTO @T_AllowedFields (ExpressionFieldName, FieldPriority)
+        SELECT ef.ExpressionFieldName,
+               CASE ef.ExpressionFieldName
+                    WHEN 'Narration'          THEN 10
+                    WHEN 'MerchantNameEN'     THEN 20
+                    WHEN 'SubMerchantNameEN'  THEN 30
+                    WHEN 'MerchantNameAR'     THEN 40
+                    WHEN 'SubMerchantNameAR'  THEN 50
+                    ELSE 999
+               END
+        FROM InMem.ExpressionField ef WITH (NOLOCK)
+        WHERE ef.IsActive = 'Y'
+          AND ef.IsApplicableForMerchantExpression = 'Y'
+          AND ef.ExpressionFieldName IN
+              ('Narration','MerchantNameEN','SubMerchantNameEN','MerchantNameAR','SubMerchantNameAR');
+
+        /*--------------------------------------------------------------------------------------------------------------
+            2) Output buffer
+        --------------------------------------------------------------------------------------------------------------*/
+        DECLARE @T_Output TABLE
+        (
+              ID                          bigint
+            , TennantID                   int
+            , MerchantExpressionID         int
+            , MatchedFieldName            sysname
+            , MatchedValue                nvarchar(4000)
+            , MerchatOtherID              int
+            , IsMatched                   char(1)
+            , CategorizationPathMerchant  nvarchar(2000)
+        );
+
+        /*--------------------------------------------------------------------------------------------------------------
+            3) Loop each transaction row (simple / debuggable)
+        --------------------------------------------------------------------------------------------------------------*/
+        DECLARE
+              @V_ID                bigint
+            , @V_TennantID          int
+            , @V_ISO               char(2)
+            , @V_Narration         nvarchar(4000)
+            , @V_MerchantNameEN    nvarchar(4000)
+            , @V_SubMerchantNameEN nvarchar(4000)
+            , @V_MerchantNameAR    nvarchar(4000)
+            , @V_SubMerchantNameAR nvarchar(4000);
+
+        DECLARE curTxn CURSOR LOCAL FAST_FORWARD FOR
+        SELECT
+              i.ID
+            , i.TennantID
+            , i.TransactionISOCountryCode
+            , NULLIF(LTRIM(RTRIM(i.Narration)), '')
+            , NULLIF(LTRIM(RTRIM(i.MerchantNameEN)), '')
+            , NULLIF(LTRIM(RTRIM(i.SubMerchantNameEN)), '')
+            , NULLIF(LTRIM(RTRIM(i.MerchantNameAR)), '')
+            , NULLIF(LTRIM(RTRIM(i.SubMerchantNameAR)), '')
+        FROM @I_InputTabularSet i;
+
+        OPEN curTxn;
+        FETCH NEXT FROM curTxn INTO
+              @V_ID, @V_TennantID, @V_ISO, @V_Narration, @V_MerchantNameEN, @V_SubMerchantNameEN, @V_MerchantNameAR, @V_SubMerchantNameAR;
+
+        WHILE @@FETCH_STATUS = 0
+        BEGIN
+            DECLARE
+                  @V_Matched char(1) = 'N'
+                , @V_MerchantExpressionID int = NULL
+                , @V_MerchatOtherID int = NULL
+                , @V_MatchedField sysname = NULL
+                , @V_MatchedValue nvarchar(4000) = NULL
+                , @V_Path nvarchar(2000) = NULL;
+
+            /*----------------------------------------------------------------------------------------------------------
+                4) Evaluate MerchantExpression in ExecutionOrder (first match wins)
+            ----------------------------------------------------------------------------------------------------------*/
+            DECLARE
+                  @E_ID int
+                , @E_Expr nvarchar(4000)
+                , @E_IsCase char(1)
+                , @E_Mode char(1)
+                , @E_Order int
+                , @E_MO_ID int
+                , @E_Name nvarchar(200);
+
+            DECLARE curExpr CURSOR LOCAL FAST_FORWARD FOR
+            SELECT
+                  me.MerchantExpressionID
+                , me.Expression
+                , me.IsExpressionCaseSensitive
+                , me.IsSQLORRegEx
+                , me.ExecutionOrder
+                , me.MerchatOtherID
+                , me.ExpressionNameEN
+            FROM InMem.MerchatExpression me WITH (NOLOCK)
+            WHERE me.TennantID = @V_TennantID
+              AND me.IsActive = 'Y'
+            ORDER BY me.ExecutionOrder, me.MerchantExpressionID;
+
+            OPEN curExpr;
+            FETCH NEXT FROM curExpr INTO @E_ID, @E_Expr, @E_IsCase, @E_Mode, @E_Order, @E_MO_ID, @E_Name;
+
+            WHILE @@FETCH_STATUS = 0 AND @V_Matched = 'N'
+            BEGIN
+                /*------------------------------------------------------------------------------------------------------
+                    5) For each expression, test allowed fields in priority order
+                ------------------------------------------------------------------------------------------------------*/
+                DECLARE @F_Name sysname, @F_Pri int;
+
+                DECLARE curField CURSOR LOCAL FAST_FORWARD FOR
+                SELECT ExpressionFieldName, FieldPriority
+                FROM @T_AllowedFields
+                ORDER BY FieldPriority;
+
+                OPEN curField;
+                FETCH NEXT FROM curField INTO @F_Name, @F_Pri;
+
+                WHILE @@FETCH_STATUS = 0 AND @V_Matched = 'N'
+                BEGIN
+                    SET @V_MatchedValue =
+                        CASE @F_Name
+                            WHEN 'Narration'          THEN @V_Narration
+                            WHEN 'MerchantNameEN'     THEN @V_MerchantNameEN
+                            WHEN 'SubMerchantNameEN'  THEN @V_SubMerchantNameEN
+                            WHEN 'MerchantNameAR'     THEN @V_MerchantNameAR
+                            WHEN 'SubMerchantNameAR'  THEN @V_SubMerchantNameAR
+                            ELSE NULL
+                        END;
+
+                    IF @V_MatchedValue IS NOT NULL
+                    BEGIN
+                        DECLARE @Hit bit = 0;
+
+                        -- SQL Mode (LIKE)
+                        IF @E_Mode = 'S'
+                        BEGIN
+                            IF @E_IsCase = 'Y'
+                            BEGIN
+                                IF @V_MatchedValue LIKE @E_Expr COLLATE Latin1_General_100_BIN2
+                                    SET @Hit = 1;
+                            END
+                            ELSE
+                            BEGIN
+                                IF @V_MatchedValue LIKE @E_Expr
+                                    SET @Hit = 1;
+                            END
+                        END
+                        -- Regex Mode
+                        ELSE IF @E_Mode = 'R'
+                        BEGIN
+                            IF dbo.fn_IsRegexMatch(@V_MatchedValue, @E_Expr, @E_IsCase) = 1
+                                SET @Hit = 1;
+                        END
+
+                        IF @Hit = 1
+                        BEGIN
+                            SET @V_Matched = 'Y';
+                            SET @V_MerchantExpressionID = @E_ID;
+                            SET @V_MerchatOtherID = @E_MO_ID;
+                            SET @V_MatchedField = @F_Name;
+
+                            SET @V_Path =
+                                CONCAT(
+                                    'MerchantExpression',
+                                    '|ExprID=', @E_ID,
+                                    '|Order=', @E_Order,
+                                    '|Field=', @F_Name,
+                                    '|Mode=', @E_Mode,
+                                    '|MOID=', COALESCE(CONVERT(varchar(20),@E_MO_ID),'NULL'),
+                                    '|Name=', COALESCE(@E_Name,'')
+                                );
+                        END
+                    END
+
+                    FETCH NEXT FROM curField INTO @F_Name, @F_Pri;
+                END
+
+                CLOSE curField;
+                DEALLOCATE curField;
+
+                FETCH NEXT FROM curExpr INTO @E_ID, @E_Expr, @E_IsCase, @E_Mode, @E_Order, @E_MO_ID, @E_Name;
+            END
+
+            CLOSE curExpr;
+            DEALLOCATE curExpr;
+
+            /*----------------------------------------------------------------------------------------------------------
+                6) Emit per-transaction output row
+            ----------------------------------------------------------------------------------------------------------*/
+            INSERT INTO @T_Output
+            (
+                  ID
+                , TennantID
+                , MerchantExpressionID
+                , MatchedFieldName
+                , MatchedValue
+                , MerchatOtherID
+                , IsMatched
+                , CategorizationPathMerchant
+            )
+            VALUES
+            (
+                  @V_ID
+                , @V_TennantID
+                , @V_MerchantExpressionID
+                , @V_MatchedField
+                , @V_MatchedValue
+                , @V_MerchatOtherID
+                , @V_Matched
+                , COALESCE(@V_Path, 'MerchantExpression|NoMatch')
+            );
+
+            FETCH NEXT FROM curTxn INTO
+                  @V_ID, @V_TennantID, @V_ISO, @V_Narration, @V_MerchantNameEN, @V_SubMerchantNameEN, @V_MerchantNameAR, @V_SubMerchantNameAR;
+        END
+
+        CLOSE curTxn;
+        DEALLOCATE curTxn;
+
+        /*--------------------------------------------------------------------------------------------------------------
+            7) Output JSON
+        --------------------------------------------------------------------------------------------------------------*/
+        SELECT @O_OutputJSON =
+        (
+            SELECT *
+            FROM @T_Output
+            FOR JSON PATH, INCLUDE_NULL_VALUES
+        );
+
+    END TRY
+    BEGIN CATCH
+        DECLARE @Err nvarchar(2048) =
+            CONCAT('ErrorNumber=',ERROR_NUMBER(),';Line=',ERROR_LINE(),';Message=',ERROR_MESSAGE());
+
+        SELECT @O_OutputJSON =
+        (
+            SELECT
+                  i.ID
+                , i.TennantID
+                , MerchantExpressionID = CAST(NULL AS int)
+                , MatchedFieldName = CAST(NULL AS sysname)
+                , MatchedValue = CAST(NULL AS nvarchar(4000))
+                , MerchatOtherID = CAST(NULL AS int)
+                , IsMatched = 'N'
+                , CategorizationPathMerchant = CONCAT('MerchantExpression|CATCH|', @Err)
+            FROM @I_InputTabularSet i
+            FOR JSON PATH, INCLUDE_NULL_VALUES
+        );
+    END CATCH
+END;
+GO
+``` [❶](code://python)
