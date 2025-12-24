@@ -1,0 +1,265 @@
+/*====================================================================================================
+  SP: usp_Categorization_GetCategoryIDFromCategoryExpression
+  Purpose:
+    - Derive CategoryID using CategoryExpression rules
+    - Uses ExpressionField.IsApplicableForCategoryExpression = 'Y'
+    - Supports SQL (LIKE / comparisons) and REGEX
+    - Supports ExecutionTypeCode: PRE / POST / OVERRIDE
+    - Produces CategorizationPathCategory for debugging
+====================================================================================================*/
+CREATE OR ALTER PROCEDURE dbo.usp_Categorization_GetCategoryIDFromCategoryExpression
+(
+      @I_InputTabularSet dbo.CategorizationInputTabularSet READONLY
+    , @I_UserID          INT
+    , @O_OutputJSON      NVARCHAR(MAX) OUTPUT
+)
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    BEGIN TRY
+        /*==============================================================
+          1. Allowed fields for CategoryExpression
+        ===============================================================*/
+        DECLARE @AllowedFields TABLE
+        (
+            ExpressionFieldName SYSNAME,
+            Priority INT
+        );
+
+        INSERT INTO @AllowedFields
+        SELECT
+            ef.ExpressionFieldName,
+            CASE ef.ExpressionFieldName
+                WHEN 'TransactionTypeCode'     THEN 10
+                WHEN 'MerchantCategoryCode'    THEN 20
+                WHEN 'Narration'               THEN 30
+                WHEN 'MerchantNameEN'          THEN 40
+                WHEN 'SubMerchantNameEN'       THEN 50
+                WHEN 'MerchantNameAR'          THEN 60
+                WHEN 'SubMerchantNameAR'       THEN 70
+                WHEN 'TransactionAmount'       THEN 80
+                ELSE 999
+            END
+        FROM InMem.ExpressionField ef
+        WHERE ef.IsActive = 'Y'
+          AND ef.IsApplicableForCategoryExpression = 'Y';
+
+        /*==============================================================
+          2. Output table
+        ===============================================================*/
+        DECLARE @Result TABLE
+        (
+            ID BIGINT,
+            TennantID INT,
+            CategoryExpressionID INT,
+            CategoryID INT,
+            ExecutionTypeCode VARCHAR(20),
+            MatchedField SYSNAME,
+            MatchedValue NVARCHAR(4000),
+            IsMatched CHAR(1),
+            CategorizationPathCategory NVARCHAR(2000)
+        );
+
+        /*==============================================================
+          3. Process each transaction
+        ===============================================================*/
+        DECLARE
+              @ID BIGINT
+            , @TennantID INT
+            , @Narration NVARCHAR(4000)
+            , @MerchantNameEN NVARCHAR(200)
+            , @SubMerchantNameEN NVARCHAR(200)
+            , @MerchantNameAR NVARCHAR(200)
+            , @SubMerchantNameAR NVARCHAR(200)
+            , @TransactionTypeCode VARCHAR(50)
+            , @MerchantCategoryCode VARCHAR(20)
+            , @TransactionAmount DECIMAL(18,3);
+
+        DECLARE txn CURSOR LOCAL FAST_FORWARD FOR
+        SELECT
+              ID
+            , TennantID
+            , Narration
+            , MerchantNameEN
+            , SubMerchantNameEN
+            , MerchantNameAR
+            , SubMerchantNameAR
+            , TransactionTypeCode
+            , MerchantCategoryCode
+            , TransactionAmount
+        FROM @I_InputTabularSet;
+
+        OPEN txn;
+        FETCH NEXT FROM txn INTO
+              @ID, @TennantID, @Narration, @MerchantNameEN, @SubMerchantNameEN,
+              @MerchantNameAR, @SubMerchantNameAR, @TransactionTypeCode,
+              @MerchantCategoryCode, @TransactionAmount;
+
+        WHILE @@FETCH_STATUS = 0
+        BEGIN
+            DECLARE
+                  @FinalCategoryID INT = NULL
+                , @MatchedExprID INT = NULL
+                , @ExecType VARCHAR(20) = NULL
+                , @MatchedField SYSNAME = NULL
+                , @MatchedValue NVARCHAR(4000) = NULL
+                , @Path NVARCHAR(2000) = NULL;
+
+            /*==========================================================
+              4. Loop CategoryExpression rules
+            ===========================================================*/
+            DECLARE
+                  @ExprID INT
+                , @Expr NVARCHAR(4000)
+                , @ExprCategoryID INT
+                , @IsCaseSensitive CHAR(1)
+                , @Mode CHAR(1)
+                , @Order INT
+                , @ExecTypeRule VARCHAR(20)
+                , @ExprName NVARCHAR(200);
+
+            DECLARE expr CURSOR LOCAL FAST_FORWARD FOR
+            SELECT
+                  CategoryExpressionID
+                , Expression
+                , CategoryID
+                , IsExpressionCaseSensitive
+                , IsSQLORRegEx
+                , ExecutionOrder
+                , ExecutionTypeCode
+                , ExpressionNameEN
+            FROM InMem.CategoryExpression
+            WHERE TennantID = @TennantID
+              AND IsActive = 'Y'
+            ORDER BY ExecutionOrder;
+
+            OPEN expr;
+            FETCH NEXT FROM expr INTO
+                  @ExprID, @Expr, @ExprCategoryID, @IsCaseSensitive,
+                  @Mode, @Order, @ExecTypeRule, @ExprName;
+
+            WHILE @@FETCH_STATUS = 0
+            BEGIN
+                IF @ExecTypeRule <> 'OVERRIDE' AND @FinalCategoryID IS NOT NULL
+                BEGIN
+                    FETCH NEXT FROM expr INTO
+                        @ExprID, @Expr, @ExprCategoryID, @IsCaseSensitive,
+                        @Mode, @Order, @ExecTypeRule, @ExprName;
+                    CONTINUE;
+                END
+
+                DECLARE
+                      @Field SYSNAME
+                    , @Value NVARCHAR(4000)
+                    , @Hit BIT = 0;
+
+                DECLARE fld CURSOR LOCAL FAST_FORWARD FOR
+                SELECT ExpressionFieldName FROM @AllowedFields ORDER BY Priority;
+
+                OPEN fld;
+                FETCH NEXT FROM fld INTO @Field;
+
+                WHILE @@FETCH_STATUS = 0 AND @Hit = 0
+                BEGIN
+                    SET @Value =
+                        CASE @Field
+                            WHEN 'Narration'            THEN @Narration
+                            WHEN 'MerchantNameEN'       THEN @MerchantNameEN
+                            WHEN 'SubMerchantNameEN'    THEN @SubMerchantNameEN
+                            WHEN 'MerchantNameAR'       THEN @MerchantNameAR
+                            WHEN 'SubMerchantNameAR'    THEN @SubMerchantNameAR
+                            WHEN 'TransactionTypeCode'  THEN @TransactionTypeCode
+                            WHEN 'MerchantCategoryCode' THEN @MerchantCategoryCode
+                            WHEN 'TransactionAmount'    THEN CONVERT(NVARCHAR(50), @TransactionAmount)
+                        END;
+
+                    IF @Value IS NOT NULL
+                    BEGIN
+                        IF @Mode = 'S'
+                        BEGIN
+                            IF @Value LIKE @Expr
+                                SET @Hit = 1;
+                        END
+                        ELSE IF @Mode = 'R'
+                        BEGIN
+                            IF dbo.fn_IsRegexMatch(@Value, @Expr, @IsCaseSensitive) = 1
+                                SET @Hit = 1;
+                        END
+                    END
+
+                    IF @Hit = 1
+                    BEGIN
+                        SET @FinalCategoryID = @ExprCategoryID;
+                        SET @MatchedExprID = @ExprID;
+                        SET @ExecType = @ExecTypeRule;
+                        SET @MatchedField = @Field;
+                        SET @MatchedValue = @Value;
+                        SET @Path =
+                            CONCAT(
+                                'CategoryExpression|ExprID=',@ExprID,
+                                '|Order=',@Order,
+                                '|Type=',@ExecTypeRule,
+                                '|Field=',@Field,
+                                '|CategoryID=',@ExprCategoryID,
+                                '|Name=',@ExprName
+                            );
+                    END
+
+                    FETCH NEXT FROM fld INTO @Field;
+                END
+
+                CLOSE fld; DEALLOCATE fld;
+                FETCH NEXT FROM expr INTO
+                    @ExprID, @Expr, @ExprCategoryID, @IsCaseSensitive,
+                    @Mode, @Order, @ExecTypeRule, @ExprName;
+            END
+
+            CLOSE expr; DEALLOCATE expr;
+
+            INSERT INTO @Result
+            VALUES
+            (
+                @ID,
+                @TennantID,
+                @MatchedExprID,
+                @FinalCategoryID,
+                @ExecType,
+                @MatchedField,
+                @MatchedValue,
+                CASE WHEN @FinalCategoryID IS NULL THEN 'N' ELSE 'Y' END,
+                COALESCE(@Path,'CategoryExpression|NoMatch')
+            );
+
+            FETCH NEXT FROM txn INTO
+                @ID, @TennantID, @Narration, @MerchantNameEN, @SubMerchantNameEN,
+                @MerchantNameAR, @SubMerchantNameAR, @TransactionTypeCode,
+                @MerchantCategoryCode, @TransactionAmount;
+        END
+
+        CLOSE txn; DEALLOCATE txn;
+
+        SELECT @O_OutputJSON =
+        (
+            SELECT * FROM @Result FOR JSON PATH, INCLUDE_NULL_VALUES
+        );
+    END TRY
+    BEGIN CATCH
+        SELECT @O_OutputJSON =
+        (
+            SELECT
+                ID,
+                TennantID,
+                NULL AS CategoryExpressionID,
+                NULL AS CategoryID,
+                NULL AS ExecutionTypeCode,
+                NULL AS MatchedField,
+                NULL AS MatchedValue,
+                'N' AS IsMatched,
+                CONCAT('CategoryExpression|ERROR|',ERROR_MESSAGE()) AS CategorizationPathCategory
+            FROM @I_InputTabularSet
+            FOR JSON PATH, INCLUDE_NULL_VALUES
+        );
+    END CATCH
+END;
+GO
