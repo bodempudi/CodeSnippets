@@ -1,0 +1,64 @@
+CREATE OR REPLACE PROCEDURE dinarwise_OLTP.usp_CategorizationUser_Transaction_DinarwiseBancs
+(
+    I_POSTING_DATE        IN  DATE,
+    I_ACCOUNT_NUMBER      IN  NUMBER,
+    I_JOURNAL_NUMBER      IN  NUMBER,
+    I_SEQUENCE_NUMBER     IN  VARCHAR2,
+    I_RECORD_NUMBER       IN  NUMBER,
+    I_TransactionHubDate  IN  DATE,
+    I_TransactionHubID    IN  NUMBER,
+    I_UserCategoryID      IN  NUMBER,
+
+    I_DoCommit            IN  CHAR DEFAULT 'N',  -- 'Y' commit here; 'N' caller controls
+
+    O_StatusCode          OUT PLS_INTEGER,       -- 0/1/9
+    O_StatusMessage       OUT VARCHAR2           -- set within 128 chars
+)
+IS
+    V_RowsUpdated NUMBER := 0;
+
+    FUNCTION F128(p_msg IN VARCHAR2) RETURN VARCHAR2 IS
+    BEGIN
+        RETURN SUBSTR(p_msg, 1, 128);
+    END;
+BEGIN
+    UPDATE dinarwise_OLTP.bancs_Fin_txn_Ext t
+       SET t.RECORD_NUMBER       = I_RECORD_NUMBER,
+           t.TransactionHubDate  = I_TransactionHubDate,
+           t.TransactionHubID    = I_TransactionHubID,
+           t.UserCategoryID      = I_UserCategoryID
+     WHERE t.POSTING_DATE    = I_POSTING_DATE
+       AND t.ACCOUNT_NUMBER  = I_ACCOUNT_NUMBER
+       AND t.JOURNAL_NUMBER  = I_JOURNAL_NUMBER
+       AND t.SEQUENCE_NUMBER = I_SEQUENCE_NUMBER;
+
+    V_RowsUpdated := SQL%ROWCOUNT;
+
+    IF I_DoCommit = 'Y' THEN
+        COMMIT;
+    END IF;
+
+    IF V_RowsUpdated = 1 THEN
+        O_StatusCode    := 0;
+        O_StatusMessage := F128('Success');
+    ELSIF V_RowsUpdated = 0 THEN
+        O_StatusCode    := 9;
+        O_StatusMessage := F128('No rows returned');
+    ELSE
+        -- Should never happen if your key is unique/physical key is enforced
+        O_StatusCode    := 1;
+        O_StatusMessage := F128('Failed');
+    END IF;
+
+EXCEPTION
+    WHEN OTHERS THEN
+        IF I_DoCommit = 'Y' THEN
+            ROLLBACK;
+        END IF;
+
+        O_StatusCode    := 1;
+        O_StatusMessage := F128('Failed');
+        -- If you want details for debugging but still cap to 128:
+        -- O_StatusMessage := F128('Failed: ' || TO_CHAR(SQLCODE) || ' ' || SQLERRM);
+END usp_CategorizationUser_Transaction_DinarwiseBancs;
+/
