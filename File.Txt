@@ -1,0 +1,122 @@
+CREATE OR ALTER PROCEDURE dbo.usp_StageLoad_CBG_ESaverNotification_Generic
+(
+    @BusinessDate DATE
+)
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    /*---------------------------------------------------------
+      1. Clean stage for rerun safety
+    ---------------------------------------------------------*/
+    TRUNCATE TABLE CBG_ESaverNotificationStage;
+
+    /*---------------------------------------------------------
+      2. Pick eligible ESaver accounts
+         - Active only
+         - Current balance % >= lowest threshold
+    ---------------------------------------------------------*/
+    ;WITH BaseAccounts AS
+    (
+        SELECT
+            A.AccountNumber,
+            A.CustomerId,
+            A.CurrentBalancePercentage,
+            A.AccountStatusCode,
+            @BusinessDate AS BusinessDate
+        FROM CBG_ESaverAccountDetail A
+        WHERE A.AccountStatusCode = 0   -- Active
+    ),
+
+    /*---------------------------------------------------------
+      3. Join threshold config
+         (50 / 90 / 100 are DATA, not code)
+    ---------------------------------------------------------*/
+    EligibleEvents AS
+    (
+        SELECT
+            BA.AccountNumber,
+            BA.CustomerId,
+            BA.BusinessDate,
+            TC.EventType,
+            TC.EventSubType,
+            TC.ThresholdPercentage,
+            TC.ThresholdLimit,
+            TC.Precedence,
+            BA.CurrentBalancePercentage
+        FROM BaseAccounts BA
+        INNER JOIN CBG_ESaverThresholdConfig TC
+            ON BA.CurrentBalancePercentage >= TC.ThresholdPercentage
+    ),
+
+    /*---------------------------------------------------------
+      4. Join last notification counts
+    ---------------------------------------------------------*/
+    WithNotificationCount AS
+    (
+        SELECT
+            EE.*,
+            ISNULL(N.LastNotificationCount, 0) AS LastNotificationCount
+        FROM EligibleEvents EE
+        LEFT JOIN CBG_ESaverNotification N
+            ON  N.AccountNumber = EE.AccountNumber
+            AND N.EventType     = EE.EventType
+            AND N.EventSubType  = EE.EventSubType
+    ),
+
+    /*---------------------------------------------------------
+      5. Apply threshold limit + precedence
+         Lowest precedence number = highest priority
+    ---------------------------------------------------------*/
+    RankedEvents AS
+    (
+        SELECT
+            *,
+            ROW_NUMBER() OVER
+            (
+                PARTITION BY AccountNumber
+                ORDER BY Precedence ASC
+            ) AS RN
+        FROM WithNotificationCount
+        WHERE LastNotificationCount < ThresholdLimit
+    )
+
+    /*---------------------------------------------------------
+      6. Insert into stage
+         RN = 1  → real event
+         RN > 1  → dummy (suppressed)
+    ---------------------------------------------------------*/
+    INSERT INTO CBG_ESaverNotificationStage
+    (
+        AccountNumber,
+        CustomerId,
+        BusinessDate,
+        EventType,
+        EventSubType,
+        CurrentBalancePercentage,
+        LastNotificationCount,
+        LastNotificationCountDerived,
+        IsDummyEntry,
+        CreatedDate
+    )
+    SELECT
+        AccountNumber,
+        CustomerId,
+        BusinessDate,
+        EventType,
+        EventSubType,
+        CurrentBalancePercentage,
+        LastNotificationCount,
+        CASE 
+            WHEN RN = 1 THEN LastNotificationCount + 1
+            ELSE LastNotificationCount
+        END AS LastNotificationCountDerived,
+        CASE 
+            WHEN RN = 1 THEN 'N'
+            ELSE 'Y'
+        END AS IsDummyEntry,
+        GETDATE()
+    FROM RankedEvents;
+
+END;
+GO
