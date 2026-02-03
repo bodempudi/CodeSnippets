@@ -1,0 +1,147 @@
+/*======================================================================
+  PARENT / CHILD / GRANDCHILD
+  Transaction-aware template (conditional BEGIN TRAN)
+  - Works standalone OR nested at any depth
+  - Commit/Rollback only by the procedure that started the transaction
+======================================================================*/
+
+-----------------------------------------------------------------------
+-- GRANDCHILD SP
+-----------------------------------------------------------------------
+CREATE OR ALTER PROCEDURE dbo.GrandChild_SP
+(
+      @I_SessionId bigint
+    , @I_RunTag    varchar(50) = NULL
+)
+AS
+BEGIN
+    SET NOCOUNT ON;
+    SET XACT_ABORT ON;
+
+    DECLARE @StartedTran bit = 0;
+
+    BEGIN TRY
+        IF @@TRANCOUNT = 0
+        BEGIN
+            SET @StartedTran = 1;
+            BEGIN TRAN;
+        END
+
+        ----------------------------------------------------------------------
+        -- GRANDCHILD LOGIC (sample DML / logic)
+        ----------------------------------------------------------------------
+        -- Example: do some DML work
+        -- INSERT INTO dbo.SomeTable(...) SELECT ...;
+
+        -- Example: simulate a validation failure (optional)
+        -- IF @I_SessionId <= 0
+        --     THROW 51000, 'Invalid session id in GrandChild.', 1;
+
+        ----------------------------------------------------------------------
+        -- Commit only if started here
+        ----------------------------------------------------------------------
+        IF @StartedTran = 1
+            COMMIT TRAN;
+    END TRY
+    BEGIN CATCH
+        IF @StartedTran = 1 AND @@TRANCOUNT > 0
+            ROLLBACK TRAN;
+
+        THROW;
+    END CATCH
+END
+GO
+
+
+-----------------------------------------------------------------------
+-- CHILD SP (calls GrandChild)
+-----------------------------------------------------------------------
+CREATE OR ALTER PROCEDURE dbo.Child_SP
+(
+      @I_SessionId bigint
+    , @I_RunTag    varchar(50) = NULL
+)
+AS
+BEGIN
+    SET NOCOUNT ON;
+    SET XACT_ABORT ON;
+
+    DECLARE @StartedTran bit = 0;
+
+    BEGIN TRY
+        IF @@TRANCOUNT = 0
+        BEGIN
+            SET @StartedTran = 1;
+            BEGIN TRAN;
+        END
+
+        ----------------------------------------------------------------------
+        -- CHILD LOGIC (sample DML / logic)
+        ----------------------------------------------------------------------
+        -- INSERT/UPDATE/DELETE/MERGE...
+
+        -- Call grandchild (inherits transaction if parent/child already started)
+        EXEC dbo.GrandChild_SP
+              @I_SessionId = @I_SessionId
+            , @I_RunTag    = @I_RunTag;
+
+        ----------------------------------------------------------------------
+        -- Commit only if started here
+        ----------------------------------------------------------------------
+        IF @StartedTran = 1
+            COMMIT TRAN;
+    END TRY
+    BEGIN CATCH
+        IF @StartedTran = 1 AND @@TRANCOUNT > 0
+            ROLLBACK TRAN;
+
+        THROW;
+    END CATCH
+END
+GO
+
+
+-----------------------------------------------------------------------
+-- PARENT SP (calls Child)
+-----------------------------------------------------------------------
+CREATE OR ALTER PROCEDURE dbo.Parent_SP
+(
+      @I_SessionId bigint
+    , @I_RunTag    varchar(50) = NULL
+)
+AS
+BEGIN
+    SET NOCOUNT ON;
+    SET XACT_ABORT ON;
+
+    DECLARE @StartedTran bit = 0;
+
+    BEGIN TRY
+        IF @@TRANCOUNT = 0
+        BEGIN
+            SET @StartedTran = 1;
+            BEGIN TRAN;
+        END
+
+        ----------------------------------------------------------------------
+        -- PARENT LOGIC (orchestration)
+        ----------------------------------------------------------------------
+        EXEC dbo.Child_SP
+              @I_SessionId = @I_SessionId
+            , @I_RunTag    = @I_RunTag;
+
+        ----------------------------------------------------------------------
+        -- Commit only if started here
+        ----------------------------------------------------------------------
+        IF @StartedTran = 1
+            COMMIT TRAN;
+    END TRY
+    BEGIN CATCH
+        IF @StartedTran = 1 AND @@TRANCOUNT > 0
+            ROLLBACK TRAN;
+
+        THROW;
+    END CATCH
+END
+GO
+```0
