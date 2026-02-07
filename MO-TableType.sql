@@ -55,7 +55,7 @@ BEGIN
 	IF @@TRANCOUNT = 0
 	BEGIN 
 		SELECT 
-			@IsTransactionAvailable = 'N';
+			@IsTransactionAvailable = 'Y';
 	END 
 	BEGIN TRY 
 
