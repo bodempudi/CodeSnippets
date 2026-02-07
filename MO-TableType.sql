@@ -1,0 +1,1 @@
+--You can not alter memory optimized user defined table type.
