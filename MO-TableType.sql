@@ -9,6 +9,7 @@ CREATE TABLE dbo.Merchant
   MerchantNumber VARCHAR(128),
   MerchantName VARCHAR(512),
   CategoryID BIGINT,
+  IsActive CHAR(1),--Y - Active, N - Inactive
   CREATEDateTime DATETIME,
   CreateUserID VARCHAR(20),
   UpdateDatetime DATETIME,
