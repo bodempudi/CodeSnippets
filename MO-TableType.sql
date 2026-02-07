@@ -33,3 +33,85 @@ WITH
     DURABILITY = SCHEMA_AND_DATA
 );
 GO
+
+CREATE PROC dbo.usp_Maintain_Merchant
+(
+    @MerchantNumber VARCHAR(128) 
+    ,@MerchantName VARCHAR(512) 
+    ,@CategoryID BIGINT 
+
+	,@StatusCode VARCHAR(20) OUT
+	,@StatusMessage VARCHAR(200) OUT
+     
+)
+AS 
+BEGIN 
+	SET NOCOUNT ON; 
+
+	SET XACT_ABORT ON;
+
+	DECLARE @IsTransactionAvailable CHAR(1) = 'N';
+
+	IF @@TRANCOUNT = 0
+	BEGIN 
+		SELECT 
+			@IsTransactionAvailable = 'N';
+	END 
+	BEGIN TRY 
+
+		IF @IsTransactionAvailable = 'Y' 
+			Begin TRAN
+
+		IF NOT EXISTS (SELECT 1 FROM dbo.Merchant WHERE MerchantNumber = @MerchantNumber)
+		BEGIN 
+			INSERT INTO dbo.Merchant
+			(
+				MerchantNumber
+				,MerchantName
+				,CategoryID
+				,IsActive
+				,CreateDateTime
+				,CreateUserID
+				,UpdateDateTime
+				,UpdateUserID
+			)
+			VALUES
+			(
+				@MerchantNumber
+				,@MerchantName
+				,@CategoryID
+				,'Y'
+				,GETDATE()
+				,'venkat'
+				,GETDATE()
+				,'venkat'
+			)
+		END 
+		ELSE 
+		BEGIN 
+			UPDATE dbo.Merchant
+			SET 
+				MerchantName = @MerchantName
+				,CategoryID	= @CategoryID		
+				,UpdateDateTime = GETDATE()
+				,UpdateUserID = 'Venkat'
+			WHERE 
+				MerchantNumber = @MerchantNumber
+		END
+
+		IF @IsTransactionAvailable = 'Y' 
+			COMMIT TRAN
+
+		SELECT 
+			@StatusCode = '0'
+			,@StatusMessage = 'SUCCESS'
+	END TRY 
+	BEGIN CATCH 
+		IF @IsTransactionAvailable = 'Y' OR @@TRANCOUNT > 0 
+			ROLLBACK TRAN
+
+		SELECT 
+			@StatusCode = '1'
+			,@StatusMessage = 'FAILED'
+	END CATCH 
+END
