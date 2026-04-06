@@ -1,0 +1,43 @@
+DECLARE 
+     @V_Expression NVARCHAR(MAX) = @I_Expression
+    ,@V_PlaceHolder NVARCHAR(50) = '@expr_'
+    ,@V_Pos INT = 1
+    ,@V_Start INT
+    ,@V_End INT
+
+-- Temp table to store fields
+IF OBJECT_ID('tempdb..#Fields') IS NOT NULL DROP TABLE #Fields
+
+CREATE TABLE #Fields
+(
+    FieldName NVARCHAR(200)
+)
+
+WHILE 1 = 1
+BEGIN
+    -- Find placeholder position
+    SET @V_Start = CHARINDEX(@V_PlaceHolder, @V_Expression, @V_Pos)
+
+    IF @V_Start = 0 BREAK
+
+    -- Move to start of actual field name
+    SET @V_Start = @V_Start + LEN(@V_PlaceHolder)
+    SET @V_End = @V_Start
+
+    -- Extract field characters (A-Z, a-z, 0-9, _)
+    WHILE @V_End <= LEN(@V_Expression)
+          AND SUBSTRING(@V_Expression, @V_End, 1) LIKE '[A-Za-z0-9_]'
+    BEGIN
+        SET @V_End = @V_End + 1
+    END
+
+    -- Insert extracted field
+    INSERT INTO #Fields (FieldName)
+    SELECT DISTINCT SUBSTRING(@V_Expression, @V_Start, @V_End - @V_Start)
+
+    -- Move forward
+    SET @V_Pos = @V_End
+END
+
+-- Result
+SELECT * FROM #Fields
