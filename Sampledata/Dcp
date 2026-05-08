@@ -1,0 +1,58 @@
+SELECT
+'INSERT INTO dinarWise_OLTP.LineOfBusinessDefaultCategory
+(
+     TennantISOCountryCode
+    ,TennantCode
+    ,LineOfBusinessName
+    ,DebitCreditIndicator
+    ,DefaultCategoryID
+    ,DefaultCategoryNameEN
+    ,DefaultCategoryNameAR
+    ,DefaultCategoryLogoURL
+    ,DefaultParentCategoryID
+    ,DefaultParentCategoryNameEN
+    ,DefaultParentCategoryNameAR
+    ,DefaultParentCategoryLogoURL
+    ,CreateDateTime
+    ,UpdateDateTime
+)
+VALUES
+(
+     ''KW''
+    ,''CBG''
+    ,''' + REPLACE(ISNULL(LOB.LineOfBusinessName, ''), '''', '''''') + '''
+    ,''' + DCP.DebitCreditIndicator + '''
+    ,' + CAST(DCP.CategoryID AS VARCHAR(20)) + '
+    ,''' + REPLACE(ISNULL(C.CategoryNameEN, ''), '''', '''''') + '''
+    ,N''' + REPLACE(ISNULL(C.CategoryNameAR, ''), '''', '''''') + '''
+    ,''' + REPLACE(ISNULL(C.CategoryLogoURL, ''), '''', '''''') + '''
+    ,' + ISNULL(CAST(P.CategoryID AS VARCHAR(20)), 'NULL') + '
+    ,' + CASE
+            WHEN P.CategoryNameEN IS NULL THEN 'NULL'
+            ELSE '''' + REPLACE(P.CategoryNameEN, '''', '''''') + ''''
+         END + '
+    ,' + CASE
+            WHEN P.CategoryNameAR IS NULL THEN 'NULL'
+            ELSE 'N''' + REPLACE(P.CategoryNameAR, '''', '''''') + ''''
+         END + '
+    ,' + CASE
+            WHEN P.CategoryLogoURL IS NULL THEN 'NULL'
+            ELSE '''' + REPLACE(P.CategoryLogoURL, '''', '''''') + ''''
+         END + '
+    ,SYSTIMESTAMP
+    ,SYSTIMESTAMP
+);
+
+'
+FROM InMem.DefaultCategoryParameter DCP
+INNER JOIN InMem.LineOfBusiness LOB
+    ON LOB.LineOfBusinessID = DCP.LineOfBusinessID
+INNER JOIN InMem.Category C
+    ON C.CategoryID = DCP.CategoryID
+LEFT JOIN InMem.Category P
+    ON P.CategoryID = C.ParentCategoryID
+WHERE DCP.TennantID = 3
+  AND LOB.TennantID = 3
+ORDER BY
+     LOB.LineOfBusinessID
+    ,DCP.DebitCreditIndicator;
