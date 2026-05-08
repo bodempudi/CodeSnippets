@@ -1,0 +1,52 @@
+SELECT
+'INSERT INTO dinarWise_OLTP.CategoryMerchantCategory
+(
+     CategoryMerchantCategoryID
+    ,CategoryID
+    ,CategoryNameEN
+    ,CategoryNameAR
+    ,CategoryLogoURL
+    ,ParentCategoryID
+    ,ParentCategoryNameEN
+    ,ParentCategoryNameAR
+    ,ParentCategoryLogoURL
+    ,CreateDateTime
+    ,UpdateDateTime
+)
+VALUES
+(
+     ' + CAST(ROW_NUMBER() OVER (ORDER BY C.CategoryID) + 2000 AS VARCHAR(20)) + '
+    ,' + CAST(C.CategoryID AS VARCHAR(20)) + '
+    ,''' + REPLACE(ISNULL(C.CategoryNameEN, ''), '''', '''''') + '''
+    ,N''' + REPLACE(ISNULL(C.CategoryNameAR, ''), '''', '''''') + '''
+    ,''' + REPLACE(ISNULL(C.CategoryLogoURL, ''), '''', '''''') + '''
+    ,' + ISNULL(CAST(C.ParentCategoryID AS VARCHAR(20)), 'NULL') + '
+    ,' + CASE
+            WHEN P.CategoryNameEN IS NULL THEN 'NULL'
+            ELSE '''' + REPLACE(P.CategoryNameEN, '''', '''''') + ''''
+         END + '
+    ,' + CASE
+            WHEN P.CategoryNameAR IS NULL THEN 'NULL'
+            ELSE 'N''' + REPLACE(P.CategoryNameAR, '''', '''''') + ''''
+         END + '
+    ,' + CASE
+            WHEN P.CategoryLogoURL IS NULL THEN 'NULL'
+            ELSE '''' + REPLACE(P.CategoryLogoURL, '''', '''''') + ''''
+         END + '
+    ,SYSTIMESTAMP
+    ,SYSTIMESTAMP
+);
+
+'
+FROM InMem.Category C
+LEFT JOIN InMem.Category P
+    ON P.CategoryID = C.ParentCategoryID
+WHERE C.TennantID = 3
+  AND C.IsActive = 'Y'
+ORDER BY
+     CASE
+         WHEN C.ParentCategoryID IS NULL THEN 0
+         ELSE 1
+     END
+    ,C.ParentCategoryID
+    ,C.CategoryID;
