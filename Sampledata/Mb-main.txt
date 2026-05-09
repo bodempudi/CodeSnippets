@@ -1,0 +1,82 @@
+INSERT /*+ APPEND */
+INTO dinarWise_OLTP.MerchantBrand
+(
+     MerchantID
+    ,MerchantNameEN
+    ,MerchantNameAR
+    ,SubMerchantNameEN
+    ,SubMerchantNameAR
+    ,MerchantCategoryID
+    ,MerchantCategoryNameEN
+    ,MerchantCategoryNameAR
+    ,MerchantCategoryLogoURL
+    ,MerchantParentCategoryID
+    ,MerchantParentCategoryNameEN
+    ,MerchantParentCategoryNameAR
+    ,MerchantParentCategoryLogoURL
+    ,BrandID
+    ,BrandNameEN
+    ,BrandNameAR
+    ,BrandLogoURL
+    ,BrandTypeCode
+    ,BrandCategoryID
+    ,BrandCategoryNameEN
+    ,BrandCategoryNameAR
+    ,BrandCategoryLogoURL
+    ,BrandParentCategoryID
+    ,BrandParentCategoryNameEN
+    ,BrandParentCategoryNameAR
+    ,BrandParentCategoryLogoURL
+    ,DisplayMerchantNameEN
+    ,DisplayMerchantNameAR
+    ,DisplayBrandNameEN
+    ,DisplayBrandNameAR
+    ,DisplayNameEN
+    ,DisplayNameAR
+    ,CreateDateTime
+    ,UpdateDateTime
+)
+SELECT
+     S.SourceMerchantID + (S.CopyNo * 1000000) AS MerchantID
+    ,S.MerchantNameEN
+    ,S.MerchantNameAR
+    ,S.SubMerchantNameEN
+    ,S.SubMerchantNameAR
+    ,S.MerchantCategoryID
+    ,S.MerchantCategoryNameEN
+    ,S.MerchantCategoryNameAR
+    ,S.MerchantCategoryLogoURL
+    ,S.MerchantParentCategoryID
+    ,S.MerchantParentCategoryNameEN
+    ,S.MerchantParentCategoryNameAR
+    ,S.MerchantParentCategoryLogoURL
+    ,S.BrandID
+    ,S.BrandNameEN
+    ,S.BrandNameAR
+    ,S.BrandLogoURL
+    ,S.BrandTypeCode
+    ,S.BrandCategoryID
+    ,S.BrandCategoryNameEN
+    ,S.BrandCategoryNameAR
+    ,S.BrandCategoryLogoURL
+    ,S.BrandParentCategoryID
+    ,S.BrandParentCategoryNameEN
+    ,S.BrandParentCategoryNameAR
+    ,S.BrandParentCategoryLogoURL
+    ,S.DisplayMerchantNameEN
+    ,S.DisplayMerchantNameAR
+    ,S.DisplayBrandNameEN
+    ,S.DisplayBrandNameAR
+    ,S.DisplayNameEN
+    ,S.DisplayNameAR
+    ,SYSTIMESTAMP
+    ,SYSTIMESTAMP
+FROM dinarWise_OLTP.STG_MerchantBrand S
+WHERE NOT EXISTS
+(
+    SELECT 1
+    FROM dinarWise_OLTP.MerchantBrand T
+    WHERE T.MerchantID = S.SourceMerchantID + (S.CopyNo * 1000000)
+);
+
+COMMIT;
