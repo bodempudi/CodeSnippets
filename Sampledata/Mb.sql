@@ -27,13 +27,39 @@ SELECT TOP (1000000)
 
     ,LEFT(ISNULL(BM.MerchantNameEN, 'Merchant') + ' ' + CAST(X.CopyNo AS VARCHAR(10)), 128) AS MerchantNameEN
     ,LEFT(ISNULL(BM.MerchantNameAR, N'تاجر') + N' ' + CAST(X.CopyNo AS NVARCHAR(10)), 256) AS MerchantNameAR
-
     ,BM.SubMerchantNameEN
     ,BM.SubMerchantNameAR
 
-    ,CASE WHEN BM.RN % 3 = 0 THEN BM.CategoryID ELSE NULL END AS MerchantCategoryID
-    ,CASE WHEN BM.RN % 3 = 1 THEN B.CategoryID  ELSE NULL END AS BrandCategoryID
-    ,CASE WHEN BM.RN % 3 = 2 THEN NULL          ELSE BM.BrandID END AS BrandID
+    ,CASE WHEN BM.RN % 3 = 0 THEN MC.CategoryID END AS MerchantCategoryID
+    ,CASE WHEN BM.RN % 3 = 0 THEN MC.CategoryNameEN END AS MerchantCategoryNameEN
+    ,CASE WHEN BM.RN % 3 = 0 THEN MC.CategoryNameAR END AS MerchantCategoryNameAR
+    ,CASE WHEN BM.RN % 3 = 0 THEN MC.CategoryLogoURL END AS MerchantCategoryLogoURL
+    ,CASE WHEN BM.RN % 3 = 0 THEN MCP.CategoryID END AS MerchantParentCategoryID
+    ,CASE WHEN BM.RN % 3 = 0 THEN MCP.CategoryNameEN END AS MerchantParentCategoryNameEN
+    ,CASE WHEN BM.RN % 3 = 0 THEN MCP.CategoryNameAR END AS MerchantParentCategoryNameAR
+    ,CASE WHEN BM.RN % 3 = 0 THEN MCP.CategoryLogoURL END AS MerchantParentCategoryLogoURL
+
+    ,CASE WHEN BM.RN % 3 IN (0, 1) THEN B.BrandID END AS BrandID
+    ,CASE WHEN BM.RN % 3 IN (0, 1) THEN B.BrandNameEN END AS BrandNameEN
+    ,CASE WHEN BM.RN % 3 IN (0, 1) THEN B.BrandNameAR END AS BrandNameAR
+    ,CASE WHEN BM.RN % 3 IN (0, 1) THEN B.BrandLogoURL END AS BrandLogoURL
+    ,CASE WHEN BM.RN % 3 IN (0, 1) THEN B.BrandTypeCode END AS BrandTypeCode
+
+    ,CASE WHEN BM.RN % 3 = 1 THEN BC.CategoryID END AS BrandCategoryID
+    ,CASE WHEN BM.RN % 3 = 1 THEN BC.CategoryNameEN END AS BrandCategoryNameEN
+    ,CASE WHEN BM.RN % 3 = 1 THEN BC.CategoryNameAR END AS BrandCategoryNameAR
+    ,CASE WHEN BM.RN % 3 = 1 THEN BC.CategoryLogoURL END AS BrandCategoryLogoURL
+    ,CASE WHEN BM.RN % 3 = 1 THEN BCP.CategoryID END AS BrandParentCategoryID
+    ,CASE WHEN BM.RN % 3 = 1 THEN BCP.CategoryNameEN END AS BrandParentCategoryNameEN
+    ,CASE WHEN BM.RN % 3 = 1 THEN BCP.CategoryNameAR END AS BrandParentCategoryNameAR
+    ,CASE WHEN BM.RN % 3 = 1 THEN BCP.CategoryLogoURL END AS BrandParentCategoryLogoURL
+
+    ,LEFT(ISNULL(BM.MerchantNameEN, 'Merchant') + ' ' + CAST(X.CopyNo AS VARCHAR(10)), 1024) AS DisplayMerchantNameEN
+    ,LEFT(ISNULL(BM.MerchantNameAR, N'تاجر') + N' ' + CAST(X.CopyNo AS NVARCHAR(10)), 1024) AS DisplayMerchantNameAR
+    ,CASE WHEN BM.RN % 3 IN (0, 1) THEN B.BrandNameEN END AS DisplayBrandNameEN
+    ,CASE WHEN BM.RN % 3 IN (0, 1) THEN B.BrandNameAR END AS DisplayBrandNameAR
+    ,LEFT(COALESCE(B.BrandNameEN, BM.MerchantNameEN, 'Merchant') + ' ' + CAST(X.CopyNo AS VARCHAR(10)), 1024) AS DisplayNameEN
+    ,LEFT(COALESCE(B.BrandNameAR, BM.MerchantNameAR, N'تاجر') + N' ' + CAST(X.CopyNo AS NVARCHAR(10)), 1024) AS DisplayNameAR
 
     ,SYSDATETIME() AS CreateDateTime
     ,SYSDATETIME() AS UpdateDateTime
@@ -43,4 +69,20 @@ LEFT JOIN InMem.Brand B
     ON B.BrandID = BM.BrandID
    AND B.TennantID = 3
    AND B.IsActive = 'Y'
+LEFT JOIN InMem.Category MC
+    ON MC.CategoryID = BM.CategoryID
+   AND MC.TennantID = 3
+   AND MC.IsActive = 'Y'
+LEFT JOIN InMem.Category MCP
+    ON MCP.CategoryID = MC.ParentCategoryID
+   AND MCP.TennantID = 3
+   AND MCP.IsActive = 'Y'
+LEFT JOIN InMem.Category BC
+    ON BC.CategoryID = B.CategoryID
+   AND BC.TennantID = 3
+   AND BC.IsActive = 'Y'
+LEFT JOIN InMem.Category BCP
+    ON BCP.CategoryID = BC.ParentCategoryID
+   AND BCP.TennantID = 3
+   AND BCP.IsActive = 'Y'
 ORDER BY X.CopyNo, BM.MerchantID;
