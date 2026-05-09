@@ -1,0 +1,223 @@
+WITH BaseMerchantOther
+AS
+(
+    SELECT TOP 50000
+         MO.MerchantOtherID               AS SourceMerchantOtherID
+        ,MO.TennantID
+        ,MO.MerchantOtherNameEN
+        ,MO.MerchantOtherNameAR
+        ,MO.SubMerchantOtherNameEN
+        ,MO.SubMerchantOtherNameAR
+        ,MO.BrandID
+        ,MO.CategoryID                   AS MerchantOtherCategoryID
+
+        ,MOC.CategoryNameEN              AS MerchantOtherCategoryNameEN
+        ,MOC.CategoryNameAR              AS MerchantOtherCategoryNameAR
+        ,MOC.CategoryLogoURL             AS MerchantOtherCategoryLogoURL
+
+        ,MOC.ParentCategoryID            AS MerchantOtherParentCategoryID
+        ,MOPC.CategoryNameEN             AS MerchantOtherParentCategoryNameEN
+        ,MOPC.CategoryNameAR             AS MerchantOtherParentCategoryNameAR
+        ,MOPC.CategoryLogoURL            AS MerchantOtherParentCategoryLogoURL
+
+        ,B.BrandNameEN
+        ,B.BrandNameAR
+        ,B.BrandLogoURL
+
+        ,BT.BrandTypeCode
+
+        ,BC.CategoryID                   AS BrandCategoryID
+        ,BC.CategoryNameEN               AS BrandCategoryNameEN
+        ,BC.CategoryNameAR               AS BrandCategoryNameAR
+        ,BC.CategoryLogoURL              AS BrandCategoryLogoURL
+
+        ,BC.ParentCategoryID             AS BrandParentCategoryID
+        ,BPC.CategoryNameEN              AS BrandParentCategoryNameEN
+        ,BPC.CategoryNameAR              AS BrandParentCategoryNameAR
+        ,BPC.CategoryLogoURL             AS BrandParentCategoryLogoURL
+    FROM InMem.MerchantOther MO WITH (NOLOCK)
+
+    LEFT JOIN InMem.Category MOC WITH (NOLOCK)
+        ON MOC.CategoryID = MO.CategoryID
+       AND MOC.TennantID = MO.TennantID
+       AND MOC.IsActive = 'Y'
+
+    LEFT JOIN InMem.Category MOPC WITH (NOLOCK)
+        ON MOPC.CategoryID = MOC.ParentCategoryID
+       AND MOPC.TennantID = MO.TennantID
+       AND MOPC.IsActive = 'Y'
+
+    LEFT JOIN InMem.Brand B WITH (NOLOCK)
+        ON B.BrandID = MO.BrandID
+       AND B.TennantID = MO.TennantID
+       AND B.IsActive = 'Y'
+
+    LEFT JOIN InMem.BrandType BT WITH (NOLOCK)
+        ON BT.BrandTypeID = B.BrandTypeID
+
+    LEFT JOIN InMem.Category BC WITH (NOLOCK)
+        ON BC.CategoryID = B.CategoryID
+       AND BC.TennantID = B.TennantID
+       AND BC.IsActive = 'Y'
+
+    LEFT JOIN InMem.Category BPC WITH (NOLOCK)
+        ON BPC.CategoryID = BC.ParentCategoryID
+       AND BPC.TennantID = B.TennantID
+       AND BPC.IsActive = 'Y'
+
+    WHERE MO.TennantID = 3
+      AND MO.IsActive = 'Y'
+)
+SELECT
+     BM.SourceMerchantOtherID
+    ,N.CopyNo
+
+    ,BM.SourceMerchantOtherID + (N.CopyNo * 1000000)
+        AS MerchantOtherID
+
+    ,BM.MerchantOtherNameEN
+        + '_'
+        + CAST(N.CopyNo AS VARCHAR(10))
+        AS MerchantOtherNameEN
+
+    ,BM.MerchantOtherNameAR
+
+    ,CASE
+         WHEN BM.SubMerchantOtherNameEN IS NULL
+             THEN NULL
+         ELSE BM.SubMerchantOtherNameEN
+              + '_'
+              + CAST(N.CopyNo AS VARCHAR(10))
+     END
+        AS SubMerchantOtherNameEN
+
+    ,BM.SubMerchantOtherNameAR
+
+    ,CASE
+         WHEN N.CopyNo % 3 = 0
+             THEN BM.MerchantOtherCategoryID
+         WHEN N.CopyNo % 3 = 1
+             THEN BM.BrandCategoryID
+         ELSE NULL
+     END
+        AS MerchantOtherCategoryID
+
+    ,CASE
+         WHEN N.CopyNo % 3 = 0
+             THEN BM.MerchantOtherCategoryNameEN
+         WHEN N.CopyNo % 3 = 1
+             THEN BM.BrandCategoryNameEN
+         ELSE NULL
+     END
+        AS MerchantOtherCategoryNameEN
+
+    ,CASE
+         WHEN N.CopyNo % 3 = 0
+             THEN BM.MerchantOtherCategoryNameAR
+         WHEN N.CopyNo % 3 = 1
+             THEN BM.BrandCategoryNameAR
+         ELSE NULL
+     END
+        AS MerchantOtherCategoryNameAR
+
+    ,CASE
+         WHEN N.CopyNo % 3 = 0
+             THEN BM.MerchantOtherCategoryLogoURL
+         WHEN N.CopyNo % 3 = 1
+             THEN BM.BrandCategoryLogoURL
+         ELSE NULL
+     END
+        AS MerchantOtherCategoryLogoURL
+
+    ,CASE
+         WHEN N.CopyNo % 3 = 0
+             THEN BM.MerchantOtherParentCategoryID
+         WHEN N.CopyNo % 3 = 1
+             THEN BM.BrandParentCategoryID
+         ELSE NULL
+     END
+        AS MerchantOtherParentCategoryID
+
+    ,CASE
+         WHEN N.CopyNo % 3 = 0
+             THEN BM.MerchantOtherParentCategoryNameEN
+         WHEN N.CopyNo % 3 = 1
+             THEN BM.BrandParentCategoryNameEN
+         ELSE NULL
+     END
+        AS MerchantOtherParentCategoryNameEN
+
+    ,CASE
+         WHEN N.CopyNo % 3 = 0
+             THEN BM.MerchantOtherParentCategoryNameAR
+         WHEN N.CopyNo % 3 = 1
+             THEN BM.BrandParentCategoryNameAR
+         ELSE NULL
+     END
+        AS MerchantOtherParentCategoryNameAR
+
+    ,CASE
+         WHEN N.CopyNo % 3 = 0
+             THEN BM.MerchantOtherParentCategoryLogoURL
+         WHEN N.CopyNo % 3 = 1
+             THEN BM.BrandParentCategoryLogoURL
+         ELSE NULL
+     END
+        AS MerchantOtherParentCategoryLogoURL
+
+    ,BM.BrandID
+
+    ,BM.BrandNameEN
+    ,BM.BrandNameAR
+    ,BM.BrandLogoURL
+    ,BM.BrandTypeCode
+
+    ,BM.BrandCategoryID
+    ,BM.BrandCategoryNameEN
+    ,BM.BrandCategoryNameAR
+    ,BM.BrandCategoryLogoURL
+
+    ,BM.BrandParentCategoryID
+    ,BM.BrandParentCategoryNameEN
+    ,BM.BrandParentCategoryNameAR
+    ,BM.BrandParentCategoryLogoURL
+
+    ,BM.MerchantOtherNameEN
+        + '_'
+        + CAST(N.CopyNo AS VARCHAR(10))
+        AS DisplayMerchantNameEN
+
+    ,BM.MerchantOtherNameAR
+        AS DisplayMerchantNameAR
+
+    ,BM.BrandNameEN
+        AS DisplayBrandNameEN
+
+    ,BM.BrandNameAR
+        AS DisplayBrandNameAR
+
+    ,BM.MerchantOtherNameEN
+        + '_'
+        + CAST(N.CopyNo AS VARCHAR(10))
+        AS DisplayNameEN
+
+    ,BM.MerchantOtherNameAR
+        AS DisplayNameAR
+FROM BaseMerchantOther BM
+CROSS JOIN
+(
+    VALUES
+         (0)
+        ,(1)
+        ,(2)
+        ,(3)
+        ,(4)
+        ,(5)
+        ,(6)
+        ,(7)
+        ,(8)
+        ,(9)
+) N
+(
+    CopyNo
+);
