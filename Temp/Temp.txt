@@ -1,13 +1,13 @@
-namespace SQLFormatter.Core.Errors
+private static IList<ParseError> ParseSql(string sql)
 {
-	public sealed class SqlErrorInfo
+	var parser = new TSql160Parser(false);
+
+	IList<ParseError> errors;
+
+	using (var reader = new StringReader(sql))
 	{
-		public int Line { get; set; }
-
-		public int Column { get; set; }
-
-		public string Message { get; set; }
-
-		public string Source { get; set; }
+		parser.Parse(reader, out errors);
 	}
+
+	return errors;
 }
