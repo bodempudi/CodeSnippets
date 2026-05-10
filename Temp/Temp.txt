@@ -1,13 +1,24 @@
-private static IList<ParseError> ParseSql(string sql)
+private static IList<SqlErrorInfo> ConvertParseErrors(
+	IList<ParseError> errors)
 {
-	var parser = new TSql160Parser(false);
+	var result = new List<SqlErrorInfo>();
 
-	IList<ParseError> errors;
-
-	using (var reader = new StringReader(sql))
+	if (errors == null)
 	{
-		parser.Parse(reader, out errors);
+		return result;
 	}
 
-	return errors;
+	foreach (ParseError error in errors)
+	{
+		result.Add(
+			new SqlErrorInfo
+			{
+				Line = error.Line,
+				Column = error.Column,
+				Message = error.Message,
+				Source = "Parser"
+			});
+	}
+
+	return result;
 }
