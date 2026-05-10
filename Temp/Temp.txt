@@ -1,24 +1,5 @@
-private static IList<SqlErrorInfo> ConvertParseErrors(
-	IList<ParseError> errors)
-{
-	var result = new List<SqlErrorInfo>();
+private static SqlErrorPanel _errorPanel;
 
-	if (errors == null)
-	{
-		return result;
-	}
+private static bool _isPanelRegistered = false;
 
-	foreach (ParseError error in errors)
-	{
-		result.Add(
-			new SqlErrorInfo
-			{
-				Line = error.Line,
-				Column = error.Column,
-				Message = error.Message,
-				Source = "Parser"
-			});
-	}
-
-	return result;
-}
+private static int idSqlErrorPanel = 25;
