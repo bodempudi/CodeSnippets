@@ -1,32 +1,30 @@
-private static void GoToEditorPosition(
-	int line,
-	int column)
+private static void FormatCurrentSql()
 {
-	IntPtr sci =
-		PluginBase.GetCurrentScintilla();
+	try
+	{
+		string sql =
+			GetCurrentEditorText();
 
-	int zeroLine =
-		line - 1;
+		IList<ParseError> parseErrors =
+			ParseSql(sql);
 
-	int zeroColumn =
-		column - 1;
+		if (parseErrors != null &&
+			parseErrors.Count > 0)
+		{
+			ShowSqlErrors(
+				ConvertParseErrors(parseErrors));
 
-	Win32.SendMessage(
-		sci,
-		(uint)SciMsg.SCI_GOTOLINE,
-		zeroLine,
-		0);
+			return;
+		}
 
-	int position =
-		(int)Win32.SendMessage(
-			sci,
-			(uint)SciMsg.SCI_FINDCOLUMN,
-			zeroLine,
-			zeroColumn);
-
-	Win32.SendMessage(
-		sci,
-		(uint)SciMsg.SCI_GOTOPOS,
-		position,
-		0);
+		ShowSqlErrors(null);
+	}
+	catch (Exception ex)
+	{
+		MessageBox.Show(
+			ex.ToString(),
+			"Venkat SQL Formatter",
+			MessageBoxButtons.OK,
+			MessageBoxIcon.Error);
+	}
 }
