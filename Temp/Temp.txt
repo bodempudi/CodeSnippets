@@ -1,26 +1,44 @@
-private static void ShowSqlErrors(IList<SqlErrorInfo> errors)
+private static void EnsureErrorPanel()
 {
-	EnsureErrorPanel();
+	if (_errorPanel == null || _errorPanel.IsDisposed)
+	{
+		_errorPanel = new SqlErrorPanel();
 
-	_errorPanel.ShowErrors(errors);
+		_errorPanel.ErrorDoubleClicked += delegate (int line, int column)
+		{
+			GoToEditorPosition(line, column);
+		};
+	}
 
-	Win32.SendMessage(
-		PluginBase.nppData._nppHandle,
-		(uint)NppMsg.NPPM_DMMSHOW,
-		0,
-		_errorPanel.Handle);
+	if (_isPanelRegistered)
+	{
+		return;
+	}
 
-	IntPtr sci = PluginBase.GetCurrentScintilla();
+	NppTbData nppTbData = new NppTbData();
 
-	Win32.SendMessage(
-		sci,
-		(uint)SciMsg.SCI_SETFOCUS,
-		1,
-		0);
+	nppTbData.hClient = _errorPanel.Handle;
+	nppTbData.pszName = "SQL Errors";
+	nppTbData.dlgID = idSqlErrorPanel;
+	nppTbData.uMask = NppTbMsg.DWS_DF_CONT_BOTTOM;
+	nppTbData.pszModuleName = PluginName;
 
-	Win32.SendMessage(
-		sci,
-		(uint)SciMsg.SCI_GRABFOCUS,
-		0,
-		0);
+	IntPtr ptr = Marshal.AllocHGlobal(Marshal.SizeOf(nppTbData));
+
+	try
+	{
+		Marshal.StructureToPtr(nppTbData, ptr, false);
+
+		Win32.SendMessage(
+			PluginBase.nppData._nppHandle,
+			(uint)NppMsg.NPPM_DMMREGASDCKDLG,
+			IntPtr.Zero,
+			ptr);
+
+		_isPanelRegistered = true;
+	}
+	finally
+	{
+		Marshal.FreeHGlobal(ptr);
+	}
 }
