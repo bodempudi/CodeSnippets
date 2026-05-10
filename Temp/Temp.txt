@@ -1,44 +1,12 @@
-private static void EnsureErrorPanel()
+private static string GetCurrentEditorText()
 {
-	if (_errorPanel == null || _errorPanel.IsDisposed)
-	{
-		_errorPanel = new SqlErrorPanel();
+	var sci =
+		new ScintillaGateway(
+			PluginBase.GetCurrentScintilla());
 
-		_errorPanel.ErrorDoubleClicked += delegate (int line, int column)
-		{
-			GoToEditorPosition(line, column);
-		};
-	}
+	int length =
+		Convert.ToInt32(
+			sci.GetLength());
 
-	if (_isPanelRegistered)
-	{
-		return;
-	}
-
-	NppTbData nppTbData = new NppTbData();
-
-	nppTbData.hClient = _errorPanel.Handle;
-	nppTbData.pszName = "SQL Errors";
-	nppTbData.dlgID = idSqlErrorPanel;
-	nppTbData.uMask = NppTbMsg.DWS_DF_CONT_BOTTOM;
-	nppTbData.pszModuleName = PluginName;
-
-	IntPtr ptr = Marshal.AllocHGlobal(Marshal.SizeOf(nppTbData));
-
-	try
-	{
-		Marshal.StructureToPtr(nppTbData, ptr, false);
-
-		Win32.SendMessage(
-			PluginBase.nppData._nppHandle,
-			(uint)NppMsg.NPPM_DMMREGASDCKDLG,
-			IntPtr.Zero,
-			ptr);
-
-		_isPanelRegistered = true;
-	}
-	finally
-	{
-		Marshal.FreeHGlobal(ptr);
-	}
+	return sci.GetText(length + 1);
 }
