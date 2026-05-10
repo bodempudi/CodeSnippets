@@ -1,88 +1,171 @@
+using System;
 using System.Collections.Generic;
-using System.Text.RegularExpressions;
+using System.Drawing;
+using System.Windows.Forms;
+using SQLFormatter.Core.Errors;
 
-namespace SQLFormatter.Core.Validation
+namespace VenkatSQLFormatter
 {
-	public sealed class SqlValidatorService
+	public sealed class SqlErrorPanel : Form
 	{
-		public IList<SqlValidationIssue> Validate(string sql)
+		private readonly ListView _list;
+
+		private readonly List<SqlErrorInfo> _errors;
+
+		public event Action<int, int> ErrorDoubleClicked;
+
+		public SqlErrorPanel()
 		{
-			var issues = new List<SqlValidationIssue>();
+			Text = "SQL Errors";
 
-			if (string.IsNullOrWhiteSpace(sql))
-			{
-				return issues;
-			}
+			_errors = new List<SqlErrorInfo>();
 
-			AddSplitKeywordIssue(issues, sql, @"\bse\s+lect\b", "SELECT");
-			AddSplitKeywordIssue(issues, sql, @"\bsele\s+ct\b", "SELECT");
-			AddSplitKeywordIssue(issues, sql, @"\bfr\s+om\b", "FROM");
-			AddSplitKeywordIssue(issues, sql, @"\bwhe\s+re\b", "WHERE");
-			AddSplitKeywordIssue(issues, sql, @"\bcrea\s+te\b", "CREATE");
-			AddSplitKeywordIssue(issues, sql, @"\bgro\s+up\b", "GROUP");
-			AddSplitKeywordIssue(issues, sql, @"\bord\s+er\b", "ORDER");
-			AddSplitKeywordIssue(issues, sql, @"\bhav\s+ing\b", "HAVING");
+			_list = new ListView();
 
-			return issues;
+			_list.Dock = DockStyle.Fill;
+			_list.View = View.Details;
+			_list.FullRowSelect = true;
+			_list.GridLines = true;
+			_list.HideSelection = false;
+			_list.MultiSelect = false;
+
+			_list.Font = new Font("Segoe UI", 9);
+
+			_list.BorderStyle = BorderStyle.None;
+
+			_list.HeaderStyle =
+				ColumnHeaderStyle.Nonclickable;
+
+			_list.Columns.Add("Ln", 60);
+			_list.Columns.Add("Col", 60);
+			_list.Columns.Add("Error Message", 900);
+
+			_list.DoubleClick += OnDoubleClick;
+			_list.Resize += OnResize;
+
+			Controls.Add(_list);
 		}
 
-		private static void AddSplitKeywordIssue(
-			IList<SqlValidationIssue> issues,
-			string sql,
-			string pattern,
-			string keyword)
+		public void ShowErrors(IList<SqlErrorInfo> errors)
 		{
-			MatchCollection matches = Regex.Matches(
-				sql,
-				pattern,
-				RegexOptions.IgnoreCase | RegexOptions.Multiline);
+			_list.BeginUpdate();
 
-			foreach (Match match in matches)
+			try
 			{
-				LineColumn location = GetLineColumn(sql, match.Index);
+				_list.Items.Clear();
 
-				issues.Add(
-					new SqlValidationIssue
-					{
-						Line = location.Line,
-						Column = location.Column,
-						Message = "Suspicious split keyword detected. Did you mean '" + keyword + "'?"
-					});
-			}
-		}
+				_errors.Clear();
 
-		private static LineColumn GetLineColumn(string text, int index)
-		{
-			int line = 1;
-			int column = 1;
-
-			for (int i = 0; i < index && i < text.Length; i++)
-			{
-				if (text[i] == '\n')
+				if (errors == null || errors.Count == 0)
 				{
-					line++;
-					column = 1;
-				}
-				else if (text[i] != '\r')
-				{
-					column++;
-				}
-			}
+					var item = new ListViewItem("-");
 
-			return new LineColumn(line, column);
+					item.SubItems.Add("-");
+					item.SubItems.Add("No SQL parse errors.");
+
+					_list.Items.Add(item);
+
+					ResizeLastColumn();
+
+					return;
+				}
+
+				foreach (SqlErrorInfo err in errors)
+				{
+					_errors.Add(err);
+
+					var item =
+						new ListViewItem(err.Line.ToString());
+
+					item.SubItems.Add(
+						err.Column.ToString());
+
+					item.SubItems.Add(
+						err.Message);
+
+					_list.Items.Add(item);
+				}
+
+				ResizeLastColumn();
+			}
+			finally
+			{
+				_list.EndUpdate();
+			}
 		}
 
-		private sealed class LineColumn
+		private void OnDoubleClick(
+			object sender,
+			EventArgs e)
 		{
-			public LineColumn(int line, int column)
+			if (_list.SelectedIndices.Count == 0)
 			{
-				Line = line;
-				Column = column;
+				return;
 			}
 
-			public int Line { get; }
+			int index =
+				_list.SelectedIndices[0];
 
-			public int Column { get; }
+			if (index < 0 ||
+				index >= _errors.Count)
+			{
+				return;
+			}
+
+			SqlErrorInfo err =
+				_errors[index];
+
+			ErrorDoubleClicked?.Invoke(
+				err.Line,
+				err.Column);
+		}
+
+		private void OnResize(
+			object sender,
+			EventArgs e)
+		{
+			ResizeLastColumn();
+		}
+
+		private void ResizeLastColumn()
+		{
+			if (_list.Columns.Count < 3)
+			{
+				return;
+			}
+
+			int usedWidth =
+				_list.Columns[0].Width +
+				_list.Columns[1].Width +
+				25;
+
+			int width =
+				_list.ClientSize.Width -
+				usedWidth;
+
+			if (width < 300)
+			{
+				width = 300;
+			}
+
+			_list.Columns[2].Width =
+				width;
+		}
+
+		protected override void OnShown(
+			EventArgs e)
+		{
+			base.OnShown(e);
+
+			ActiveControl = null;
+		}
+
+		protected override void OnFormClosing(
+			FormClosingEventArgs e)
+		{
+			e.Cancel = true;
+
+			Hide();
 		}
 	}
 }
