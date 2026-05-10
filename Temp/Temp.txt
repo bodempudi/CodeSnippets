@@ -1,0 +1,17 @@
+public IList<SqlValidationIssue> Validate(string sql)
+{
+	var issues = new List<SqlValidationIssue>();
+
+	if (sql.Contains("sele ct"))
+	{
+		issues.Add(
+			new SqlValidationIssue
+			{
+				Line = 1,
+				Column = 1,
+				Message = "Suspicious split keyword detected: SELECT"
+			});
+	}
+
+	return issues;
+}
