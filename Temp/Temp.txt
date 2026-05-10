@@ -1,30 +1,29 @@
-private static void FormatCurrentSql()
+private void DrawColumnHeader(
+	object sender,
+	DrawListViewColumnHeaderEventArgs e)
 {
-	try
+	using (SolidBrush backBrush =
+		new SolidBrush(Color.FromArgb(245, 245, 245)))
 	{
-		string sql =
-			GetCurrentEditorText();
-
-		IList<ParseError> parseErrors =
-			ParseSql(sql);
-
-		if (parseErrors != null &&
-			parseErrors.Count > 0)
-		{
-			ShowSqlErrors(
-				ConvertParseErrors(parseErrors));
-
-			return;
-		}
-
-		ShowSqlErrors(null);
+		e.Graphics.FillRectangle(
+			backBrush,
+			e.Bounds);
 	}
-	catch (Exception ex)
+
+	using (Pen borderPen =
+		new Pen(Color.FromArgb(220, 220, 220)))
 	{
-		MessageBox.Show(
-			ex.ToString(),
-			"Venkat SQL Formatter",
-			MessageBoxButtons.OK,
-			MessageBoxIcon.Error);
+		e.Graphics.DrawRectangle(
+			borderPen,
+			e.Bounds);
 	}
+
+	TextRenderer.DrawText(
+		e.Graphics,
+		e.Header.Text,
+		new Font("Segoe UI", 9F, FontStyle.Bold),
+		e.Bounds,
+		Color.Black,
+		TextFormatFlags.Left |
+		TextFormatFlags.VerticalCenter);
 }
