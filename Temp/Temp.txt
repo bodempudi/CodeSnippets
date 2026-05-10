@@ -1,12 +1,32 @@
-private static string GetCurrentEditorText()
+private static void GoToEditorPosition(
+	int line,
+	int column)
 {
-	var sci =
-		new ScintillaGateway(
-			PluginBase.GetCurrentScintilla());
+	IntPtr sci =
+		PluginBase.GetCurrentScintilla();
 
-	int length =
-		Convert.ToInt32(
-			sci.GetLength());
+	int zeroLine =
+		line - 1;
 
-	return sci.GetText(length + 1);
+	int zeroColumn =
+		column - 1;
+
+	Win32.SendMessage(
+		sci,
+		(uint)SciMsg.SCI_GOTOLINE,
+		zeroLine,
+		0);
+
+	int position =
+		(int)Win32.SendMessage(
+			sci,
+			(uint)SciMsg.SCI_FINDCOLUMN,
+			zeroLine,
+			zeroColumn);
+
+	Win32.SendMessage(
+		sci,
+		(uint)SciMsg.SCI_GOTOPOS,
+		position,
+		0);
 }
