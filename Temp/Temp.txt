@@ -1,5 +1,26 @@
-private static SqlErrorPanel _errorPanel;
+private static void ShowSqlErrors(IList<SqlErrorInfo> errors)
+{
+	EnsureErrorPanel();
 
-private static bool _isPanelRegistered = false;
+	_errorPanel.ShowErrors(errors);
 
-private static int idSqlErrorPanel = 25;
+	Win32.SendMessage(
+		PluginBase.nppData._nppHandle,
+		(uint)NppMsg.NPPM_DMMSHOW,
+		0,
+		_errorPanel.Handle);
+
+	IntPtr sci = PluginBase.GetCurrentScintilla();
+
+	Win32.SendMessage(
+		sci,
+		(uint)SciMsg.SCI_SETFOCUS,
+		1,
+		0);
+
+	Win32.SendMessage(
+		sci,
+		(uint)SciMsg.SCI_GRABFOCUS,
+		0,
+		0);
+}
