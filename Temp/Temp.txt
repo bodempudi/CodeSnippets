@@ -1,47 +1,74 @@
-private static void FormatCurrentSql()
+using System.IO;
+using Microsoft.SqlServer.TransactSql.ScriptDom;
+
+namespace ScriptFormatter.Core.Formatting
 {
-	try
+	public sealed class SqlFormatterService
 	{
-		string sql =
-			GetCurrentEditorText();
-
-		IList<ParseError> parseErrors =
-			ParseSql(sql);
-
-		if (parseErrors != null &&
-			parseErrors.Count > 0)
+		public string Format(string sql)
 		{
-			ShowSqlErrors(
-				ConvertParseErrors(parseErrors));
+			if (string.IsNullOrWhiteSpace(sql))
+			{
+				return sql;
+			}
 
-			return;
+			var parser =
+				new TSql160Parser(false);
+
+			TSqlFragment fragment;
+
+			using (var reader =
+				new StringReader(sql))
+			{
+				IList<ParseError> errors;
+
+				fragment =
+					parser.Parse(
+						reader,
+						out errors);
+
+				if (errors != null &&
+					errors.Count > 0)
+				{
+					return sql;
+				}
+			}
+
+			var generator =
+				new Sql160ScriptGenerator(
+					CreateOptions());
+
+			string formattedSql;
+
+			generator.GenerateScript(
+				fragment,
+				out formattedSql);
+
+			return formattedSql;
 		}
 
-		var validator =
-			new SqlValidatorService();
-
-		IList<SqlValidationIssue>
-			validationIssues =
-				validator.Validate(sql);
-
-		if (validationIssues != null &&
-			validationIssues.Count > 0)
+		private static SqlScriptGeneratorOptions
+			CreateOptions()
 		{
-			ShowSqlErrors(
-				ConvertValidationIssues(
-					validationIssues));
+			return new SqlScriptGeneratorOptions
+			{
+				KeywordCasing =
+					KeywordCasing.Uppercase,
 
-			return;
+				IncludeSemicolons = false,
+
+				IndentationSize = 4,
+
+				NewLineBeforeFromClause = true,
+
+				NewLineBeforeWhereClause = true,
+
+				NewLineBeforeGroupByClause = true,
+
+				NewLineBeforeOrderByClause = true,
+
+				AlignClauseBodies = false
+			};
 		}
-
-		ShowSqlErrors(null);
-	}
-	catch (Exception ex)
-	{
-		MessageBox.Show(
-			ex.ToString(),
-			"Venkat SQL Formatter",
-			MessageBoxButtons.OK,
-			MessageBoxIcon.Error);
 	}
 }
