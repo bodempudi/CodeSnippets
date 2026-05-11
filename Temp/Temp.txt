@@ -1,26 +1,47 @@
-private static IList<SqlErrorInfo>
-	ConvertValidationIssues(
-		IList<SqlValidationIssue> issues)
+private static void FormatCurrentSql()
 {
-	var result =
-		new List<SqlErrorInfo>();
-
-	if (issues == null)
+	try
 	{
-		return result;
-	}
+		string sql =
+			GetCurrentEditorText();
 
-	foreach (SqlValidationIssue issue in issues)
+		IList<ParseError> parseErrors =
+			ParseSql(sql);
+
+		if (parseErrors != null &&
+			parseErrors.Count > 0)
+		{
+			ShowSqlErrors(
+				ConvertParseErrors(parseErrors));
+
+			return;
+		}
+
+		var validator =
+			new SqlValidatorService();
+
+		IList<SqlValidationIssue>
+			validationIssues =
+				validator.Validate(sql);
+
+		if (validationIssues != null &&
+			validationIssues.Count > 0)
+		{
+			ShowSqlErrors(
+				ConvertValidationIssues(
+					validationIssues));
+
+			return;
+		}
+
+		ShowSqlErrors(null);
+	}
+	catch (Exception ex)
 	{
-		result.Add(
-			new SqlErrorInfo
-			{
-				Line = issue.Line,
-				Column = issue.Column,
-				Message = issue.Message,
-				Source = "Validator"
-			});
+		MessageBox.Show(
+			ex.ToString(),
+			"Venkat SQL Formatter",
+			MessageBoxButtons.OK,
+			MessageBoxIcon.Error);
 	}
-
-	return result;
 }
