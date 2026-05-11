@@ -1,74 +1,47 @@
+using System.Collections.Generic;
 using System.IO;
 using Microsoft.SqlServer.TransactSql.ScriptDom;
 
-namespace ScriptFormatter.Core.Formatting
+namespace ScriptFormatter.Core.Formatting.Custom
 {
-	public sealed class SqlFormatterService
+	public sealed class CustomSqlFormatterService
 	{
 		public string Format(string sql)
 		{
-			if (string.IsNullOrWhiteSpace(sql))
-			{
-				return sql;
-			}
-
 			var parser =
 				new TSql160Parser(false);
 
 			TSqlFragment fragment;
 
+			IList<ParseError> errors;
+
 			using (var reader =
 				new StringReader(sql))
 			{
-				IList<ParseError> errors;
-
 				fragment =
 					parser.Parse(
 						reader,
 						out errors);
-
-				if (errors != null &&
-					errors.Count > 0)
-				{
-					return sql;
-				}
 			}
 
-			var generator =
-				new Sql160ScriptGenerator(
-					CreateOptions());
+			if (errors != null &&
+				errors.Count > 0)
+			{
+				return sql;
+			}
 
-			string formattedSql;
+			// For now fallback to ScriptDOM generator.
+			// Next step: detect QuerySpecification and custom format.
+			var generator =
+				new Sql160ScriptGenerator();
+
+			string output;
 
 			generator.GenerateScript(
 				fragment,
-				out formattedSql);
+				out output);
 
-			return formattedSql;
-		}
-
-		private static SqlScriptGeneratorOptions
-			CreateOptions()
-		{
-			return new SqlScriptGeneratorOptions
-			{
-				KeywordCasing =
-					KeywordCasing.Uppercase,
-
-				IncludeSemicolons = false,
-
-				IndentationSize = 4,
-
-				NewLineBeforeFromClause = true,
-
-				NewLineBeforeWhereClause = true,
-
-				NewLineBeforeGroupByClause = true,
-
-				NewLineBeforeOrderByClause = true,
-
-				AlignClauseBodies = false
-			};
+			return output;
 		}
 	}
 }
