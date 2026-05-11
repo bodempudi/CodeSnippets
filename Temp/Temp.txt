@@ -1,47 +1,24 @@
-using System.Collections.Generic;
-using System.IO;
 using Microsoft.SqlServer.TransactSql.ScriptDom;
 
-namespace ScriptFormatter.Core.Formatting.Custom
+namespace ScriptFormatter.Core.Formatting.Custom.Visitors
 {
-	public sealed class CustomSqlFormatterService
+	public sealed class QuerySpecificationVisitor
+		: TSqlFragmentVisitor
 	{
-		public string Format(string sql)
+		public QuerySpecification QuerySpecification
 		{
-			var parser =
-				new TSql160Parser(false);
+			get;
+			private set;
+		}
 
-			TSqlFragment fragment;
-
-			IList<ParseError> errors;
-
-			using (var reader =
-				new StringReader(sql))
+		public override void ExplicitVisit(
+			QuerySpecification node)
+		{
+			// Capture first SELECT query block.
+			if (QuerySpecification == null)
 			{
-				fragment =
-					parser.Parse(
-						reader,
-						out errors);
+				QuerySpecification = node;
 			}
-
-			if (errors != null &&
-				errors.Count > 0)
-			{
-				return sql;
-			}
-
-			// For now fallback to ScriptDOM generator.
-			// Next step: detect QuerySpecification and custom format.
-			var generator =
-				new Sql160ScriptGenerator();
-
-			string output;
-
-			generator.GenerateScript(
-				fragment,
-				out output);
-
-			return output;
 		}
 	}
 }
