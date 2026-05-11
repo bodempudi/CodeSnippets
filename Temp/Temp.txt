@@ -1,29 +1,26 @@
-private void DrawColumnHeader(
-	object sender,
-	DrawListViewColumnHeaderEventArgs e)
+private static IList<SqlErrorInfo>
+	ConvertValidationIssues(
+		IList<SqlValidationIssue> issues)
 {
-	using (SolidBrush backBrush =
-		new SolidBrush(Color.FromArgb(245, 245, 245)))
+	var result =
+		new List<SqlErrorInfo>();
+
+	if (issues == null)
 	{
-		e.Graphics.FillRectangle(
-			backBrush,
-			e.Bounds);
+		return result;
 	}
 
-	using (Pen borderPen =
-		new Pen(Color.FromArgb(220, 220, 220)))
+	foreach (SqlValidationIssue issue in issues)
 	{
-		e.Graphics.DrawRectangle(
-			borderPen,
-			e.Bounds);
+		result.Add(
+			new SqlErrorInfo
+			{
+				Line = issue.Line,
+				Column = issue.Column,
+				Message = issue.Message,
+				Source = "Validator"
+			});
 	}
 
-	TextRenderer.DrawText(
-		e.Graphics,
-		e.Header.Text,
-		new Font("Segoe UI", 9F, FontStyle.Bold),
-		e.Bounds,
-		Color.Black,
-		TextFormatFlags.Left |
-		TextFormatFlags.VerticalCenter);
+	return result;
 }
