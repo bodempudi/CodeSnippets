@@ -1,0 +1,87 @@
+@echo off
+setlocal enabledelayedexpansion
+
+set "BASE=\\nbkftp001\ftp\Dinarwise\FileControlProcess"
+
+set "USER_INPUT=%BASE%\UserTriggerFile\Input"
+set "USER_PROCESSING=%BASE%\UserTriggerFile\Processing"
+set "USER_FAILED=%BASE%\UserTriggerFile\Failed"
+set "USER_ARCHIVE=%BASE%\UserTriggerFile\Archive"
+
+set "BANCS_STAGE=%BASE%\ETLTriggerFile\BANCS\Stage"
+set "BANCS_INPUT=%BASE%\ETLTriggerFile\BANCS\Input"
+
+set "FDI_STAGE=%BASE%\ETLTriggerFile\FDI\Stage"
+set "FDI_INPUT=%BASE%\ETLTriggerFile\FDI\Input"
+
+set "HPS_STAGE=%BASE%\ETLTriggerFile\HPS\Stage"
+set "HPS_INPUT=%BASE%\ETLTriggerFile\HPS\Input"
+
+set "LOG=%BASE%\Adhoc_Test_Log.txt"
+
+echo ================================ >> "%LOG%"
+echo Started: %date% %time% >> "%LOG%"
+
+:LOOP
+
+set "DU_UserTriggerFileName="
+
+for /f "delims=" %%F in ('dir /b /a-d /on "%USER_INPUT%\*.trg" 2^>nul') do (
+    set "DU_UserTriggerFileName=%%F"
+    goto FILE_FOUND
+)
+
+echo No trigger files found. Completed. >> "%LOG%"
+exit /b 0
+
+
+:FILE_FOUND
+
+echo Processing trigger file: !DU_UserTriggerFileName! >> "%LOG%"
+
+rem UProc-3: Delete all files from Processing folder
+del /q "%USER_PROCESSING%\*.trg" 2>nul
+
+rem UProc-4: Move selected User Trigger file from Input to Processing
+move "%USER_INPUT%\!DU_UserTriggerFileName!" "%USER_PROCESSING%\" >> "%LOG%" 2>&1
+
+if errorlevel 1 (
+    echo Failed to move user trigger file. >> "%LOG%"
+    exit /b 1
+)
+
+rem UProc-5: Copy User Trigger file from Processing to Failed
+copy "%USER_PROCESSING%\!DU_UserTriggerFileName!" "%USER_FAILED%\" >> "%LOG%" 2>&1
+
+if errorlevel 1 (
+    echo Failed to copy user trigger file to Failed folder. >> "%LOG%"
+    exit /b 1
+)
+
+rem UProc-6: Execute User Trigger File Processing SSIS package
+dtexec /SQL "\Dinarwise\Pkg_FileControl_ProcessUserTriggerFile" /SERVER NBKSSIS_MSDB2019 >> "%LOG%" 2>&1
+
+if errorlevel 1 (
+    echo User trigger file processing failed. >> "%LOG%"
+    exit /b 1
+)
+
+rem UProc-7: Generate ETL Trigger File
+dtexec /SQL "\Dinarwise\Pkg_FileControl_GenerateETLTriggerFile" /SERVER NBKSSIS_MSDB2019 >> "%LOG%" 2>&1
+
+if errorlevel 1 (
+    echo ETL trigger file generation failed. >> "%LOG%"
+    exit /b 1
+)
+
+rem UProc-8/9/10: Move BANCS, FDI, HPS ETL trigger files from Stage to Input
+move "%BANCS_STAGE%\*.trg" "%BANCS_INPUT%\" >> "%LOG%" 2>&1
+move "%FDI_STAGE%\*.trg" "%FDI_INPUT%\" >> "%LOG%" 2>&1
+move "%HPS_STAGE%\*.trg" "%HPS_INPUT%\" >> "%LOG%" 2>&1
+
+rem UProc-11: Archive User Trigger file from Failed to Archive
+move "%USER_FAILED%\!DU_UserTriggerFileName!" "%USER_ARCHIVE%\" >> "%LOG%" 2>&1
+
+rem UProc-12: Continue next file
+echo Completed trigger file: !DU_UserTriggerFileName! >> "%LOG%"
+goto LOOP
