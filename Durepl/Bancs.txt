@@ -1,0 +1,96 @@
+@echo off
+setlocal enabledelayedexpansion
+
+set "BASE=\\nbkftp001\ftp\Dinarwise\FileControlProcess"
+
+set "INPUT=%BASE%\ETLTriggerFile\BANCS\Input"
+set "PROCESSING=%BASE%\ETLTriggerFile\BANCS\Processing"
+set "FAILED=%BASE%\ETLTriggerFile\BANCS\Failed"
+set "ARCHIVE=%BASE%\ETLTriggerFile\BANCS\Archive"
+
+set "SERVER=NBKSSIS_MSDB2019"
+set "LOG=%BASE%\BANCS_Adhoc_Test_Log.txt"
+
+echo ============================== >> "%LOG%"
+echo BANCS session started: %date% %time% >> "%LOG%"
+
+:LOOP
+
+set "DU_ETLTrgFile="
+
+rem UPROC 2 - Listener: pick one file by filename ascending
+for /f "delims=" %%F in ('dir /b /a-d /on "%INPUT%\*.trg" 2^>nul') do (
+    set "DU_ETLTrgFile=%%F"
+    goto FILE_FOUND
+)
+
+echo No more BANCS trigger files. Session completed. >> "%LOG%"
+exit /b 0
+
+
+:FILE_FOUND
+
+echo Processing BANCS trigger file: !DU_ETLTrgFile! >> "%LOG%"
+
+rem UPROC 3 - Delete old files from Processing
+del /q "%PROCESSING%\*.trg" 2>nul
+
+rem UPROC 4 - Move selected trigger file Input -> Processing
+move "%INPUT%\!DU_ETLTrgFile!" "%PROCESSING%\" >> "%LOG%" 2>&1
+
+if errorlevel 1 (
+    echo FAILED: Move Input to Processing >> "%LOG%"
+    exit /b 1
+)
+
+rem UPROC 5 - Copy Processing -> Failed
+copy "%PROCESSING%\!DU_ETLTrgFile!" "%FAILED%\" >> "%LOG%" 2>&1
+
+if errorlevel 1 (
+    echo FAILED: Copy Processing to Failed >> "%LOG%"
+    exit /b 1
+)
+
+rem UPROC 6 - ODS Stage Load
+dtexec /SQL "\Dinarwise\Pkg_StageLoad_TransactionHub_BANCS_ODS" /SERVER %SERVER% /set "\package.variables[DU_ETLTrgFile].Value";"!DU_ETLTrgFile!" /REPORTING V >> "%LOG%" 2>&1
+if errorlevel 1 exit /b 1
+
+rem UPROC 7 - Stage Load
+dtexec /SQL "\Dinarwise\Pkg_StageLoad_TransactionHub_BANCS" /SERVER %SERVER% /set "\package.variables[DU_ETLTrgFile].Value";"!DU_ETLTrgFile!" /REPORTING V >> "%LOG%" 2>&1
+if errorlevel 1 exit /b 1
+
+rem UPROC 8 - Categorization
+dtexec /SQL "\Dinarwise\Pkg_Dinarwise_Categorization_BANCS" /SERVER %SERVER% /set "\package.variables[DU_ETLTrgFile].Value";"!DU_ETLTrgFile!" /REPORTING V >> "%LOG%" 2>&1
+if errorlevel 1 exit /b 1
+
+rem UPROC 9 - TransactionHub
+dtexec /SQL "\Dinarwise\Pkg_Dinarwise_Healing_TransactionHubSpoke_BANCS" /SERVER %SERVER% /set "\package.variables[DU_ETLTrgFile].Value";"!DU_ETLTrgFile!" /REPORTING V >> "%LOG%" 2>&1
+if errorlevel 1 exit /b 1
+
+rem UPROC 10 - LOBSYNC Stage Load
+dtexec /SQL "\Dinarwise\Pkg_LOB_StageLoad_Transaction_BANCS" /SERVER %SERVER% /set "\package.variables[DU_ETLTrgFile].Value";"!DU_ETLTrgFile!" /REPORTING V >> "%LOG%" 2>&1
+if errorlevel 1 exit /b 1
+
+rem UPROC 11 - LOBSYNC Load
+dtexec /SQL "\Dinarwise\Pkg_LOB_Load_Transaction_BANCS" /SERVER %SERVER% /set "\package.variables[DU_ETLTrgFile].Value";"!DU_ETLTrgFile!" /REPORTING V >> "%LOG%" 2>&1
+if errorlevel 1 exit /b 1
+
+rem UPROC 12 - CPSYNC Stage Load
+dtexec /SQL "\Dinarwise\Pkg_StageLoad_CustomerProductDetail_BANCS" /SERVER %SERVER% /set "\package.variables[DU_ETLTrgFile].Value";"!DU_ETLTrgFile!" /REPORTING V >> "%LOG%" 2>&1
+if errorlevel 1 exit /b 1
+
+rem UPROC 13 - CPSYNC Load
+dtexec /SQL "\Dinarwise\Pkg_Load_CustomerProductDetail_BANCS" /SERVER %SERVER% /set "\package.variables[DU_ETLTrgFile].Value";"!DU_ETLTrgFile!" /REPORTING V >> "%LOG%" 2>&1
+if errorlevel 1 exit /b 1
+
+rem UPROC 14 - Control Check
+dtexec /SQL "\Dinarwise\Pkg_ControlCheck_BANCS" /SERVER %SERVER% /set "\package.variables[DU_ETLTrgFile].Value";"!DU_ETLTrgFile!" /REPORTING V >> "%LOG%" 2>&1
+if errorlevel 1 exit /b 1
+
+rem UPROC 15 - Archive ETL Trigger file
+move "%FAILED%\!DU_ETLTrgFile!" "%ARCHIVE%\" >> "%LOG%" 2>&1
+
+echo Completed BANCS trigger file: !DU_ETLTrgFile! >> "%LOG%"
+
+rem UPROC 16 - Trailer / next file
+goto LOOP
