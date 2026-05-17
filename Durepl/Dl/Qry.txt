@@ -1,0 +1,35 @@
+IF EXISTS
+(
+    SELECT 1
+    FROM sys.server_event_sessions
+    WHERE name = 'DeadlockCapture'
+)
+BEGIN
+    DROP EVENT SESSION DeadlockCapture ON SERVER;
+END
+GO
+
+CREATE EVENT SESSION DeadlockCapture ON SERVER
+ADD EVENT sqlserver.xml_deadlock_report
+ADD TARGET package0.event_file
+(
+    SET filename = 'D:\SQLTrace\Deadlocks.xel',
+        max_file_size = 50,
+        max_rollover_files = 5
+);
+GO
+
+ALTER EVENT SESSION DeadlockCapture ON SERVER
+STATE = START;
+GO
+
+
+SELECT
+    CAST(event_data AS XML) AS DeadlockXml
+FROM sys.fn_xe_file_target_read_file
+(
+    'D:\SQLTrace\Deadlocks*.xel',
+    NULL,
+    NULL,
+    NULL
+);
