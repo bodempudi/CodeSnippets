@@ -1,0 +1,11 @@
+SELECT
+    @I_RecordEndDate =
+        CASE
+            WHEN @V_PreviousRecordEndDate > @I_RecordStartDate
+                THEN @V_PreviousRecordEndDate
+
+            WHEN @V_NextRecordStartDate IS NOT NULL
+                THEN @V_NextRecordStartDate
+
+            ELSE CONVERT(DATE,'20991231')
+        END;
