@@ -1,22 +1,63 @@
-public enum CommentPlacement
+private static void ParseSQL()
 {
-    Leading,
-    Inline,
-    Trailing
-}
-public enum MessageType
-{
-    Info,
-    Warning,
-    Error
-}
-public sealed class FormatterMessage
-{
-    public MessageType Type { get; set; }
+    try
+    {
+        string sql =
+            GetCurrentEditorText();
 
-    public int? Line { get; set; }
+        IList<ParseError> errors =
+            ParseSql(sql);
 
-    public int? Column { get; set; }
+        var results =
+            new List<SqlResultInfo>();
 
-    public string Message { get; set; }
+        if (errors != null &&
+            errors.Count > 0)
+        {
+            foreach (
+                ParseError error
+                in errors)
+            {
+                results.Add(
+                    new SqlResultInfo
+                    {
+                        Source = "Parser",
+                        Severity = "Error",
+                        Line = error.Line,
+                        Column = error.Column,
+                        Message = error.Message
+                    });
+            }
+        }
+        else
+        {
+            results.Add(
+                new SqlResultInfo
+                {
+                    Source = "Parser",
+                    Severity = "Info",
+                    Line = 0,
+                    Column = 0,
+                    Message = "No SQL syntax errors found."
+                });
+        }
+
+        EnsureErrorPanel();
+
+        _errorPanel.SetTitle(
+            "SQL Parsing Results");
+
+        _errorPanel.ShowResults(
+            results);
+
+        ShowErrorPanel();
+    }
+    catch (Exception ex)
+    {
+        MessageBox.Show(
+            ex.ToString(),
+            "Parse Your SQL",
+            MessageBoxButtons.OK,
+            MessageBoxIcon.Error);
+    }
 }
