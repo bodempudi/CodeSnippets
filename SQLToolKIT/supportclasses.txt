@@ -1,55 +1,238 @@
-private static void ParseYourSQL()
+using Microsoft.SqlServer.TransactSql.ScriptDom;
+using ScriptFormatter.Core.Review.ScriptFormatter.Core.Review;
+using System.Collections.Generic;
+
+namespace ScriptFormatter.Core.Review.Rules
 {
-    try
+    public sealed class ColumnQualificationRule
+        : ReviewRuleBase
     {
-        string sql =
-            GetCurrentEditorText();
-
-        var parserService =
-            new SQLParserService();
-
-        var parseResult =
-            parserService.ParseSql(sql);
-
-        EnsureErrorPanel();
-
-        _errorPanel.SetTitle(
-            "SQL Parsing Results");
-
-        if (!parseResult.IsValid)
+        public override string RuleId
         {
-            _errorPanel.ShowResults(
-                parseResult.Errors);
-
-            ShowErrorPanel();
-
-            return;
+            get { return "SQLR0012"; }
         }
 
-        var results =
-            new List<SqlResultInfo>();
+        public override ReviewSeverity Severity
+        {
+            get { return ReviewSeverity.Error; }
+        }
 
-        results.Add(
-            new SqlResultInfo
+        public override IEnumerable<ReviewFinding> Review(
+            SqlReviewContext context)
+        {
+            var findings =
+                new List<ReviewFinding>();
+
+            if (context == null ||
+                context.Fragment == null)
             {
-                Source = "Parse",
-                Severity = "Info",
-                Line = 0,
-                Column = 0,
-                Message = "No SQL parsing errors found."
-            });
+                return findings;
+            }
 
-        _errorPanel.ShowResults(
-            results);
+            var visitor =
+                new QueryVisitor(
+                    this);
 
-        ShowErrorPanel();
-    }
-    catch (Exception ex)
-    {
-        MessageBox.Show(
-            ex.ToString(),
-            "Parse Your SQL",
-            MessageBoxButtons.OK,
-            MessageBoxIcon.Error);
+            context.Fragment.Accept(
+                visitor);
+
+            return visitor.Findings;
+        }
+
+        private sealed class QueryVisitor
+            : TSqlFragmentVisitor
+        {
+            private readonly ColumnQualificationRule _rule;
+
+            public QueryVisitor(
+                ColumnQualificationRule rule)
+            {
+                _rule = rule;
+
+                Findings =
+                    new List<ReviewFinding>();
+            }
+
+            public IList<ReviewFinding> Findings
+            {
+                get;
+                private set;
+            }
+
+            public override void ExplicitVisit(
+                QuerySpecification node)
+            {
+                if (node == null)
+                {
+                    return;
+                }
+
+                if (HasJoinInCurrentQueryScope(
+                        node))
+                {
+                    var columnVisitor =
+                        new CurrentQueryColumnVisitor(
+                            _rule,
+                            Findings);
+
+                    //
+                    // Visit only this query's expressions.
+                    // Nested QuerySpecification nodes are deliberately skipped.
+                    //
+                    foreach (SelectElement selectElement
+                        in node.SelectElements)
+                    {
+                        selectElement.Accept(
+                            columnVisitor);
+                    }
+
+                    if (node.WhereClause != null)
+                    {
+                        node.WhereClause.Accept(
+                            columnVisitor);
+                    }
+
+                    if (node.GroupByClause != null)
+                    {
+                        node.GroupByClause.Accept(
+                            columnVisitor);
+                    }
+
+                    if (node.HavingClause != null)
+                    {
+                        node.HavingClause.Accept(
+                            columnVisitor);
+                    }
+
+                    if (node.OrderByClause != null)
+                    {
+                        node.OrderByClause.Accept(
+                            columnVisitor);
+                    }
+                }
+
+                //
+                // Continue traversal so nested queries are reviewed
+                // independently by this QueryVisitor.
+                //
+                base.ExplicitVisit(
+                    node);
+            }
+
+            private static bool HasJoinInCurrentQueryScope(
+                QuerySpecification query)
+            {
+                if (query.FromClause == null ||
+                    query.FromClause.TableReferences == null)
+                {
+                    return false;
+                }
+
+                foreach (TableReference tableReference
+                    in query.FromClause.TableReferences)
+                {
+                    if (ContainsJoin(
+                            tableReference))
+                    {
+                        return true;
+                    }
+                }
+
+                return false;
+            }
+
+            private static bool ContainsJoin(
+                TableReference tableReference)
+            {
+                if (tableReference == null)
+                {
+                    return false;
+                }
+
+                if (tableReference is QualifiedJoin)
+                {
+                    return true;
+                }
+
+                if (tableReference is UnqualifiedJoin)
+                {
+                    return true;
+                }
+
+                if (tableReference is JoinParenthesisTableReference
+                    joinParenthesis)
+                {
+                    return ContainsJoin(
+                        joinParenthesis.Join);
+                }
+
+                return false;
+            }
+        }
+
+        private sealed class CurrentQueryColumnVisitor
+            : TSqlFragmentVisitor
+        {
+            private readonly ColumnQualificationRule _rule;
+
+            private readonly IList<ReviewFinding> _findings;
+
+            public CurrentQueryColumnVisitor(
+                ColumnQualificationRule rule,
+                IList<ReviewFinding> findings)
+            {
+                _rule = rule;
+                _findings = findings;
+            }
+
+            public override void Visit(
+                ColumnReferenceExpression node)
+            {
+                if (node == null ||
+                    node.MultiPartIdentifier == null)
+                {
+                    return;
+                }
+
+                //
+                // One identifier:
+                //
+                // BusinessDate
+                //
+                // More than one:
+                //
+                // hist.BusinessDate
+                //
+                if (node.MultiPartIdentifier
+                        .Identifiers.Count > 1)
+                {
+                    return;
+                }
+
+                _findings.Add(
+                    _rule.CreateFinding(
+                        node,
+                        "Column should be qualified with table alias when JOIN is used."));
+            }
+
+            public override void ExplicitVisit(
+                QuerySpecification node)
+            {
+                //
+                // Critical:
+                // do NOT walk into nested SELECTs.
+                //
+                return;
+            }
+
+            public override void ExplicitVisit(
+                ScalarSubquery node)
+            {
+                //
+                // Nested query has its own scope.
+                //
+                return;
+            }
+        }
     }
 }
