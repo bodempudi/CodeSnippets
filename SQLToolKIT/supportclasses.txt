@@ -1,63 +1,1188 @@
-private static void ParseSQL()
+// NPP plugin platform for .Net v0.91.57 by Kasper B. Graversen etc.
+using Kbg.NppPluginNET.PluginInfrastructure;
+using Microsoft.SqlServer.TransactSql.ScriptDom;
+using NppDemo.Forms;
+using NppDemo.JSON_Tools;
+using NppDemo.Tests;
+using NppDemo.Utils;
+using ScriptFormatter.Core.Errors;
+using ScriptFormatter.Core.Formatting;
+using ScriptFormatter.Core.Formatting.Custom;
+using ScriptFormatter.Core.Review;
+using ScriptFormatter.Core.Review.Models;
+using ScriptFormatter.Core.Review.ScriptFormatter.Core.Review;
+using ScriptFormatter.Core.Validation;
+using System;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.Drawing;
+using System.Drawing.Imaging;
+using System.IO;
+using System.Linq;
+using System.Reflection;
+using System.Runtime.InteropServices;
+using System.Text;
+using System.Text.RegularExpressions;
+using System.Threading;
+using System.Windows.Forms;
+using VenkatSQLFormatter;
+using static Kbg.NppPluginNET.PluginInfrastructure.Win32;
+using AssemblyName = System.Reflection.AssemblyName;
+using PluginNetResources = NppDemo.Properties.Resources;
+
+namespace Kbg.NppPluginNET
 {
-    try
+    class Main
     {
-        string sql =
-            GetCurrentEditorText();
+        #region " Fields "
+        internal const int UNDO_BUFFER_SIZE = 64;
+        internal const string PluginName = "NBK SQL Toolkit";
+        public static readonly string PluginConfigDirectory = Path.Combine(Npp.notepad.GetConfigDirectory(), PluginName);
+        public const string PluginRepository = "https://github.com/molsonkiko/NppCSharpPluginPack";
+        // general stuff things
+        static Icon dockingFormIcon = null;
+        private static readonly string sessionFilePath = Path.Combine(PluginConfigDirectory, "savedNppSession.xml");
+        private static List<(string filepath, DateTime time, bool opened, int modsSinceOpen)> filesOpenedClosed = new List<(string filepath, DateTime time, bool opened, int modsSinceOpen)>();
+        public static Settings settings = new Settings();
+        public static bool bufferFinishedOpening;
+        public static int modsSinceBufferOpened = 0;
+        public static string activeFname = null;
+        public static bool isDocTypeHTML = false;
+        public static bool isShuttingDown = false;
+        // indicator things
+        private static int firstIndicator = -1;
+        private static int lastIndicator = -1;
+        // forms
+        public static SelectionRememberingForm selectionRememberingForm = null;
+        static internal int IdAboutForm = -1;
+        static internal int IdSelectionRememberingForm = -1;
+        static internal int IdCloseHtmlTag = -1;
+        // Allowing translation to other languages
+        /// <summary>
+        ///  This listens to the message that Notepad++ sends when its UI language is changed.
+        /// </summary>
+        private static NppListener nppListener = null;
+        /// <summary>
+        /// If the Notepad++ version is higher than 8.6.9, this boolean does not matter.<br></br>
+        /// If this is true, and the Notepad++ version is 8.6.9 or lower, <see cref="nppListener"/> will be initialized.<br></br>
+        /// <b>SETTING THIS TO <c>true</c> COMES AT A REAL PERFORMANCE COST <i>EVEN WHEN YOUR PLUGIN IS NOT IN USE</i></b> (possibly up to 10% of all CPU usage associated with Notepad++)<br></br>
+        /// <i>Do NOT</i> set this to true unless it is very important to you that your plugin's UI language can dynamically adjust to the Notepad++ UI language.<br></br>
+        /// Note that <b>translation will work even if this is <c>false</c></b>, so the only upside of this is that
+        /// the user doesn't need to close Notepad++ and restart it to see their new language preferences reflected in this plugin's UI.
+        /// </summary>
+        private const bool FOLLOW_NPP_UI_LANGUAGE = false;
 
-        IList<ParseError> errors =
-            ParseSql(sql);
+        private static SqlErrorPanel _errorPanel;
 
-        var results =
-            new List<SqlResultInfo>();
+        private static bool _isPanelRegistered = false;
 
-        if (errors != null &&
-            errors.Count > 0)
+        private static int idSqlErrorPanel = 25;
+        #endregion
+
+        #region " Startup/CleanUp "
+        private static void ShowFormatterStatus(
+    string message)
         {
-            foreach (
-                ParseError error
-                in errors)
-            {
-                results.Add(
-                    new SqlResultInfo
-                    {
-                        Source = "Parser",
-                        Severity = "Error",
-                        Line = error.Line,
-                        Column = error.Column,
-                        Message = error.Message
-                    });
-            }
-        }
-        else
-        {
-            results.Add(
-                new SqlResultInfo
+            ShowSqlErrors(
+                new List<SqlErrorInfo>
                 {
-                    Source = "Parser",
-                    Severity = "Info",
-                    Line = 0,
-                    Column = 0,
-                    Message = "No SQL syntax errors found."
+            new SqlErrorInfo
+            {
+                Line = 1,
+                Column = 1,
+                Message = message,
+                Source = "Formatter"
+            }
                 });
         }
+        private static void ShowSqlErrors(IList<SqlErrorInfo> errors)
+        {
+            EnsureErrorPanel();
 
-        EnsureErrorPanel();
+            _errorPanel.ShowErrors(errors);
 
-        _errorPanel.SetTitle(
-            "SQL Parsing Results");
+            Win32.SendMessage(
+                PluginBase.nppData._nppHandle,
+                (uint)NppMsg.NPPM_DMMSHOW,
+                0,
+                _errorPanel.Handle);
 
-        _errorPanel.ShowResults(
-            results);
+            IntPtr sci = PluginBase.GetCurrentScintilla();
 
-        ShowErrorPanel();
-    }
-    catch (Exception ex)
-    {
-        MessageBox.Show(
-            ex.ToString(),
-            "Parse Your SQL",
-            MessageBoxButtons.OK,
-            MessageBoxIcon.Error);
+            Win32.SendMessage(
+                sci,
+                (uint)SciMsg.SCI_SETFOCUS,
+                1,
+                0);
+
+            Win32.SendMessage(
+                sci,
+                (uint)SciMsg.SCI_GRABFOCUS,
+                0,
+                0);
+        }
+
+        static internal void CommandMenuInit()
+        {
+            AppDomain.CurrentDomain.AssemblyResolve += LoadDependency;
+
+            Translator.ResetTranslations(true);
+
+            //PluginBase.SetCommand(0, "Format SQL", FormatSQL);
+            PluginBase.SetCommand(0, "Parse Your SQL", ParseSQL);
+            PluginBase.SetCommand(1, "Review Your SQL", ReviewSQL);
+            PluginBase.SetCommand(2, "Format Your SQL", FormatSQL);
+        }
+        private static string GetCurrentEditorText()
+        {
+            var sci =
+                new ScintillaGateway(
+                    PluginBase.GetCurrentScintilla());
+
+            int length =
+                Convert.ToInt32(
+                    sci.GetLength());
+
+            return sci.GetText(length + 1);
+        }
+        private static void GoToEditorPosition(
+    int line,
+    int column)
+        {
+            IntPtr sci =
+                PluginBase.GetCurrentScintilla();
+
+            int zeroLine =
+                line - 1;
+
+            int zeroColumn =
+                column - 1;
+
+            Win32.SendMessage(
+                sci,
+                (uint)SciMsg.SCI_GOTOLINE,
+                zeroLine,
+                0);
+
+            int position =
+                (int)Win32.SendMessage(
+                    sci,
+                    (uint)SciMsg.SCI_FINDCOLUMN,
+                    zeroLine,
+                    zeroColumn);
+
+            Win32.SendMessage(
+                sci,
+                (uint)SciMsg.SCI_GOTOPOS,
+                position,
+                0);
+        }
+        private static void ReviewSQL()
+        {
+            try
+            {
+                string sql =
+                    GetCurrentEditorText();
+
+                var reviewService =
+                    new SqlReviewService();
+
+                IList<ParseError> parseErrors;
+
+                IList<ReviewFinding> findings =
+                    reviewService.Review(
+                        sql,
+                        out parseErrors);
+
+                //
+                // Parser errors found while reviewing
+                //
+                if (parseErrors != null &&
+                    parseErrors.Count > 0)
+                {
+                    var parseResults =
+                        new List<SqlResultInfo>();
+
+                    foreach (
+                        ParseError error
+                        in parseErrors)
+                    {
+                        parseResults.Add(
+                            new SqlResultInfo
+                            {
+                                Source =
+                                    "Parser",
+
+                                Severity =
+                                    "Error",
+
+                                Line =
+                                    error.Line,
+
+                                Column =
+                                    error.Column,
+
+                                Message =
+                                    error.Message
+                            });
+                    }
+
+
+
+                    EnsureErrorPanel();
+
+                    _errorPanel.SetTitle(
+                        "SQL Parsing Results");
+
+                    _errorPanel.ShowResults(
+                        parseResults);
+
+                    ShowErrorPanel();
+
+                    return;
+                }
+
+                //
+                // Review findings
+                //
+                var reviewResults =
+                    new List<SqlResultInfo>();
+
+                if (findings != null)
+                {
+                    foreach (
+                        ReviewFinding finding
+                        in findings)
+                    {
+                        reviewResults.Add(
+                            new SqlResultInfo
+                            {
+                                Source =
+                                    finding.RuleId,
+
+                                Severity =
+                                    finding.Severity.ToString(),
+
+                                Line =
+                                    finding.Line,
+
+                                Column =
+                                    finding.Column,
+
+                                Message =
+                                    finding.Message,
+
+                                StartOffset =
+                                    finding.StartOffset,
+
+                                Length =
+                                    finding.Length
+                            });
+                    }
+                }
+                if (reviewResults.Count == 0)
+                {
+                    reviewResults.Add(
+                        new SqlResultInfo
+                        {
+                            Source = "Review",
+                            Severity = "Info",
+                            Line = 0,
+                            Column = 0,
+                            Message = "No review violations found."
+                        });
+                }
+                EnsureErrorPanel();
+
+                _errorPanel.SetTitle(
+                    "SQL Review Results");
+
+                _errorPanel.ShowResults(
+                    reviewResults);
+
+                ShowErrorPanel();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(
+                    ex.ToString(),
+                    "Review Your SQL",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Error);
+            }
+        }
+        private static void ShowErrorPanel()
+        {
+            Win32.SendMessage(
+                PluginBase.nppData._nppHandle,
+                (uint)NppMsg.NPPM_DMMSHOW,
+                0,
+                _errorPanel.Handle);
+
+            IntPtr sci =
+                PluginBase.GetCurrentScintilla();
+
+            Win32.SendMessage(
+                sci,
+                (uint)SciMsg.SCI_SETFOCUS,
+                1,
+                0);
+
+            Win32.SendMessage(
+                sci,
+                (uint)SciMsg.SCI_GRABFOCUS,
+                0,
+                0);
+        }
+        private static void EnsureErrorPanel()
+        {
+            if (_errorPanel == null ||
+                _errorPanel.IsDisposed)
+            {
+                _errorPanel =
+                    new SqlErrorPanel();
+
+                //
+                // Keep the bottom results panel compact.
+                //
+                _errorPanel.Height =
+                    150;
+
+                _errorPanel.ErrorDoubleClicked +=
+                    delegate (int line, int column)
+                    {
+                        GoToEditorPosition(
+                            line,
+                            column);
+                    };
+            }
+
+            if (_isPanelRegistered)
+            {
+                return;
+            }
+
+            NppTbData nppTbData =
+                new NppTbData();
+
+            nppTbData.hClient =
+                _errorPanel.Handle;
+
+            nppTbData.pszName =
+                "SQL Results";
+
+            nppTbData.dlgID =
+                idSqlErrorPanel;
+
+            nppTbData.uMask =
+                NppTbMsg.DWS_DF_CONT_BOTTOM;
+
+            nppTbData.pszModuleName =
+                PluginName;
+
+            IntPtr ptr =
+                Marshal.AllocHGlobal(
+                    Marshal.SizeOf(
+                        nppTbData));
+
+            try
+            {
+                Marshal.StructureToPtr(
+                    nppTbData,
+                    ptr,
+                    false);
+
+                Win32.SendMessage(
+                    PluginBase.nppData._nppHandle,
+                    (uint)NppMsg.NPPM_DMMREGASDCKDLG,
+                    IntPtr.Zero,
+                    ptr);
+
+                _isPanelRegistered =
+                    true;
+            }
+            finally
+            {
+                Marshal.FreeHGlobal(
+                    ptr);
+            }
+        }
+        private static IList<ParseError> ParseSql(string sql)
+        {
+
+            var parser = new TSql160Parser(false);
+            //MessageBox.Show("Check Point 7");
+
+            IList<ParseError> errors;
+            //MessageBox.Show("Check Point 8");
+
+            using (var reader = new StringReader(sql))
+            {
+                //MessageBox.Show("Check Point 9");
+
+                parser.Parse(reader, out errors);
+                // MessageBox.Show("Check Point 10");
+
+            }
+
+            return errors;
+
+        }
+        private static IList<SqlErrorInfo> ConvertParseErrors(IList<ParseError> errors)
+        {
+            var result = new List<SqlErrorInfo>();
+
+            if (errors == null)
+            {
+                return result;
+            }
+
+            foreach (ParseError error in errors)
+            {
+                result.Add(
+                    new SqlErrorInfo
+                    {
+                        Line = error.Line,
+                        Column = error.Column,
+                        Message = error.Message,
+                        Source = "Parser"
+                    });
+            }
+
+            return result;
+        }
+        private static void ParseSQL()
+        {
+            try
+            {
+                string sql =
+                    GetCurrentEditorText();
+
+                IList<ParseError> errors =
+                    ParseSql(sql);
+
+                var results =
+                    new List<SqlResultInfo>();
+
+                if (errors != null &&
+                    errors.Count > 0)
+                {
+                    foreach (
+                        ParseError error
+                        in errors)
+                    {
+                        results.Add(
+                            new SqlResultInfo
+                            {
+                                Source = "Parser",
+                                Severity = "Error",
+                                Line = error.Line,
+                                Column = error.Column,
+                                Message = error.Message
+                            });
+                    }
+                }
+                else
+                {
+                    results.Add(
+                        new SqlResultInfo
+                        {
+                            Source = "Parser",
+                            Severity = "Info",
+                            Line = 0,
+                            Column = 0,
+                            Message = "No SQL syntax errors found."
+                        });
+                }
+
+                EnsureErrorPanel();
+
+                _errorPanel.SetTitle(
+                    "SQL Parsing Results");
+
+                _errorPanel.ShowResults(
+                    results);
+
+                ShowErrorPanel();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(
+                    ex.ToString(),
+                    "Parse Your SQL",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Error);
+            }
+        }
+        private static void FormatSQL()
+        {
+            try
+            {
+                string sql =
+                    GetCurrentEditorText();
+
+                IList<ParseError> parseErrors =
+                    ParseSql(sql);
+
+                if (parseErrors != null &&
+                    parseErrors.Count > 0)
+                {
+                    ShowSqlErrors(
+                        ConvertParseErrors(parseErrors));
+
+                    return;
+                }
+
+                var validator =
+                    new SqlValidatorService();
+
+                IList<SqlValidationIssue> validationIssues =
+                    validator.Validate(sql);
+
+                if (validationIssues != null &&
+                    validationIssues.Count > 0)
+                {
+                    ShowSqlErrors(
+                        ConvertValidationIssues(
+                            validationIssues));
+
+                    return;
+                }
+
+                var formatter =
+                    new CustomSqlFormatterService();
+
+                string formattedSql =
+                    formatter.Format(sql);
+
+                SetCurrentEditorText(
+                    formattedSql);
+
+                ShowFormatterMessages(
+                    formatter.Messages);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(
+                    ex.ToString(),
+                    "Venkat SQL Formatter",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Error);
+            }
+        }
+
+        private static void ShowFormatterMessages(
+            IReadOnlyList<FormatterMessage> messages)
+        {
+            EnsureErrorPanel();
+
+            _errorPanel.ShowFormatterMessages(
+                messages);
+
+            Win32.SendMessage(
+                PluginBase.nppData._nppHandle,
+                (uint)NppMsg.NPPM_DMMSHOW,
+                0,
+                _errorPanel.Handle);
+
+            IntPtr sci =
+                PluginBase.GetCurrentScintilla();
+
+            Win32.SendMessage(
+                sci,
+                (uint)SciMsg.SCI_SETFOCUS,
+                1,
+                0);
+
+            Win32.SendMessage(
+                sci,
+                (uint)SciMsg.SCI_GRABFOCUS,
+                0,
+                0);
+        }
+        private static void HideSqlErrors()
+        {
+            if (_errorPanel == null)
+            {
+                return;
+            }
+
+            Win32.SendMessage(
+                PluginBase.nppData._nppHandle,
+                (uint)NppMsg.NPPM_DMMHIDE,
+                0,
+                _errorPanel.Handle);
+        }
+        private static void SetCurrentEditorText(string text)
+        {
+            var sci = new ScintillaGateway(PluginBase.GetCurrentScintilla());
+
+            sci.SetText(text);
+        }
+
+        private static Assembly LoadDependency(
+    object sender,
+    ResolveEventArgs args)
+        {
+            try
+            {
+                AssemblyName requestedAssembly =
+    new AssemblyName(args.Name);
+
+                if (requestedAssembly.Name.EndsWith(
+                    ".resources",
+                    StringComparison.OrdinalIgnoreCase))
+                {
+                    return null;
+                }
+                string assemblyFile =
+                    Path.Combine(
+                        Npp.pluginDllDirectory,
+                        new AssemblyName(args.Name).Name) +
+                    ".dll";
+
+                if (!File.Exists(assemblyFile))
+                {
+                    MessageBox.Show(
+                        "Missing dependency:\n" + assemblyFile,
+                        "SQLStandardFormatter");
+
+                    return null;
+                }
+
+                Assembly assembly =
+                    Assembly.LoadFrom(
+                        assemblyFile);
+
+
+
+                return assembly;
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(
+                    ex.ToString(),
+                    "Assembly Load Error");
+
+                return null;
+            }
+        }
+
+        static internal void SetToolBarIcons()
+        {
+            // No toolbar icons are registered in the simplified plugin.
+            // This avoids referencing removed template command IDs.
+        }
+        private static IList<SqlErrorInfo>
+    ConvertValidationIssues(
+        IList<SqlValidationIssue> issues)
+        {
+            var result =
+                new List<SqlErrorInfo>();
+
+            if (issues == null)
+            {
+                return result;
+            }
+
+            foreach (SqlValidationIssue issue in issues)
+            {
+                result.Add(
+                    new SqlErrorInfo
+                    {
+                        Line = issue.Line,
+                        Column = issue.Column,
+                        Message = issue.Message,
+                        Source = "Validator"
+                    });
+            }
+
+            return result;
+        }
+
+        public static void OnNotification(ScNotification notification)
+        {
+            // Minimal formatter plugin: no template notification handling.
+            // Format SQL is executed only from the menu command.
+        }
+
+        static internal void PluginCleanUp()
+        {
+            // dispose of any forms
+            if (selectionRememberingForm != null && !selectionRememberingForm.IsDisposed)
+            {
+                selectionRememberingForm.Close();
+                selectionRememberingForm.Dispose();
+            }
+            isShuttingDown = true;
+        }
+        #endregion
+
+        #region " Menu functions "
+
+        /// <summary>
+        /// open GitHub repo with the web browser
+        /// </summary>
+        private static void Docs()
+        {
+            OpenUrlInWebBrowser(PluginRepository);
+        }
+
+        public static void OpenUrlInWebBrowser(string url)
+        {
+            try
+            {
+                var ps = new ProcessStartInfo(url)
+                {
+                    UseShellExecute = true,
+                    Verb = "open"
+                };
+                Process.Start(ps);
+            }
+            catch (Exception ex)
+            {
+                Translator.ShowTranslatedMessageBox(
+                    "While attempting to open URL {0} in web browser, got exception\r\n{1}",
+                    "Could not open url in web browser",
+                    MessageBoxButtons.OK, MessageBoxIcon.Error,
+                    2, url, ex);
+            }
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        static void PrintScrollInformation()
+        {
+            ScrollInfo scrollInfo = Npp.editor.GetScrollInfo(ScrollInfoMask.SIF_RANGE | ScrollInfoMask.SIF_TRACKPOS | ScrollInfoMask.SIF_PAGE, ScrollInfoBar.SB_VERT);
+            var scrollRatio = (double)scrollInfo.nTrackPos / (scrollInfo.nMax - scrollInfo.nPage);
+            var scrollPercentage = Math.Min(scrollRatio, 1) * 100;
+            Npp.editor.ReplaceSel($@"The maximum row in the current document was {scrollInfo.nMax + 1}.
+A maximum of {scrollInfo.nPage} rows is visible at a time.
+The current scroll ratio is {Math.Round(scrollPercentage, 2)}%.
+");
+        }
+
+        /// <summary>
+        /// open a new file, write a hello world type message, then play with the zoom
+        /// </summary>
+        static void HelloFX()
+        {
+            Npp.notepad.FileNew();
+            Npp.editor.SetText("Hello, Notepad++...from.NET!");
+            var rest = Npp.editor.GetLine(0);
+            Npp.editor.SetText(rest + rest + rest);
+            new Thread(CallbackHelloFX).Start();
+        }
+
+        static void CallbackHelloFX()
+        {
+            int currentZoomLevel = Npp.editor.GetZoom();
+            int i = currentZoomLevel;
+            for (int j = 0; j < 4; j++)
+            {
+                for (; i >= -10; i--)
+                {
+                    Npp.editor.SetZoom(i);
+                    Thread.Sleep(30);
+                }
+                Thread.Sleep(100);
+                for (; i <= 20; i++)
+                {
+                    Thread.Sleep(30);
+                    Npp.editor.SetZoom(i);
+                }
+                Thread.Sleep(100);
+            }
+            for (; i >= currentZoomLevel; i--)
+            {
+                Thread.Sleep(30);
+                Npp.editor.SetZoom(i);
+            }
+        }
+
+        /// <summary>
+        /// open a new buffer and slowly write out the text of text2display in the WhatIsNpp method above.
+        /// </summary>
+        static void WhatIsNpp()
+        {
+            string text2display = "Notepad++ is a free (as in \"free speech\" and also as in \"free beer\") " +
+                "source code editor and Notepad replacement that supports several languages.\n" +
+                "Running in the MS Windows environment, its use is governed by GPL License.\n\n" +
+                "Based on a powerful editing component Scintilla, Notepad++ is written in C++ and " +
+                "uses pure Win32 API and STL which ensures a higher execution speed and smaller program size.\n" +
+                "By optimizing as many routines as possible without losing user friendliness, Notepad++ is trying " +
+                "to reduce the world carbon dioxide emissions. When using less CPU power, the PC can throttle down " +
+                "and reduce power consumption, resulting in a greener environment.";
+            new Thread(new ParameterizedThreadStart(CallbackWhatIsNpp)).Start(text2display);
+        }
+
+        static void CallbackWhatIsNpp(object data)
+        {
+            string text2display = (string)data;
+            Npp.notepad.FileNew();
+            string newFileName = Npp.notepad.GetCurrentFilePath();
+
+            Random srand = new Random(DateTime.Now.Millisecond);
+            int rangeMin = 0;
+            int rangeMax = 250;
+            for (int i = 0; i < text2display.Length; i++)
+            {
+                Thread.Sleep(srand.Next(rangeMin, rangeMax) + 30);
+                if (Npp.notepad.GetCurrentFilePath() != newFileName)
+                    break;
+                Npp.editor.AppendTextAndMoveCursor(text2display[i].ToString());
+            }
+        }
+
+        static void InsertCurrentFullFilePath()
+        {
+            Npp.editor.ReplaceSel(Npp.GetCurrentPath(Npp.PathType.FULL_CURRENT_PATH));
+        }
+
+        static void InsertCurrentDirectory()
+        {
+            Npp.editor.ReplaceSel(Npp.GetCurrentPath(Npp.PathType.DIRECTORY));
+        }
+
+        /// <summary>
+        /// toggle whether or not to autocomplete HTML/XML tags
+        /// </summary>
+        static void CheckInsertHtmlCloseTag()
+        {
+            settings.close_html_tag = !settings.close_html_tag;
+            settings.SetXmlMenuItemCheck();
+            settings.SaveToIniFile();
+        }
+
+        static internal void DoesCurrentLexerSupportCloseHtmlTag()
+        {
+            LangType docType = LangType.L_TEXT;
+            Win32.SendMessage(PluginBase.nppData._nppHandle, (uint)NppMsg.NPPM_GETCURRENTLANGTYPE, 0, ref docType);
+            isDocTypeHTML = (docType == LangType.L_HTML || docType == LangType.L_XML || docType == LangType.L_PHP);
+        }
+
+        static readonly Regex htmlTagNameRegex = new Regex(@"[\._\-:\w]", RegexOptions.Compiled);
+
+
+        static internal void DoInsertHtmlCloseTag(char newChar)
+        {
+            if (!(isDocTypeHTML && settings.close_html_tag && newChar == '>'))
+                return;
+
+            int bufCapacity = 512;
+            var pos = Npp.editor.GetCurrentPos();
+            int currentPos = pos;
+            int beginPos = currentPos - (bufCapacity - 1);
+            int startPos = (beginPos > 0) ? beginPos : 0;
+            int size = currentPos - startPos;
+
+            if (size < 3)
+                return;
+
+            using (TextRange tr = new TextRange(startPos, currentPos, bufCapacity))
+            {
+                Npp.editor.GetTextRange(tr);
+                string buf = tr.lpstrText;
+
+                if (buf[size - 2] == '/')
+                    return;
+
+                int pCur = size - 2;
+                while ((pCur > 0) && (buf[pCur] != '<') && (buf[pCur] != '>'))
+                    pCur--;
+
+                if (buf[pCur] == '<')
+                {
+                    pCur++;
+
+                    var insertString = new StringBuilder("</");
+
+                    while (htmlTagNameRegex.IsMatch(buf[pCur].ToString()))
+                    {
+                        insertString.Append(buf[pCur]);
+                        pCur++;
+                    }
+                    insertString.Append('>');
+
+                    if (insertString.Length > 3)
+                    {
+                        Npp.editor.BeginUndoAction();
+                        Npp.editor.ReplaceSel(insertString.ToString());
+                        Npp.editor.SetSel(pos, pos);
+                        Npp.editor.EndUndoAction();
+                    }
+                }
+            }
+        }
+
+        static void GetFileNamesDemo()
+        {
+            string[] fileNames = Npp.notepad.GetOpenFileNames();
+            MessageBox.Show(fileNames.Length.ToString(), "Number of opened files:");
+
+            foreach (string file in fileNames)
+                MessageBox.Show(file);
+        }
+
+        static void GetSessionFileNamesDemo()
+        {
+            if (!Directory.Exists(PluginConfigDirectory) || !File.Exists(sessionFilePath))
+            {
+                MessageBox.Show($"No valid session file at path \"{sessionFilePath}\" in order to point to a valid session file",
+                    "No valid session file",
+                    MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return;
+            }
+            int nbFile = (int)Win32.SendMessage(PluginBase.nppData._nppHandle, (uint)NppMsg.NPPM_GETNBSESSIONFILES, 0, sessionFilePath);
+
+            if (nbFile < 1)
+            {
+                MessageBox.Show($"No valid session file at path \"{sessionFilePath}\" in order to point to a valid session file",
+                    "No valid session file",
+                    MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return;
+            }
+            MessageBox.Show($"Number of session files: {nbFile}");
+
+            using (ClikeStringArray cStrArray = new ClikeStringArray(nbFile, Win32.MAX_PATH))
+            {
+                if (Win32.SendMessage(PluginBase.nppData._nppHandle, (uint)NppMsg.NPPM_GETSESSIONFILES, cStrArray.NativePointer, sessionFilePath) != IntPtr.Zero)
+                    foreach (string file in cStrArray.ManagedStringsUnicode) MessageBox.Show(file);
+            }
+        }
+        static void SaveCurrentSessionDemo()
+        {
+            Npp.CreateConfigSubDirectoryIfNotExists();
+            Win32.SendMessage(PluginBase.nppData._nppHandle, (uint)NppMsg.NPPM_SAVECURRENTSESSION, 0, sessionFilePath);
+            if (!string.IsNullOrWhiteSpace(sessionFilePath))
+                MessageBox.Show($"Saved Session File to: \"{sessionFilePath}\"",
+                    "saved session file",
+                    MessageBoxButtons.OK, MessageBoxIcon.Information);
+        }
+
+        static void PrintNanInf()
+        {
+            bool neginf_correct = double.IsNegativeInfinity(NanInf.neginf);
+            bool inf_correct = double.IsPositiveInfinity(NanInf.inf);
+            bool nan_correct = double.IsNaN(NanInf.nan);
+            string naninf = $@"-infinity == NanInf.neginf: {neginf_correct}
+infinity == NanInf.inf: {inf_correct}
+NaN == NanInf.nan: {nan_correct}
+If you want these constants in your plugin, you can find them in the NanInf class in PluginInfrastructure.
+DO NOT USE double.PositiveInfinity, double.NegativeInfinity, or double.NaN.
+You will get a compiler error if you do.";
+            Npp.notepad.FileNew();
+            Npp.editor.AppendTextAndMoveCursor(naninf);
+        }
+
+        private static void ShowFilesOpenedAndClosedThisSession()
+        {
+            Npp.notepad.FileNew();
+            var sb = new StringBuilder();
+            sb.Append("Action\tFilename\tTime\tModifications since buffer opened\r\n");
+            foreach ((string filename, DateTime time, bool wasOpened, int modsSinceBufferOpened) in filesOpenedClosed)
+            {
+                string formattedTime = time.ToString("yyyy-MM-dd HH:mm:ss");
+                string openClose = wasOpened ? "open" : "close";
+                sb.Append($"{filename}\t{formattedTime}\t{openClose}\t{modsSinceBufferOpened}\r\n");
+            }
+            Npp.editor.SetText(sb.ToString());
+        }
+
+        /// <summary>
+        /// this shows how to allocate indicators (note: this only works in Notepad++ 8.5.6 or newer)<br></br>
+        /// and also provides a very simple example of how to style a region of text with indicators.
+        /// </summary>
+        private static void AllocateIndicatorsDemo()
+        {
+            var dialog = new Form
+            {
+                Text = "Allocate indicators demo",
+                ClientSize = new Size(300, 220),
+                MinimumSize = new Size(300, 220),
+                ShowIcon = false,
+                AutoScaleMode = AutoScaleMode.Font,
+                AutoScaleDimensions = new SizeF(6F, 13F),
+                ShowInTaskbar = false,
+                StartPosition = FormStartPosition.CenterParent,
+                Controls =
+                {
+                    new Label
+                    {
+                        Name = "AllocateIndicatorsTextBoxLabel",
+                        Text = "Choose a positive integer",
+                        Anchor = AnchorStyles.Bottom | AnchorStyles.Right,
+                        AutoSize = true,
+                        Location = new Point(60, 50),
+                    },
+                    new TextBox
+                    {
+                        Name = "AllocateIndicatorsTextBox",
+                        Text = "1",
+                        Anchor = AnchorStyles.Bottom | AnchorStyles.Right,
+                        Size = new Size(75, 23),
+                        Location = new Point(100, 100)
+                    },
+                    new Button
+                    {
+                        Name = "Ok",
+                        Text = "&Ok",
+                        Anchor = AnchorStyles.Bottom | AnchorStyles.Right,
+                        Size = new Size(75, 23),
+                        Location = new Point(50, 160),
+                        UseVisualStyleBackColor = true
+                    },
+                    new Button
+                    {
+                        Name = "Show",
+                        Text = "&Show",
+                        Anchor = AnchorStyles.Bottom | AnchorStyles.Right,
+                        Size = new Size(75, 23),
+                        Location = new Point(175, 160),
+                        UseVisualStyleBackColor = true
+                    },
+                }
+            };
+
+            dialog.Controls["Show"].Click += (a, b) => dialog.Close();
+            dialog.Controls["Ok"].Click += (a, b) =>
+            {
+                string allocatorIndicatorsText = dialog.Controls["AllocateIndicatorsTextBox"].Text;
+                bool failure = false;
+                string errorMessage = "Number of indicators must be a positive integer, not " + allocatorIndicatorsText;
+                try
+                {
+                    int numberOfIndicators = int.Parse(allocatorIndicatorsText);
+                    if (numberOfIndicators < 1)
+                        failure = true;
+                    if (Npp.notepad.AllocateIndicators(numberOfIndicators, out int[] indicators))
+                    {
+                        string indicatorsStr = string.Join(", ", indicators.Select(x => x.ToString()).ToArray());
+                        if (indicators.Length > 0)
+                        {
+                            if (firstIndicator == -1)
+                                firstIndicator = indicators[0];
+                            lastIndicator = indicators[indicators.Length - 1];
+                        }
+                        MessageBox.Show($"Was able to allocate the following {numberOfIndicators} indicators: {indicatorsStr}",
+                            $"Successfully allocated {numberOfIndicators} indicators",
+                            MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    }
+                    else
+                    {
+                        failure = true;
+                        errorMessage = $"Notepad++ failed to find {numberOfIndicators} consecutive unallocated indicators starting at {lastIndicator + 1}, but there was no error";
+                    }
+                }
+                catch
+                {
+                    failure = true;
+                }
+                if (failure)
+                    MessageBox.Show(errorMessage,
+                        "Could not allocate indicators",
+                        MessageBoxButtons.OK, MessageBoxIcon.Error);
+            };
+            dialog.ShowDialog();
+            if (firstIndicator != -1)
+            {
+                string text = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
+                Npp.notepad.FileNew();
+                Npp.editor.SetText(text);
+                for (int ii = firstIndicator; ii <= lastIndicator; ii++)
+                {
+                    Npp.editor.SetIndicatorCurrent(ii);
+                    Npp.editor.IndicSetStyle(ii, IndicatorStyle.SQUIGGLE);
+                    Npp.editor.IndicSetFore(ii, new Colour(0xff, 0, 0));
+                    Npp.editor.IndicatorFillRange(ii, 1);
+                }
+                MessageBox.Show($"Characters {firstIndicator}-{lastIndicator} are styled by indicators {firstIndicator}-{lastIndicator}, which have been allocated by the preceding dialog this session.",
+                    "Showing which indicators are in use",
+                    MessageBoxButtons.OK, MessageBoxIcon.Information);
+            }
+        }
+
+        //form opening stuff
+
+        static void OpenSettings()
+        {
+            settings.ShowDialog();
+        }
+
+        /// <summary>
+        /// Apply the appropriate styling
+        /// (either generic control styling or Notepad++ styling as the case may be)
+        /// to all forms.
+        /// </summary>
+        public static void RestyleEverything()
+        {
+            if (selectionRememberingForm != null && !selectionRememberingForm.IsDisposed)
+                FormStyle.ApplyStyle(selectionRememberingForm, settings.use_npp_styling);
+        }
+
+        public static void OpenSelectionRememberingForm()
+        {
+            bool wasVisible = selectionRememberingForm != null && selectionRememberingForm.Visible;
+            if (wasVisible)
+                Npp.notepad.HideDockingForm(selectionRememberingForm);
+            else if (selectionRememberingForm == null || selectionRememberingForm.IsDisposed)
+            {
+                selectionRememberingForm = new SelectionRememberingForm();
+                DisplaySelectionRememberingForm(selectionRememberingForm);
+            }
+            else
+            {
+                Npp.notepad.ShowDockingForm(selectionRememberingForm);
+            }
+        }
+
+        private static void DisplaySelectionRememberingForm(SelectionRememberingForm form)
+        {
+            using (Bitmap newBmp = new Bitmap(16, 16))
+            {
+                Graphics g = Graphics.FromImage(newBmp);
+                ColorMap[] colorMap = new ColorMap[1];
+                colorMap[0] = new ColorMap();
+                colorMap[0].OldColor = Color.Fuchsia;
+                colorMap[0].NewColor = Color.FromKnownColor(KnownColor.ButtonFace);
+                ImageAttributes attr = new ImageAttributes();
+                attr.SetRemapTable(colorMap);
+                //g.DrawImage(tbBmp_tbTab, new Rectangle(0, 0, 16, 16), 0, 0, 16, 16, GraphicsUnit.Pixel, attr);
+                dockingFormIcon = Icon.FromHandle(newBmp.GetHicon());
+            }
+
+            NppTbData _nppTbData = new NppTbData();
+            _nppTbData.hClient = form.Handle;
+            string defaultTitle = "Remember and set selections";
+            string formTitle = (Translator.TryGetTranslationAtPath(new string[] { "forms", "SelectionRememberingForm", "title" }, out JNode node) && node.value is string s) ? s : defaultTitle;
+            _nppTbData.pszName = formTitle;
+            // the dlgDlg should be the index of funcItem where the current function pointer is in
+            // this case is 15.. so the initial value of funcItem[15]._cmdID - not the updated internal one !
+            _nppTbData.dlgID = IdSelectionRememberingForm;
+            // dock on left
+            _nppTbData.uMask = NppTbMsg.DWS_DF_CONT_LEFT | NppTbMsg.DWS_ICONTAB | NppTbMsg.DWS_ICONBAR;
+            _nppTbData.hIconTab = (uint)dockingFormIcon.Handle;
+            _nppTbData.pszModuleName = PluginName;
+            IntPtr _ptrNppTbData = Marshal.AllocHGlobal(Marshal.SizeOf(_nppTbData));
+            Marshal.StructureToPtr(_nppTbData, _ptrNppTbData, false);
+
+            Win32.SendMessage(PluginBase.nppData._nppHandle, (uint)NppMsg.NPPM_DMMREGASDCKDLG, 0, _ptrNppTbData);
+            Npp.notepad.ShowDockingForm(form);
+        }
+
+        static void ShowAboutForm()
+        {
+            AboutForm aboutForm = new AboutForm();
+            aboutForm.ShowDialog();
+            aboutForm.Focus();
+        }
+
+        static void OpenPopupDialog()
+        {
+            using (var popupForm = new PopupDialog())
+                popupForm.ShowDialog();
+        }
+        #endregion
     }
 }
