@@ -1,39 +1,55 @@
-private static void ReviewYourSQL()
+private static void ParseYourSQL()
 {
-    string sql =
-        GetCurrentEditorText();
-
-    var parserService =
-        new SQLParserService();
-
-    SqlParseResult parseResult =
-        parserService.ParseSql(
-            sql);
-
-    if (!parseResult.IsValid)
+    try
     {
-        _errorPanel.ShowResults(
-            parseResult.Errors);
+        string sql =
+            GetCurrentEditorText();
 
-        return;
-    }
+        var parserService =
+            new SQLParserService();
 
-    var reviewContext =
-        new SqlReviewContext
+        var parseResult =
+            parserService.ParseSql(sql);
+
+        EnsureErrorPanel();
+
+        _errorPanel.SetTitle(
+            "SQL Parsing Results");
+
+        if (!parseResult.IsValid)
         {
-            Sql =
-                sql,
+            _errorPanel.ShowResults(
+                parseResult.Errors);
 
-            Fragment =
-                parseResult.Fragment
-        };
+            ShowErrorPanel();
 
-    var reviewService =
-        new SqlReviewService();
+            return;
+        }
 
-    IEnumerable<ReviewFinding> findings =
-        reviewService.Review(
-            reviewContext);
+        var results =
+            new List<SqlResultInfo>();
 
-    // Show findings
+        results.Add(
+            new SqlResultInfo
+            {
+                Source = "Parse",
+                Severity = "Info",
+                Line = 0,
+                Column = 0,
+                Message = "No SQL parsing errors found."
+            });
+
+        _errorPanel.ShowResults(
+            results);
+
+        ShowErrorPanel();
+    }
+    catch (Exception ex)
+    {
+        MessageBox.Show(
+            ex.ToString(),
+            "Parse Your SQL",
+            MessageBoxButtons.OK,
+            MessageBoxIcon.Error);
+    }
 }
