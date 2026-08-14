@@ -1,54 +1,39 @@
-using Microsoft.SqlServer.TransactSql.ScriptDom;
-using NBK.SQL.CodingStandards.Core.Models;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-
-namespace NBK.SQL.CodingStandards.Core.Parsing
+private static void ReviewYourSQL()
 {
-    public sealed class SQLParserService
+    string sql =
+        GetCurrentEditorText();
+
+    var parserService =
+        new SQLParserService();
+
+    SqlParseResult parseResult =
+        parserService.ParseSql(
+            sql);
+
+    if (!parseResult.IsValid)
     {
-        public SqlParseResult ParseSql(
-            string sql)
-        {
-            var parser =
-                new TSql160Parser(false);
+        _errorPanel.ShowResults(
+            parseResult.Errors);
 
-            TSqlFragment fragment;
-
-            IList<ParseError> errors;
-
-            using (var reader =
-                new StringReader(sql))
-            {
-                fragment =
-                    parser.Parse(
-                        reader,
-                        out errors);
-            }
-
-            return new SqlParseResult
-            {
-                Fragment =
-                    fragment,
-
-                Errors =
-                    errors
-                        .Select(
-                            error =>
-                                new SqlResultInfo
-                                {
-                                    Line =
-                                        error.Line,
-
-                                    Column =
-                                        error.Column,
-
-                                    Message =
-                                        error.Message
-                                })
-                        .ToList()
-            };
-        }
+        return;
     }
+
+    var reviewContext =
+        new SqlReviewContext
+        {
+            Sql =
+                sql,
+
+            Fragment =
+                parseResult.Fragment
+        };
+
+    var reviewService =
+        new SqlReviewService();
+
+    IEnumerable<ReviewFinding> findings =
+        reviewService.Review(
+            reviewContext);
+
+    // Show findings
 }
