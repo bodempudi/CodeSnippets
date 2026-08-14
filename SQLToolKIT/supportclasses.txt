@@ -1,68 +1,134 @@
-using System;
-using System.IO;
-using System.Reflection;
-
-namespace NotepadPlusPlusPlugin.PluginInfrastructure
+private static void ReviewSQL()
 {
-    internal static class DependencyResolver
+    try
     {
-        private static bool _registered;
+        string sql =
+            GetCurrentEditorText();
 
-        internal static void Register()
+        var reviewService =
+            new SqlReviewService();
+
+        IList<ParseError> parseErrors;
+
+        IList<ReviewFinding> findings =
+            reviewService.Review(
+                sql,
+                out parseErrors);
+
+        //
+        // Parser errors found while reviewing
+        //
+        if (parseErrors != null &&
+            parseErrors.Count > 0)
         {
-            if (_registered)
+            var parseResults =
+                new List<SqlResultInfo>();
+
+            foreach (
+                ParseError error
+                in parseErrors)
             {
-                return;
+                parseResults.Add(
+                    new SqlResultInfo
+                    {
+                        Source =
+                            "Parser",
+
+                        Severity =
+                            "Error",
+
+                        Line =
+                            error.Line,
+
+                        Column =
+                            error.Column,
+
+                        Message =
+                            error.Message
+                    });
             }
 
-            AppDomain.CurrentDomain.AssemblyResolve += ResolveAssembly;
 
-            _registered = true;
+
+            EnsureErrorPanel();
+
+            _errorPanel.SetTitle(
+                "SQL Parsing Results");
+
+            _errorPanel.ShowResults(
+                parseResults);
+
+            ShowErrorPanel();
+
+            return;
         }
 
-        private static Assembly ResolveAssembly(
-            object sender,
-            ResolveEventArgs args)
+        //
+        // Review findings
+        //
+        var reviewResults =
+            new List<SqlResultInfo>();
+
+        if (findings != null)
         {
-            AssemblyName requestedAssembly =
-                new AssemblyName(args.Name);
-
-            if (requestedAssembly.Name.EndsWith(
-                    ".resources",
-                    StringComparison.OrdinalIgnoreCase))
+            foreach (
+                ReviewFinding finding
+                in findings)
             {
-                return null;
+                reviewResults.Add(
+                    new SqlResultInfo
+                    {
+                        Source =
+                            finding.RuleId,
+
+                        Severity =
+                            finding.Severity.ToString(),
+
+                        Line =
+                            finding.Line,
+
+                        Column =
+                            finding.Column,
+
+                        Message =
+                            finding.Message,
+
+                        StartOffset =
+                            finding.StartOffset,
+
+                        Length =
+                            finding.Length
+                    });
             }
-
-            string pluginDirectory =
-                Path.GetDirectoryName(
-                    Assembly.GetExecutingAssembly().Location);
-
-            string assemblyPath =
-                Path.Combine(
-                    pluginDirectory,
-                    requestedAssembly.Name + ".dll");
-
-            if (!File.Exists(assemblyPath))
-            {
-                return null;
-            }
-
-            return Assembly.LoadFrom(
-                assemblyPath);
         }
+        if (reviewResults.Count == 0)
+        {
+            reviewResults.Add(
+                new SqlResultInfo
+                {
+                    Source = "Review",
+                    Severity = "Info",
+                    Line = 0,
+                    Column = 0,
+                    Message = "No review violations found."
+                });
+        }
+        EnsureErrorPanel();
+
+        _errorPanel.SetTitle(
+            "SQL Review Results");
+
+        _errorPanel.ShowResults(
+            reviewResults);
+
+        ShowErrorPanel();
     }
-}
-
-
-
-[DllExport(CallingConvention = CallingConvention.Cdecl)]
-static void setInfo(NppData notepadPlusData)
-{
-    DependencyResolver.Register();
-
-    PluginBase.nppData =
-        notepadPlusData;
-
-    Main.CommandMenuInit();
+    catch (Exception ex)
+    {
+        MessageBox.Show(
+            ex.ToString(),
+            "Review Your SQL",
+            MessageBoxButtons.OK,
+            MessageBoxIcon.Error);
+    }
 }
