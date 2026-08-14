@@ -1,134 +1,29 @@
-private static void ReviewSQL()
+using Microsoft.SqlServer.TransactSql.ScriptDom;
+using System.Collections.Generic;
+
+namespace NBK.SQL.CodingStandards.Core.Models
 {
-    try
+    public sealed class SqlParseResult
     {
-        string sql =
-            GetCurrentEditorText();
-
-        var reviewService =
-            new SqlReviewService();
-
-        IList<ParseError> parseErrors;
-
-        IList<ReviewFinding> findings =
-            reviewService.Review(
-                sql,
-                out parseErrors);
-
-        //
-        // Parser errors found while reviewing
-        //
-        if (parseErrors != null &&
-            parseErrors.Count > 0)
+        public TSqlFragment Fragment
         {
-            var parseResults =
-                new List<SqlResultInfo>();
-
-            foreach (
-                ParseError error
-                in parseErrors)
-            {
-                parseResults.Add(
-                    new SqlResultInfo
-                    {
-                        Source =
-                            "Parser",
-
-                        Severity =
-                            "Error",
-
-                        Line =
-                            error.Line,
-
-                        Column =
-                            error.Column,
-
-                        Message =
-                            error.Message
-                    });
-            }
-
-
-
-            EnsureErrorPanel();
-
-            _errorPanel.SetTitle(
-                "SQL Parsing Results");
-
-            _errorPanel.ShowResults(
-                parseResults);
-
-            ShowErrorPanel();
-
-            return;
+            get;
+            set;
         }
 
-        //
-        // Review findings
-        //
-        var reviewResults =
-            new List<SqlResultInfo>();
-
-        if (findings != null)
+        public IList<SqlResultInfo> Errors
         {
-            foreach (
-                ReviewFinding finding
-                in findings)
+            get;
+            set;
+        }
+
+        public bool IsValid
+        {
+            get
             {
-                reviewResults.Add(
-                    new SqlResultInfo
-                    {
-                        Source =
-                            finding.RuleId,
-
-                        Severity =
-                            finding.Severity.ToString(),
-
-                        Line =
-                            finding.Line,
-
-                        Column =
-                            finding.Column,
-
-                        Message =
-                            finding.Message,
-
-                        StartOffset =
-                            finding.StartOffset,
-
-                        Length =
-                            finding.Length
-                    });
+                return Errors == null ||
+                       Errors.Count == 0;
             }
         }
-        if (reviewResults.Count == 0)
-        {
-            reviewResults.Add(
-                new SqlResultInfo
-                {
-                    Source = "Review",
-                    Severity = "Info",
-                    Line = 0,
-                    Column = 0,
-                    Message = "No review violations found."
-                });
-        }
-        EnsureErrorPanel();
-
-        _errorPanel.SetTitle(
-            "SQL Review Results");
-
-        _errorPanel.ShowResults(
-            reviewResults);
-
-        ShowErrorPanel();
-    }
-    catch (Exception ex)
-    {
-        MessageBox.Show(
-            ex.ToString(),
-            "Review Your SQL",
-            MessageBoxButtons.OK,
-            MessageBoxIcon.Error);
     }
 }
