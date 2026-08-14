@@ -1,29 +1,54 @@
 using Microsoft.SqlServer.TransactSql.ScriptDom;
+using NBK.SQL.CodingStandards.Core.Models;
 using System.Collections.Generic;
+using System.IO;
+using System.Linq;
 
-namespace NBK.SQL.CodingStandards.Core.Models
+namespace NBK.SQL.CodingStandards.Core.Parsing
 {
-    public sealed class SqlParseResult
+    public sealed class SQLParserService
     {
-        public TSqlFragment Fragment
+        public SqlParseResult ParseSql(
+            string sql)
         {
-            get;
-            set;
-        }
+            var parser =
+                new TSql160Parser(false);
 
-        public IList<SqlResultInfo> Errors
-        {
-            get;
-            set;
-        }
+            TSqlFragment fragment;
 
-        public bool IsValid
-        {
-            get
+            IList<ParseError> errors;
+
+            using (var reader =
+                new StringReader(sql))
             {
-                return Errors == null ||
-                       Errors.Count == 0;
+                fragment =
+                    parser.Parse(
+                        reader,
+                        out errors);
             }
+
+            return new SqlParseResult
+            {
+                Fragment =
+                    fragment,
+
+                Errors =
+                    errors
+                        .Select(
+                            error =>
+                                new SqlResultInfo
+                                {
+                                    Line =
+                                        error.Line,
+
+                                    Column =
+                                        error.Column,
+
+                                    Message =
+                                        error.Message
+                                })
+                        .ToList()
+            };
         }
     }
 }
