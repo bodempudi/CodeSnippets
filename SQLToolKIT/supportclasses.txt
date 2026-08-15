@@ -1,374 +1,180 @@
 using Microsoft.SqlServer.TransactSql.ScriptDom;
-using ScriptFormatter.Core.Review.ScriptFormatter.Core.Review;
-using System;
 using System.Collections.Generic;
-using System.Linq;
 
-namespace ScriptFormatter.Core.Review.Rules
+namespace NBK.SQL.CodingStandards.Core.Models
 {
-    public sealed class NoLockRule
-        : ReviewRuleBase
+    public sealed class SqlParseResult
     {
-        public override string RuleId
+        public TSqlFragment Fragment
         {
-            get { return "SQLR0001"; }
+            get;
+            set;
         }
 
-        public override ReviewSeverity Severity
+        public IList<SqlResultInfo> Errors
         {
-            get { return ReviewSeverity.Warning; }
+            get;
+            set;
         }
 
-        public override IEnumerable<ReviewFinding> Review(
-            SqlReviewContext context)
+        public bool IsValid
         {
-            var findings =
-                new List<ReviewFinding>();
-
-            if (context == null ||
-                context.Fragment == null)
+            get
             {
-                return findings;
+                return Errors == null ||
+                       Errors.Count == 0;
+            }
+        }
+
+        public bool CanReview
+        {
+            get
+            {
+                return Fragment != null;
+            }
+        }
+    }
+}
+
+private static void ReviewYourSQL()
+{
+    try
+    {
+        string sql =
+            GetCurrentEditorText();
+
+        var parserService =
+            new SQLParserService();
+
+        SqlParseResult parseResult =
+            parserService.ParseSql(
+                sql);
+
+        var reviewResults =
+            new List<SqlResultInfo>();
+
+        //
+        // Keep parse errors.
+        //
+        if (!parseResult.IsValid)
+        {
+            if (parseResult.Errors != null)
+            {
+                reviewResults.AddRange(
+                    parseResult.Errors);
             }
 
             //
-            // Collect CTE names first so that references
-            // such as FROM CustomerCTE are not treated
-            // as physical tables requiring NOLOCK.
+            // No fragment means review cannot safely continue.
             //
-            var cteVisitor =
-                new CteVisitor();
+            if (!parseResult.CanReview)
+            {
+                EnsureErrorPanel();
 
-            context.Fragment.Accept(
-                cteVisitor);
+                _errorPanel.SetTitle(
+                    "SQL Review Results");
 
-            var visitor =
-                new Visitor(
-                    this,
-                    cteVisitor.CteNames);
+                _errorPanel.ShowResults(
+                    reviewResults);
 
-            context.Fragment.Accept(
-                visitor);
+                ShowErrorPanel();
 
-            return visitor.Findings;
+                return;
+            }
+
+            //
+            // Fragment exists, so review can continue,
+            // but tell the developer that results may
+            // be incomplete.
+            //
+            reviewResults.Add(
+                new SqlResultInfo
+                {
+                    Source = "Review",
+                    Severity = "Information",
+                    Line = 0,
+                    Column = 0,
+                    Message =
+                        "SQL parsing errors were detected. Review results may be incomplete."
+                });
         }
 
-        private sealed class Visitor
-            : TSqlFragmentVisitor
+        var reviewService =
+            new SqlReviewService();
+
+        IEnumerable<ReviewFinding> findings =
+            reviewService.Review(
+                sql,
+                parseResult);
+
+        if (findings != null)
         {
-            private readonly NoLockRule _rule;
-
-            private readonly ISet<string> _cteNames;
-
-            public Visitor(
-                NoLockRule rule,
-                ISet<string> cteNames)
+            foreach (ReviewFinding finding
+                in findings)
             {
-                _rule =
-                    rule;
+                reviewResults.Add(
+                    new SqlResultInfo
+                    {
+                        Source =
+                            finding.RuleId,
 
-                _cteNames =
-                    cteNames;
+                        Severity =
+                            finding.Severity.ToString(),
 
-                Findings =
-                    new List<ReviewFinding>();
-            }
+                        Line =
+                            finding.Line,
 
-            public IList<ReviewFinding> Findings
-            {
-                get;
-                private set;
-            }
+                        Column =
+                            finding.Column,
 
-            public override void Visit(
-                QuerySpecification node)
-            {
-                if (node == null ||
-                    node.FromClause == null ||
-                    node.FromClause.TableReferences == null)
-                {
-                    return;
-                }
+                        Message =
+                            finding.Message,
 
-                //
-                // Only inspect tables appearing in FROM/JOIN.
-                //
-                // This avoids treating INSERT, UPDATE or DELETE
-                // target objects as read tables.
-                //
-                foreach (TableReference tableReference
-                    in node.FromClause.TableReferences)
-                {
-                    ReviewTableReference(
-                        tableReference);
-                }
-            }
+                        StartOffset =
+                            finding.StartOffset,
 
-            private void ReviewTableReference(
-                TableReference tableReference)
-            {
-                if (tableReference == null)
-                {
-                    return;
-                }
-
-                var namedTable =
-                    tableReference
-                        as NamedTableReference;
-
-                if (namedTable != null)
-                {
-                    ReviewNamedTable(
-                        namedTable);
-
-                    return;
-                }
-
-                var qualifiedJoin =
-                    tableReference
-                        as QualifiedJoin;
-
-                if (qualifiedJoin != null)
-                {
-                    ReviewTableReference(
-                        qualifiedJoin.FirstTableReference);
-
-                    ReviewTableReference(
-                        qualifiedJoin.SecondTableReference);
-
-                    return;
-                }
-
-                var unqualifiedJoin =
-                    tableReference
-                        as UnqualifiedJoin;
-
-                if (unqualifiedJoin != null)
-                {
-                    ReviewTableReference(
-                        unqualifiedJoin.FirstTableReference);
-
-                    ReviewTableReference(
-                        unqualifiedJoin.SecondTableReference);
-
-                    return;
-                }
-
-                var joinParenthesis =
-                    tableReference
-                        as JoinParenthesisTableReference;
-
-                if (joinParenthesis != null)
-                {
-                    ReviewTableReference(
-                        joinParenthesis.Join);
-
-                    return;
-                }
-
-                //
-                // QueryDerivedTable is intentionally not
-                // traversed here.
-                //
-                // Its QuerySpecification will be visited
-                // independently by the main visitor.
-                //
-            }
-
-            private void ReviewNamedTable(
-                NamedTableReference table)
-            {
-                if (table == null ||
-                    table.SchemaObject == null)
-                {
-                    return;
-                }
-
-                if (IsSystemObject(
-                        table))
-                {
-                    return;
-                }
-
-                if (IsTemporaryTable(
-                        table))
-                {
-                    return;
-                }
-
-                if (IsCteReference(
-                        table))
-                {
-                    return;
-                }
-
-                if (HasNoLock(
-                        table))
-                {
-                    return;
-                }
-
-                Findings.Add(
-                    _rule.CreateFinding(
-                        table,
-                        "NOLOCK missing: " +
-                        GetTableName(table)));
-            }
-
-            private bool IsCteReference(
-                NamedTableReference table)
-            {
-                IList<Identifier> identifiers =
-                    table.SchemaObject.Identifiers;
-
-                if (identifiers == null ||
-                    identifiers.Count != 1)
-                {
-                    return false;
-                }
-
-                string objectName =
-                    identifiers[0].Value;
-
-                return _cteNames.Contains(
-                    objectName);
-            }
-
-            private static bool IsTemporaryTable(
-                NamedTableReference table)
-            {
-                IList<Identifier> identifiers =
-                    table.SchemaObject.Identifiers;
-
-                if (identifiers == null ||
-                    identifiers.Count == 0)
-                {
-                    return false;
-                }
-
-                string objectName =
-                    identifiers[
-                        identifiers.Count - 1]
-                        .Value;
-
-                return !string.IsNullOrWhiteSpace(
-                           objectName) &&
-                       objectName.StartsWith(
-                           "#",
-                           StringComparison.Ordinal);
-            }
-
-            private static bool IsSystemObject(
-                NamedTableReference table)
-            {
-                IList<Identifier> identifiers =
-                    table.SchemaObject.Identifiers;
-
-                if (identifiers == null ||
-                    identifiers.Count < 2)
-                {
-                    return false;
-                }
-
-                //
-                // Examples:
-                //
-                // sys.tables
-                //
-                // tempdb.sys.tables
-                //
-                // master.sys.objects
-                //
-                // INFORMATION_SCHEMA.TABLES
-                //
-                string schemaName =
-                    identifiers[
-                        identifiers.Count - 2]
-                        .Value;
-
-                if (string.Equals(
-                        schemaName,
-                        "sys",
-                        StringComparison.OrdinalIgnoreCase))
-                {
-                    return true;
-                }
-
-                if (string.Equals(
-                        schemaName,
-                        "INFORMATION_SCHEMA",
-                        StringComparison.OrdinalIgnoreCase))
-                {
-                    return true;
-                }
-
-                return false;
-            }
-
-            private static bool HasNoLock(
-                NamedTableReference table)
-            {
-                if (table.TableHints == null ||
-                    table.TableHints.Count == 0)
-                {
-                    return false;
-                }
-
-                return table.TableHints.Any(
-                    hint =>
-                        hint != null &&
-                        hint.HintKind ==
-                            TableHintKind.NoLock);
-            }
-
-            private static string GetTableName(
-                NamedTableReference table)
-            {
-                if (table == null ||
-                    table.SchemaObject == null ||
-                    table.SchemaObject.Identifiers == null)
-                {
-                    return string.Empty;
-                }
-
-                return string.Join(
-                    ".",
-                    table.SchemaObject
-                        .Identifiers
-                        .Select(x => x.Value));
+                        Length =
+                            finding.Length
+                    });
             }
         }
 
-        private sealed class CteVisitor
-            : TSqlFragmentVisitor
+        //
+        // Only show "no violations" when:
+        // 1. parsing was valid, and
+        // 2. no review findings were produced.
+        //
+        if (parseResult.IsValid &&
+            reviewResults.Count == 0)
         {
-            public CteVisitor()
-            {
-                CteNames =
-                    new HashSet<string>(
-                        StringComparer.OrdinalIgnoreCase);
-            }
-
-            public ISet<string> CteNames
-            {
-                get;
-                private set;
-            }
-
-            public override void Visit(
-                CommonTableExpression node)
-            {
-                if (node == null ||
-                    node.ExpressionName == null ||
-                    string.IsNullOrWhiteSpace(
-                        node.ExpressionName.Value))
+            reviewResults.Add(
+                new SqlResultInfo
                 {
-                    return;
-                }
-
-                CteNames.Add(
-                    node.ExpressionName.Value);
-            }
+                    Source = "Review",
+                    Severity = "Information",
+                    Line = 0,
+                    Column = 0,
+                    Message =
+                        "No review violations found."
+                });
         }
+
+        EnsureErrorPanel();
+
+        _errorPanel.SetTitle(
+            "SQL Review Results");
+
+        _errorPanel.ShowResults(
+            reviewResults);
+
+        ShowErrorPanel();
+    }
+    catch (Exception ex)
+    {
+        MessageBox.Show(
+            ex.ToString(),
+            "Review Your SQL",
+            MessageBoxButtons.OK,
+            MessageBoxIcon.Error);
     }
 }
