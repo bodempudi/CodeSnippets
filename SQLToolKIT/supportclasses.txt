@@ -1,20 +1,22 @@
 using Microsoft.SqlServer.TransactSql.ScriptDom;
 using ScriptFormatter.Core.Review.ScriptFormatter.Core.Review;
+using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace ScriptFormatter.Core.Review.Rules
 {
-    public sealed class FunctionOnJoinColumnRule
+    public sealed class LeftJoinFilterPredicateRule
         : ReviewRuleBase
     {
         public override string RuleId
         {
-            get { return "SQLR0025"; }
+            get { return "SQLR0023"; }
         }
 
         public override ReviewSeverity Severity
         {
-            get { return ReviewSeverity.Warning; }
+            get { return ReviewSeverity.Information; }
         }
 
         public override IEnumerable<ReviewFinding> Review(
@@ -30,8 +32,7 @@ namespace ScriptFormatter.Core.Review.Rules
             }
 
             var visitor =
-                new Visitor(
-                    this);
+                new Visitor(this);
 
             context.Fragment.Accept(
                 visitor);
@@ -42,13 +43,12 @@ namespace ScriptFormatter.Core.Review.Rules
         private sealed class Visitor
             : TSqlFragmentVisitor
         {
-            private readonly FunctionOnJoinColumnRule _rule;
+            private readonly LeftJoinFilterPredicateRule _rule;
 
             public Visitor(
-                FunctionOnJoinColumnRule rule)
+                LeftJoinFilterPredicateRule rule)
             {
-                _rule =
-                    rule;
+                _rule = rule;
 
                 Findings =
                     new List<ReviewFinding>();
@@ -60,147 +60,356 @@ namespace ScriptFormatter.Core.Review.Rules
                 private set;
             }
 
-            public override void ExplicitVisit(
-                QualifiedJoin node)
+            public override void Visit(
+                QuerySpecification node)
             {
                 if (node == null)
                 {
                     return;
                 }
 
-                if (node.SearchCondition != null)
-                {
-                    var predicateVisitor =
-                        new JoinPredicateVisitor(
-                            _rule,
-                            Findings);
+                IList<QualifiedJoin> leftJoins =
+                    GetLeftJoinsFromCurrentQuery(
+                        node);
 
-                    node.SearchCondition.Accept(
-                        predicateVisitor);
+                if (leftJoins.Count == 0)
+                {
+                    return;
                 }
 
                 //
-                // Continue normal traversal.
+                // PART 1
                 //
-                // Nested queries and nested JOINs will therefore
+                // Review filter predicates inside
+                // LEFT JOIN ON conditions.
+                //
+                foreach (QualifiedJoin join
+                    in leftJoins)
+                {
+                    ReviewJoinOnClause(
+                        join);
+                }
+
+                //
+                // PART 2
+                //
+                // Review WHERE predicates referencing
+                // right-side LEFT JOIN aliases.
+                //
+                if (node.WhereClause == null ||
+                    node.WhereClause.SearchCondition == null)
+                {
+                    return;
+                }
+
+                IList<string> rightAliases =
+                    leftJoins
+                        .Select(GetRightSideAlias)
+                        .Where(
+                            x =>
+                                !string.IsNullOrWhiteSpace(
+                                    x))
+                        .Distinct(
+                            StringComparer.OrdinalIgnoreCase)
+                        .ToList();
+
+                if (rightAliases.Count == 0)
+                {
+                    return;
+                }
+
+                var whereVisitor =
+                    new WherePredicateVisitor(
+                        rightAliases);
+
+                node.WhereClause
+                    .SearchCondition
+                    .Accept(
+                        whereVisitor);
+
+                foreach (TSqlFragment predicate
+                    in whereVisitor.Predicates)
+                {
+                    Findings.Add(
+                        _rule.CreateFinding(
+                            predicate,
+                            "WHERE condition references a LEFT JOIN table and may change LEFT JOIN behavior. Review whether the condition belongs in ON or whether INNER JOIN was intended."));
+                }
+            }
+
+            private void ReviewJoinOnClause(
+                QualifiedJoin join)
+            {
+                if (join == null ||
+                    join.SearchCondition == null)
+                {
+                    return;
+                }
+
+                var predicateVisitor =
+                    new OnFilterPredicateVisitor();
+
+                join.SearchCondition.Accept(
+                    predicateVisitor);
+
+                foreach (BooleanComparisonExpression predicate
+                    in predicateVisitor.Predicates)
+                {
+                    Findings.Add(
+                        _rule.CreateFinding(
+                            predicate,
+                            "LEFT JOIN ON contains a filter predicate. Review whether the condition belongs in ON or WHERE."));
+                }
+            }
+
+            private static IList<QualifiedJoin>
+                GetLeftJoinsFromCurrentQuery(
+                    QuerySpecification query)
+            {
+                var joins =
+                    new List<QualifiedJoin>();
+
+                if (query == null ||
+                    query.FromClause == null ||
+                    query.FromClause.TableReferences == null)
+                {
+                    return joins;
+                }
+
+                foreach (TableReference tableReference
+                    in query.FromClause.TableReferences)
+                {
+                    CollectLeftJoins(
+                        tableReference,
+                        joins);
+                }
+
+                return joins;
+            }
+
+            private static void CollectLeftJoins(
+                TableReference tableReference,
+                IList<QualifiedJoin> joins)
+            {
+                if (tableReference == null)
+                {
+                    return;
+                }
+
+                var qualifiedJoin =
+                    tableReference as QualifiedJoin;
+
+                if (qualifiedJoin != null)
+                {
+                    if (qualifiedJoin.QualifiedJoinType ==
+                        QualifiedJoinType.LeftOuter)
+                    {
+                        joins.Add(
+                            qualifiedJoin);
+                    }
+
+                    //
+                    // Walk only the JOIN tree belonging
+                    // to the current query scope.
+                    //
+                    CollectLeftJoins(
+                        qualifiedJoin.FirstTableReference,
+                        joins);
+
+                    CollectLeftJoins(
+                        qualifiedJoin.SecondTableReference,
+                        joins);
+
+                    return;
+                }
+
+                var joinParenthesis =
+                    tableReference
+                        as JoinParenthesisTableReference;
+
+                if (joinParenthesis != null)
+                {
+                    CollectLeftJoins(
+                        joinParenthesis.Join,
+                        joins);
+
+                    return;
+                }
+
+                //
+                // Do not enter QueryDerivedTable or
+                // other nested SELECTs here.
+                //
+                // Nested QuerySpecification nodes will
                 // be reviewed independently.
                 //
-                base.ExplicitVisit(
-                    node);
+            }
+
+            private static string GetRightSideAlias(
+                QualifiedJoin join)
+            {
+                if (join == null ||
+                    join.SecondTableReference == null)
+                {
+                    return null;
+                }
+
+                var tableWithAlias =
+                    join.SecondTableReference
+                        as TableReferenceWithAlias;
+
+                if (tableWithAlias == null ||
+                    tableWithAlias.Alias == null)
+                {
+                    return null;
+                }
+
+                return tableWithAlias.Alias.Value;
             }
         }
 
-        private sealed class JoinPredicateVisitor
+        private sealed class OnFilterPredicateVisitor
             : TSqlFragmentVisitor
         {
-            private readonly FunctionOnJoinColumnRule _rule;
-
-            private readonly IList<ReviewFinding> _findings;
-
-            public JoinPredicateVisitor(
-                FunctionOnJoinColumnRule rule,
-                IList<ReviewFinding> findings)
+            public OnFilterPredicateVisitor()
             {
-                _rule =
-                    rule;
-
-                _findings =
-                    findings;
+                Predicates =
+                    new List<BooleanComparisonExpression>();
             }
 
-            //
-            // Examples:
-            //
-            // ON UPPER(A.Code) = B.Code
-            //
-            // ON ISNULL(A.CustomerId, 0) = B.CustomerId
-            //
-            // ON YEAR(A.CreatedDate) = B.CreatedYear
-            //
+            public IList<BooleanComparisonExpression> Predicates
+            {
+                get;
+                private set;
+            }
+
             public override void Visit(
-                FunctionCall node)
+                BooleanComparisonExpression node)
             {
                 if (node == null)
                 {
                     return;
                 }
 
-                if (!ContainsColumn(
+                bool firstIsColumn =
+                    node.FirstExpression
+                        is ColumnReferenceExpression;
+
+                bool secondIsColumn =
+                    node.SecondExpression
+                        is ColumnReferenceExpression;
+
+                //
+                // Normal JOIN relationship:
+                //
+                // A.CustomerId = B.CustomerId
+                //
+                if (firstIsColumn &&
+                    secondIsColumn)
+                {
+                    return;
+                }
+
+                //
+                // Review examples:
+                //
+                // B.Status = 'A'
+                // B.Type = @V_Type
+                // B.Date = GETDATE()
+                //
+                if (firstIsColumn ||
+                    secondIsColumn)
+                {
+                    Predicates.Add(
+                        node);
+                }
+            }
+
+            //
+            // Do not inspect predicates inside
+            // nested scalar subqueries.
+            //
+            public override void ExplicitVisit(
+                ScalarSubquery node)
+            {
+                return;
+            }
+        }
+
+        private sealed class WherePredicateVisitor
+            : TSqlFragmentVisitor
+        {
+            private readonly IList<string> _rightAliases;
+
+            public WherePredicateVisitor(
+                IList<string> rightAliases)
+            {
+                _rightAliases =
+                    rightAliases;
+
+                Predicates =
+                    new List<TSqlFragment>();
+            }
+
+            public IList<TSqlFragment> Predicates
+            {
+                get;
+                private set;
+            }
+
+            public override void Visit(
+                BooleanComparisonExpression node)
+            {
+                if (node == null)
+                {
+                    return;
+                }
+
+                if (ReferencesRightAlias(
                         node))
                 {
-                    return;
+                    Predicates.Add(
+                        node);
                 }
-
-                AddFinding(
-                    node);
             }
 
-            //
-            // Example:
-            //
-            // ON CONVERT(DATE, A.CreatedDate) =
-            //    B.BusinessDate
-            //
             public override void Visit(
-                ConvertCall node)
+                BooleanIsNullExpression node)
             {
-                if (node == null ||
-                    node.Parameter == null)
+                if (node == null)
                 {
                     return;
                 }
 
-                if (!ContainsColumn(
-                        node.Parameter))
+                //
+                // WHERE B.Id IS NULL
+                //
+                // Usually intentional anti-join logic,
+                // so do not flag.
+                //
+                if (!node.IsNot)
                 {
                     return;
                 }
 
-                AddFinding(
-                    node);
+                //
+                // WHERE B.Id IS NOT NULL
+                //
+                // Removes unmatched LEFT JOIN rows.
+                //
+                if (ReferencesRightAlias(
+                        node))
+                {
+                    Predicates.Add(
+                        node);
+                }
             }
 
             //
-            // Example:
+            // Critical:
             //
-            // ON CAST(A.CreatedDate AS DATE) =
-            //    B.BusinessDate
-            //
-            public override void Visit(
-                CastCall node)
-            {
-                if (node == null ||
-                    node.Parameter == null)
-                {
-                    return;
-                }
-
-                if (!ContainsColumn(
-                        node.Parameter))
-                {
-                    return;
-                }
-
-                AddFinding(
-                    node);
-            }
-
-            //
-            // Important:
-            //
-            // Do not inspect a nested SELECT as part of
-            // the parent JOIN condition.
-            //
-            // Example:
-            //
-            // ON A.BusinessDate =
-            // (
-            //     SELECT MAX(BusinessDate)
-            //     FROM dbo.TableB
-            // )
-            //
-            // MAX(BusinessDate) is not a function applied
-            // to a column in the parent JOIN predicate.
+            // Do not inspect nested SELECTs as part
+            // of the current WHERE predicate.
             //
             public override void ExplicitVisit(
                 ScalarSubquery node)
@@ -208,57 +417,79 @@ namespace ScriptFormatter.Core.Review.Rules
                 return;
             }
 
-            private void AddFinding(
+            private bool ReferencesRightAlias(
                 TSqlFragment fragment)
             {
-                _findings.Add(
-                    _rule.CreateFinding(
-                        fragment,
-                        "Function applied to a column in JOIN condition."));
-            }
-
-            private static bool ContainsColumn(
-                TSqlFragment fragment)
-            {
-                if (fragment == null)
-                {
-                    return false;
-                }
-
-                var columnVisitor =
-                    new ColumnVisitor();
+                var visitor =
+                    new ColumnAliasVisitor(
+                        _rightAliases);
 
                 fragment.Accept(
-                    columnVisitor);
+                    visitor);
 
-                return columnVisitor.HasColumn;
+                return visitor.Found;
+            }
+        }
+
+        private sealed class ColumnAliasVisitor
+            : TSqlFragmentVisitor
+        {
+            private readonly IList<string> _aliases;
+
+            public ColumnAliasVisitor(
+                IList<string> aliases)
+            {
+                _aliases =
+                    aliases;
             }
 
-            private sealed class ColumnVisitor
-                : TSqlFragmentVisitor
+            public bool Found
             {
-                public bool HasColumn
-                {
-                    get;
-                    private set;
-                }
+                get;
+                private set;
+            }
 
-                public override void Visit(
-                    ColumnReferenceExpression node)
-                {
-                    HasColumn =
-                        true;
-                }
-
-                //
-                // Don't consider columns belonging to
-                // a nested scalar subquery.
-                //
-                public override void ExplicitVisit(
-                    ScalarSubquery node)
+            public override void Visit(
+                ColumnReferenceExpression node)
+            {
+                if (node == null ||
+                    node.MultiPartIdentifier == null ||
+                    node.MultiPartIdentifier
+                        .Identifiers.Count < 2)
                 {
                     return;
                 }
+
+                int identifierCount =
+                    node.MultiPartIdentifier
+                        .Identifiers.Count;
+
+                string alias =
+                    node.MultiPartIdentifier
+                        .Identifiers[
+                            identifierCount - 2]
+                        .Value;
+
+                if (_aliases.Any(
+                    x =>
+                        string.Equals(
+                            x,
+                            alias,
+                            StringComparison.OrdinalIgnoreCase)))
+                {
+                    Found =
+                        true;
+                }
+            }
+
+            //
+            // Do not accidentally match aliases
+            // inside a nested query.
+            //
+            public override void ExplicitVisit(
+                ScalarSubquery node)
+            {
+                return;
             }
         }
     }
