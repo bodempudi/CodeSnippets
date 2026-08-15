@@ -48,7 +48,8 @@ namespace ScriptFormatter.Core.Review.Rules
             public Visitor(
                 LeftJoinFilterPredicateRule rule)
             {
-                _rule = rule;
+                _rule =
+                    rule;
 
                 Findings =
                     new List<ReviewFinding>();
@@ -197,7 +198,8 @@ namespace ScriptFormatter.Core.Review.Rules
                 }
 
                 var qualifiedJoin =
-                    tableReference as QualifiedJoin;
+                    tableReference
+                        as QualifiedJoin;
 
                 if (qualifiedJoin != null)
                 {
@@ -208,10 +210,6 @@ namespace ScriptFormatter.Core.Review.Rules
                             qualifiedJoin);
                     }
 
-                    //
-                    // Walk only the JOIN tree belonging
-                    // to the current query scope.
-                    //
                     CollectLeftJoins(
                         qualifiedJoin.FirstTableReference,
                         joins);
@@ -232,17 +230,7 @@ namespace ScriptFormatter.Core.Review.Rules
                     CollectLeftJoins(
                         joinParenthesis.Join,
                         joins);
-
-                    return;
                 }
-
-                //
-                // Do not enter QueryDerivedTable or
-                // other nested SELECTs here.
-                //
-                // Nested QuerySpecification nodes will
-                // be reviewed independently.
-                //
             }
 
             private static string GetRightSideAlias(
@@ -291,48 +279,101 @@ namespace ScriptFormatter.Core.Review.Rules
                     return;
                 }
 
-                bool firstIsColumn =
-                    node.FirstExpression
-                        is ColumnReferenceExpression;
+                bool firstReferencesColumn =
+                    ContainsColumnReference(
+                        node.FirstExpression);
 
-                bool secondIsColumn =
-                    node.SecondExpression
-                        is ColumnReferenceExpression;
+                bool secondReferencesColumn =
+                    ContainsColumnReference(
+                        node.SecondExpression);
 
                 //
-                // Normal JOIN relationship:
+                // Both sides ultimately reference columns.
                 //
-                // A.CustomerId = B.CustomerId
+                // Examples:
                 //
-                if (firstIsColumn &&
-                    secondIsColumn)
+                // A.Id = B.Id
+                //
+                // TRY_CONVERT(BIGINT, A.Id) = B.Id
+                //
+                // RIGHT(A.AccountNo, 10) = B.AccountNo
+                //
+                // A.Amount + A.Fee = B.TotalAmount
+                //
+                // These are JOIN relationships,
+                // not filter predicates.
+                //
+                if (firstReferencesColumn &&
+                    secondReferencesColumn)
                 {
                     return;
                 }
 
                 //
-                // Review examples:
+                // Only one side references a column.
+                //
+                // Examples:
                 //
                 // B.Status = 'A'
-                // B.Type = @V_Type
-                // B.Date = GETDATE()
                 //
-                if (firstIsColumn ||
-                    secondIsColumn)
+                // B.IsActive = 1
+                //
+                // B.Type = @I_Type
+                //
+                // These are potential filters.
+                //
+                if (firstReferencesColumn ||
+                    secondReferencesColumn)
                 {
                     Predicates.Add(
                         node);
                 }
             }
 
-            //
-            // Do not inspect predicates inside
-            // nested scalar subqueries.
-            //
             public override void ExplicitVisit(
                 ScalarSubquery node)
             {
                 return;
+            }
+
+            private static bool ContainsColumnReference(
+                TSqlFragment fragment)
+            {
+                if (fragment == null)
+                {
+                    return false;
+                }
+
+                var visitor =
+                    new ColumnReferenceVisitor();
+
+                fragment.Accept(
+                    visitor);
+
+                return visitor.Found;
+            }
+
+            private sealed class ColumnReferenceVisitor
+                : TSqlFragmentVisitor
+            {
+                public bool Found
+                {
+                    get;
+                    private set;
+                }
+
+                public override void Visit(
+                    ColumnReferenceExpression node)
+                {
+                    Found =
+                        true;
+                }
+
+                public override void ExplicitVisit(
+                    ScalarSubquery node)
+                {
+                    return;
+                }
             }
         }
 
@@ -384,8 +425,7 @@ namespace ScriptFormatter.Core.Review.Rules
                 //
                 // WHERE B.Id IS NULL
                 //
-                // Usually intentional anti-join logic,
-                // so do not flag.
+                // Usually intentional anti-join logic.
                 //
                 if (!node.IsNot)
                 {
@@ -405,12 +445,6 @@ namespace ScriptFormatter.Core.Review.Rules
                 }
             }
 
-            //
-            // Critical:
-            //
-            // Do not inspect nested SELECTs as part
-            // of the current WHERE predicate.
-            //
             public override void ExplicitVisit(
                 ScalarSubquery node)
             {
@@ -482,10 +516,6 @@ namespace ScriptFormatter.Core.Review.Rules
                 }
             }
 
-            //
-            // Do not accidentally match aliases
-            // inside a nested query.
-            //
             public override void ExplicitVisit(
                 ScalarSubquery node)
             {
