@@ -1,180 +1,85 @@
 using Microsoft.SqlServer.TransactSql.ScriptDom;
 using System.Collections.Generic;
 
-namespace NBK.SQL.CodingStandards.Core.Models
+namespace ScriptFormatter.Core.Review.Rules
 {
-    public sealed class SqlParseResult
+    public sealed class UseStatementRule
+        : ReviewRuleBase
     {
-        public TSqlFragment Fragment
+        public override string RuleId
         {
-            get;
-            set;
+            get { return "SQLR0025"; }
         }
 
-        public IList<SqlResultInfo> Errors
+        public override ReviewSeverity Severity
         {
-            get;
-            set;
+            get { return ReviewSeverity.Warning; }
         }
 
-        public bool IsValid
+        public override IEnumerable<ReviewFinding> Review(
+            SqlReviewContext context)
         {
-            get
+            var visitor =
+                new Visitor();
+
+            context.Fragment.Accept(
+                visitor);
+
+            var findings =
+                new List<ReviewFinding>();
+
+            if (visitor.UseStatements.Count == 0)
             {
-                return Errors == null ||
-                       Errors.Count == 0;
+                findings.Add(
+                    CreateFinding(
+                        context.Fragment,
+                        "USE statement is missing. " +
+                        "A SQL file must define one database context."));
+
+                return findings;
             }
+
+            if (visitor.UseStatements.Count > 1)
+            {
+                UseStatement secondUse =
+                    visitor.UseStatements[1];
+
+                findings.Add(
+                    CreateFinding(
+                        secondUse,
+                        "Multiple USE statements detected. " +
+                        "A SQL file must define only one database context."));
+            }
+
+            return findings;
         }
 
-        public bool CanReview
+        private sealed class Visitor
+            : TSqlFragmentVisitor
         {
-            get
+            public Visitor()
             {
-                return Fragment != null;
-            }
-        }
-    }
-}
-
-private static void ReviewYourSQL()
-{
-    try
-    {
-        string sql =
-            GetCurrentEditorText();
-
-        var parserService =
-            new SQLParserService();
-
-        SqlParseResult parseResult =
-            parserService.ParseSql(
-                sql);
-
-        var reviewResults =
-            new List<SqlResultInfo>();
-
-        //
-        // Keep parse errors.
-        //
-        if (!parseResult.IsValid)
-        {
-            if (parseResult.Errors != null)
-            {
-                reviewResults.AddRange(
-                    parseResult.Errors);
+                UseStatements =
+                    new List<UseStatement>();
             }
 
-            //
-            // No fragment means review cannot safely continue.
-            //
-            if (!parseResult.CanReview)
+            public IList<UseStatement> UseStatements
             {
-                EnsureErrorPanel();
-
-                _errorPanel.SetTitle(
-                    "SQL Review Results");
-
-                _errorPanel.ShowResults(
-                    reviewResults);
-
-                ShowErrorPanel();
-
-                return;
+                get;
+                private set;
             }
 
-            //
-            // Fragment exists, so review can continue,
-            // but tell the developer that results may
-            // be incomplete.
-            //
-            reviewResults.Add(
-                new SqlResultInfo
+            public override void Visit(
+                UseStatement node)
+            {
+                if (node == null)
                 {
-                    Source = "Review",
-                    Severity = "Information",
-                    Line = 0,
-                    Column = 0,
-                    Message =
-                        "SQL parsing errors were detected. Review results may be incomplete."
-                });
-        }
+                    return;
+                }
 
-        var reviewService =
-            new SqlReviewService();
-
-        IEnumerable<ReviewFinding> findings =
-            reviewService.Review(
-                sql,
-                parseResult);
-
-        if (findings != null)
-        {
-            foreach (ReviewFinding finding
-                in findings)
-            {
-                reviewResults.Add(
-                    new SqlResultInfo
-                    {
-                        Source =
-                            finding.RuleId,
-
-                        Severity =
-                            finding.Severity.ToString(),
-
-                        Line =
-                            finding.Line,
-
-                        Column =
-                            finding.Column,
-
-                        Message =
-                            finding.Message,
-
-                        StartOffset =
-                            finding.StartOffset,
-
-                        Length =
-                            finding.Length
-                    });
+                UseStatements.Add(
+                    node);
             }
         }
-
-        //
-        // Only show "no violations" when:
-        // 1. parsing was valid, and
-        // 2. no review findings were produced.
-        //
-        if (parseResult.IsValid &&
-            reviewResults.Count == 0)
-        {
-            reviewResults.Add(
-                new SqlResultInfo
-                {
-                    Source = "Review",
-                    Severity = "Information",
-                    Line = 0,
-                    Column = 0,
-                    Message =
-                        "No review violations found."
-                });
-        }
-
-        EnsureErrorPanel();
-
-        _errorPanel.SetTitle(
-            "SQL Review Results");
-
-        _errorPanel.ShowResults(
-            reviewResults);
-
-        ShowErrorPanel();
-    }
-    catch (Exception ex)
-    {
-        MessageBox.Show(
-            ex.ToString(),
-            "Review Your SQL",
-            MessageBoxButtons.OK,
-            MessageBoxIcon.Error);
     }
 }
