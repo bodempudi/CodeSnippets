@@ -1,85 +1,67 @@
-using Microsoft.SqlServer.TransactSql.ScriptDom;
-using System.Collections.Generic;
-
-namespace ScriptFormatter.Core.Review.Rules
+private static void FormatSql()
 {
-    public sealed class UseStatementRule
-        : ReviewRuleBase
+    try
     {
-        public override string RuleId
+        string sql =
+            PluginBase.GetCurrentEditorText();
+
+        if (string.IsNullOrWhiteSpace(sql))
         {
-            get { return "SQLR0025"; }
+            MessageBox.Show(
+                "No SQL text found.",
+                "SQL Formatter",
+                MessageBoxButtons.OK,
+                MessageBoxIcon.Information);
+
+            return;
         }
 
-        public override ReviewSeverity Severity
+        SqlFormatterOptions options =
+            new SqlFormatterOptions
+            {
+                EnableLogFile = false,
+                EnablePdfReport = false
+            };
+
+        SqlFormatterService formatter =
+            new SqlFormatterService(
+                options);
+
+        SqlFormatterResult result =
+            formatter.Format(
+                sql);
+
+        if (result == null)
         {
-            get { return ReviewSeverity.Warning; }
+            MessageBox.Show(
+                "Formatter returned no result.",
+                "SQL Formatter",
+                MessageBoxButtons.OK,
+                MessageBoxIcon.Warning);
+
+            return;
         }
 
-        public override IEnumerable<ReviewFinding> Review(
-            SqlReviewContext context)
+        if (!result.Success)
         {
-            var visitor =
-                new Visitor();
+            MessageBox.Show(
+                result.Message,
+                "SQL Formatter",
+                MessageBoxButtons.OK,
+                MessageBoxIcon.Warning);
 
-            context.Fragment.Accept(
-                visitor);
-
-            var findings =
-                new List<ReviewFinding>();
-
-            if (visitor.UseStatements.Count == 0)
-            {
-                findings.Add(
-                    CreateFinding(
-                        context.Fragment,
-                        "USE statement is missing. " +
-                        "A SQL file must define one database context."));
-
-                return findings;
-            }
-
-            if (visitor.UseStatements.Count > 1)
-            {
-                UseStatement secondUse =
-                    visitor.UseStatements[1];
-
-                findings.Add(
-                    CreateFinding(
-                        secondUse,
-                        "Multiple USE statements detected. " +
-                        "A SQL file must define only one database context."));
-            }
-
-            return findings;
+            return;
         }
 
-        private sealed class Visitor
-            : TSqlFragmentVisitor
-        {
-            public Visitor()
-            {
-                UseStatements =
-                    new List<UseStatement>();
-            }
-
-            public IList<UseStatement> UseStatements
-            {
-                get;
-                private set;
-            }
-
-            public override void Visit(
-                UseStatement node)
-            {
-                if (node == null)
-                {
-                    return;
-                }
-
-                UseStatements.Add(
-                    node);
-            }
-        }
+        PluginBase.ReplaceCurrentEditorText(
+            result.FormattedSql);
+    }
+    catch (Exception ex)
+    {
+        MessageBox.Show(
+            ex.Message,
+            "SQL Formatter",
+            MessageBoxButtons.OK,
+            MessageBoxIcon.Error);
     }
 }
