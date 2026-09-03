@@ -1,152 +1,73 @@
-private static void FormatYourSQL()
+using Microsoft.SqlServer.TransactSql.ScriptDom;
+
+namespace NotepadPlusPlusPlugin.Formatting.Policies
 {
-    try
+    public sealed class WindowLayoutPolicy :
+        ILayoutPolicy
     {
-        string sql =
-            GetCurrentEditorText();
-
-        if (string.IsNullOrWhiteSpace(sql))
+        public void Apply(
+            AstNodeContext context,
+            LayoutContext layoutContext)
         {
-            return;
-        }
-
-        var formatterService =
-            new SqlFormatterService();
-
-        SqlFormatterResult formatResult =
-            formatterService.Format(sql);
-
-        var formatResults =
-            new List<SqlResultInfo>();
-
-        if (formatResult == null)
-        {
-            formatResults.Add(
-                new SqlResultInfo
-                {
-                    Source = "Format",
-                    Severity = "Error",
-                    Line = 0,
-                    Column = 0,
-                    Message =
-                        "SQL formatter did not return a result."
-                });
-
-            EnsureErrorPanel();
-
-            _errorPanel.SetTitle(
-                "SQL Format Results");
-
-            _errorPanel.ShowResults(
-                formatResults);
-
-            ShowErrorPanel();
-
-            return;
-        }
-
-        if (!formatResult.ValidationPassed)
-        {
-            formatResults.Add(
-                new SqlResultInfo
-                {
-                    Source = "Format",
-                    Severity = "Error",
-                    Line = 0,
-                    Column = 0,
-                    Message =
-                        string.IsNullOrWhiteSpace(
-                            formatResult.Message)
-                            ? "SQL formatting could not be completed safely. Original SQL was preserved."
-                            : formatResult.Message
-                });
-
-            EnsureErrorPanel();
-
-            _errorPanel.SetTitle(
-                "SQL Format Results");
-
-            _errorPanel.ShowResults(
-                formatResults);
-
-            ShowErrorPanel();
-
-            return;
-        }
-
-        if (formatResult.WasFormatted &&
-            !string.IsNullOrEmpty(
-                formatResult.Sql))
-        {
-            var editor =
-                new ScintillaGateway(
-                    PluginBase.GetCurrentScintilla());
-
-            editor.SetText(
-                formatResult.Sql);
-
-            formatResults.Add(
-                new SqlResultInfo
-                {
-                    Source = "Format",
-                    Severity = "Information",
-                    Line = 0,
-                    Column = 0,
-                    Message =
-                        string.IsNullOrWhiteSpace(
-                            formatResult.Message)
-                            ? "SQL formatted successfully."
-                            : "SQL formatted successfully. " +
-                              formatResult.Message
-                });
-        }
-        else
-        {
-            formatResults.Add(
-                new SqlResultInfo
-                {
-                    Source = "Format",
-                    Severity = "Information",
-                    Line = 0,
-                    Column = 0,
-                    Message =
-                        "SQL is already formatted. No changes were required."
-                });
-        }
-
-        EnsureErrorPanel();
-
-        _errorPanel.SetTitle(
-            "SQL Format Results");
-
-        _errorPanel.ShowResults(
-            formatResults);
-
-        ShowErrorPanel();
-    }
-    catch (Exception ex)
-    {
-        var formatResults =
-            new List<SqlResultInfo>();
-
-        formatResults.Add(
-            new SqlResultInfo
+            if (context == null ||
+                context.Node == null ||
+                layoutContext == null)
             {
-                Source = "Format",
-                Severity = "Error",
-                Line = 0,
-                Column = 0,
-                Message = ex.ToString()
-            });
+                return;
+            }
 
-        EnsureErrorPanel();
+            /*
+             * V1 rule:
+             *
+             * Keep window expressions on the same line.
+             *
+             * Examples:
+             *
+             * ROW_NUMBER() OVER (ORDER BY Id)
+             *
+             * ROW_NUMBER() OVER
+             *     (PARTITION BY CustomerId ORDER BY LoginDate DESC)
+             *
+             * should remain:
+             *
+             * ROW_NUMBER() OVER (PARTITION BY CustomerId ORDER BY LoginDate DESC)
+             *
+             * Do not introduce layout instructions inside OVER(...).
+             *
+             * Existing whitespace/tokens are still handled by the
+             * token-preserving emitter and other generic policies.
+             */
 
-        _errorPanel.SetTitle(
-            "SQL Format Results");
+            OverClause overClause =
+                context.Node as OverClause;
 
-        _errorPanel.ShowResults(
-            formatResults);
+            if (overClause != null)
+            {
+                return;
+            }
 
-        ShowErrorPanel();
+            /*
+             * Do not separately format PARTITION BY expressions
+             * that belong to an OVER clause.
+             */
+            if (context.Parent is OverClause &&
+                TokenNavigator.IsIndexedRelationship(
+                    context.Relationship,
+                    "Partitions"))
+            {
+                return;
+            }
+
+            /*
+             * Do not separately push ORDER BY inside OVER(...)
+             * onto another line.
+             */
+            if (context.Parent is OverClause &&
+                context.Relationship ==
+                    "OrderByClause")
+            {
+                return;
+            }
+        }
     }
 }
