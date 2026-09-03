@@ -1,34 +1,779 @@
+using Microsoft.SqlServer.TransactSql.ScriptDom;
 
-public int FindPreviousToken(
-    int startIndex,
-    TSqlTokenType tokenType)
+using NBK.SQL.CodingStandards.Core.Models;
+using NBK.SQL.CodingStandards.Core.Parse;
+
+using NotepadPlusPlusPlugin.Formatting.Diagnostics;
+using NotepadPlusPlusPlugin.Formatting.Emission;
+using NotepadPlusPlusPlugin.Formatting.Reporting;
+using NotepadPlusPlusPlugin.Formatting.Validation;
+
+using System;
+using System.Collections.Generic;
+
+namespace NotepadPlusPlusPlugin.Formatting
 {
-    if (_tokens.Count == 0)
+    public sealed class SqlFormatterResult
     {
-        return -1;
-    }
-
-    int index =
-        Math.Min(
-            startIndex - 1,
-            _tokens.Count - 1);
-
-    for (int i = index; i >= 0; i--)
-    {
-        TSqlParserToken token =
-            _tokens[i];
-
-        if (token.TokenType == TSqlTokenType.WhiteSpace ||
-            token.TokenType == TSqlTokenType.SingleLineComment ||
-            token.TokenType == TSqlTokenType.MultilineComment)
+        public string Sql
         {
-            continue;
+            get;
+            set;
         }
 
-        return token.TokenType == tokenType
-            ? i
-            : -1;
+        public bool WasFormatted
+        {
+            get;
+            set;
+        }
+
+        public bool ValidationPassed
+        {
+            get;
+            set;
+        }
+
+        public string Message
+        {
+            get;
+            set;
+        }
+
+        public string ExecutionId
+        {
+            get;
+            set;
+        }
+
+        public string PdfReportPath
+        {
+            get;
+            set;
+        }
+
+        public FormatterDiagnostics Diagnostics
+        {
+            get;
+            set;
+        }
     }
 
-    return -1;
+    public sealed class SqlFormatterService
+    {
+        private readonly SQLParserService _parserService;
+
+        private readonly IFormatterLogger _logger;
+
+        private readonly SqlFormatterOptions _options;
+
+
+        public SqlFormatterService()
+            : this(
+                new SqlFormatterOptions(),
+                new FileFormatterLogger())
+        {
+        }
+
+
+        public SqlFormatterService(
+            SqlFormatterOptions options)
+            : this(
+                options,
+                new FileFormatterLogger())
+        {
+        }
+
+
+        public SqlFormatterService(
+            IFormatterLogger logger)
+            : this(
+                new SqlFormatterOptions(),
+                logger)
+        {
+        }
+
+
+        public SqlFormatterService(
+            SqlFormatterOptions options,
+            IFormatterLogger logger)
+        {
+            _parserService =
+                new SQLParserService();
+
+            _options =
+                options ??
+                new SqlFormatterOptions();
+
+            _logger =
+                logger;
+        }
+
+
+        public SqlFormatterResult Format(
+            string sql)
+        {
+            FormatterDiagnostics diagnostics =
+                new FormatterDiagnostics();
+
+            string input =
+                sql ?? string.Empty;
+
+            string pdfReportPath =
+                null;
+
+            diagnostics.InputLength =
+                input.Length;
+
+            diagnostics.Add(
+                "START",
+                "Formatter execution started.");
+
+            try
+            {
+                /*
+                 * ==================================================
+                 * EMPTY INPUT
+                 * ==================================================
+                 */
+
+                if (string.IsNullOrEmpty(input))
+                {
+                    diagnostics.OutputLength =
+                        0;
+
+                    diagnostics.InputTokenCount =
+                        0;
+
+                    diagnostics.OutputTokenCount =
+                        0;
+
+                    diagnostics.LayoutInstructionCount =
+                        0;
+
+                    diagnostics.ParseErrorCount =
+                        0;
+
+                    diagnostics.TokenPreservationPassed =
+                        true;
+
+                    diagnostics.OutputParsePassed =
+                        true;
+
+                    diagnostics.ResultStatus =
+                        "EMPTY";
+
+                    diagnostics.Add(
+                        "RESULT",
+                        "EMPTY");
+
+                    diagnostics.Complete();
+
+                    WriteLog(
+                        diagnostics);
+
+                    return new SqlFormatterResult
+                    {
+                        Sql =
+                            input,
+
+                        WasFormatted =
+                            false,
+
+                        ValidationPassed =
+                            true,
+
+                        Message =
+                            "SQL is empty.",
+
+                        ExecutionId =
+                            diagnostics.ExecutionId,
+
+                        PdfReportPath =
+                            null,
+
+                        Diagnostics =
+                            diagnostics
+                    };
+                }
+
+
+                /*
+                 * ==================================================
+                 * PARSE INPUT
+                 * ==================================================
+                 */
+
+                diagnostics.Add(
+                    "PARSE",
+                    "Parsing input SQL.");
+
+                SqlParseResult parseResult =
+                    _parserService.Parse(
+                        input);
+
+                diagnostics.ParseErrorCount =
+                    parseResult.Errors == null
+                        ? 0
+                        : parseResult.Errors.Count;
+
+
+                if (!parseResult.IsValid)
+                {
+                    diagnostics.ResultStatus =
+                        "INPUT_PARSE_FAILED";
+
+                    diagnostics.OutputLength =
+                        input.Length;
+
+                    diagnostics.TokenPreservationPassed =
+                        true;
+
+                    diagnostics.OutputParsePassed =
+                        false;
+
+                    diagnostics.Add(
+                        "PARSE",
+                        "Input SQL parse failed.");
+
+
+                    if (parseResult.Errors != null)
+                    {
+                        foreach (
+                            SqlResultInfo error
+                            in parseResult.Errors)
+                        {
+                            diagnostics.Add(
+                                "PARSE_ERROR",
+                                "Line=" +
+                                error.Line +
+                                ", Column=" +
+                                error.Column +
+                                ", Message=" +
+                                error.Message);
+                        }
+                    }
+
+
+                    diagnostics.Complete();
+
+                    WriteLog(
+                        diagnostics);
+
+                    return new SqlFormatterResult
+                    {
+                        Sql =
+                            input,
+
+                        WasFormatted =
+                            false,
+
+                        ValidationPassed =
+                            false,
+
+                        Message =
+                            "Input SQL could not be parsed. Original SQL preserved.",
+
+                        ExecutionId =
+                            diagnostics.ExecutionId,
+
+                        PdfReportPath =
+                            null,
+
+                        Diagnostics =
+                            diagnostics
+                    };
+                }
+
+
+                diagnostics.Add(
+                    "PARSE",
+                    "Input SQL parsed successfully.");
+
+
+                /*
+                 * ==================================================
+                 * TOKEN STREAM
+                 * ==================================================
+                 */
+
+                IList<TSqlParserToken> tokens =
+                    parseResult.Tokens;
+
+                if (tokens == null)
+                {
+                    tokens =
+                        new List<TSqlParserToken>();
+                }
+
+
+                diagnostics.Add(
+                    "TOKENS",
+                    "Original token stream loaded. Count=" +
+                    tokens.Count +
+                    ".");
+
+
+                diagnostics.InputTokenCount =
+                    CountMeaningfulTokens(
+                        tokens);
+
+
+                /*
+                 * ==================================================
+                 * AST + LAYOUT
+                 * ==================================================
+                 */
+
+                LayoutPlan plan =
+                    new LayoutPlan();
+
+                GenericAstWalker walker =
+                    new GenericAstWalker();
+
+                LayoutPolicyEngine policyEngine =
+                    new LayoutPolicyEngine(
+                        tokens,
+                        walker,
+                        plan,
+                        diagnostics);
+
+
+                diagnostics.Add(
+                    "AST",
+                    "Generic AST analysis started.");
+
+
+                policyEngine.Analyze(
+                    parseResult.Fragment);
+
+
+                diagnostics.LayoutInstructionCount =
+                    plan.Count;
+
+
+                diagnostics.Add(
+                    "LAYOUT",
+                    "Layout plan created. Instructions=" +
+                    plan.Count +
+                    ".");
+
+
+                /*
+                 * ==================================================
+                 * EMIT
+                 * ==================================================
+                 */
+
+                diagnostics.Add(
+                    "EMIT",
+                    "Token-preserving emission started.");
+
+
+                TokenPreservingEmitter emitter =
+                    new TokenPreservingEmitter();
+
+
+                string candidate =
+                    emitter.Emit(
+                        tokens,
+                        plan);
+
+
+                diagnostics.OutputLength =
+                    candidate == null
+                        ? 0
+                        : candidate.Length;
+
+
+                diagnostics.Add(
+                    "EMIT",
+                    "Token-preserving emission completed.");
+
+
+                /*
+                 * ==================================================
+                 * SAFETY VALIDATION
+                 * ==================================================
+                 */
+
+                diagnostics.Add(
+                    "VALIDATE",
+                    "Safety validation started.");
+
+
+                FormatterSafetyValidator validator =
+                    new FormatterSafetyValidator(
+                        _parserService);
+
+
+                FormatterValidationResult validation =
+                    validator.Validate(
+                        tokens,
+                        candidate);
+
+
+                diagnostics.TokenPreservationPassed =
+                    validation.TokensPreserved;
+
+                diagnostics.OutputParsePassed =
+                    validation.OutputParses;
+
+
+                diagnostics.Add(
+                    "VALIDATE",
+                    validation.Message);
+
+
+                /*
+                 * ==================================================
+                 * IDEMPOTENCY CHECK
+                 * ==================================================
+                 */
+
+                if (validation.Success)
+                {
+                    FormatterIdempotencyValidator
+                        idempotencyValidator =
+                            new FormatterIdempotencyValidator(
+                                _parserService);
+
+
+                    FormatterIdempotencyResult
+                        idempotencyResult =
+                            idempotencyValidator.Validate(
+                                candidate);
+
+
+                    diagnostics.Add(
+                        "IDEMPOTENCY",
+                        "Passed=" +
+                        idempotencyResult.Passed +
+                        ". " +
+                        idempotencyResult.Message);
+                }
+
+
+                /*
+                 * ==================================================
+                 * OUTPUT TOKEN COUNT
+                 * ==================================================
+                 */
+
+                SqlParseResult candidateParse =
+                    _parserService.Parse(
+                        candidate);
+
+
+                diagnostics.OutputTokenCount =
+                    candidateParse.Tokens == null
+                        ? 0
+                        : CountMeaningfulTokens(
+                            candidateParse.Tokens);
+
+
+                /*
+                 * ==================================================
+                 * DETERMINE FINAL SQL
+                 * ==================================================
+                 */
+
+                string output;
+
+                bool wasFormatted;
+
+                bool validationPassed;
+
+                string message;
+
+
+                if (!validation.Success)
+                {
+                    /*
+                     * Never return an unsafe candidate.
+                     */
+
+                    output =
+                        input;
+
+                    wasFormatted =
+                        false;
+
+                    validationPassed =
+                        false;
+
+                    message =
+                        validation.Message +
+                        " Original SQL preserved.";
+
+                    diagnostics.ResultStatus =
+                        "VALIDATION_FAILED";
+                }
+                else
+                {
+                    output =
+                        candidate;
+
+                    validationPassed =
+                        true;
+
+                    wasFormatted =
+                        !string.Equals(
+                            input,
+                            candidate,
+                            StringComparison.Ordinal);
+
+                    message =
+                        validation.Message;
+
+                    diagnostics.ResultStatus =
+                        wasFormatted
+                            ? "FORMATTED"
+                            : "UNCHANGED";
+                }
+
+
+                diagnostics.Add(
+                    "RESULT",
+                    diagnostics.ResultStatus);
+
+
+                /*
+                 * ==================================================
+                 * PDF REPORT
+                 * ==================================================
+                 */
+
+                if (_options.EnablePdfReport)
+                {
+                    try
+                    {
+                        diagnostics.Add(
+                            "PDF",
+                            "PDF report generation started.");
+
+
+                        FormatterReportBuilder reportBuilder =
+                            new FormatterReportBuilder();
+
+
+                        FormatterReport report =
+                            reportBuilder.Build(
+                                input,
+                                output,
+                                tokens,
+                                plan,
+                                diagnostics,
+                                validationPassed);
+
+
+                        IFormatterReportWriter reportWriter =
+                            new PdfFormatterReportWriter();
+
+
+                        pdfReportPath =
+                            reportWriter.Write(
+                                report);
+
+
+                        diagnostics.Add(
+                            "PDF",
+                            "PDF formatting report created: " +
+                            pdfReportPath);
+                    }
+                    catch (Exception pdfException)
+                    {
+                        diagnostics.Add(
+                            "PDF_ERROR",
+                            pdfException.ToString());
+
+                        /*
+                         * Reporting is best effort only.
+                         * Never fail formatting because PDF failed.
+                         */
+                    }
+                }
+
+
+                /*
+                 * ==================================================
+                 * COMPLETE DIAGNOSTICS
+                 * ==================================================
+                 */
+
+                diagnostics.Complete();
+
+
+                /*
+                 * ==================================================
+                 * WRITE LOG
+                 * ==================================================
+                 */
+
+                WriteLog(
+                    diagnostics);
+
+
+                /*
+                 * ==================================================
+                 * RETURN
+                 * ==================================================
+                 */
+
+                return new SqlFormatterResult
+                {
+                    Sql =
+                        output,
+
+                    WasFormatted =
+                        wasFormatted,
+
+                    ValidationPassed =
+                        validationPassed,
+
+                    Message =
+                        message,
+
+                    ExecutionId =
+                        diagnostics.ExecutionId,
+
+                    PdfReportPath =
+                        pdfReportPath,
+
+                    Diagnostics =
+                        diagnostics
+                };
+            }
+            catch (Exception exception)
+            {
+                /*
+                 * ==================================================
+                 * UNEXPECTED FORMATTER ERROR
+                 * ==================================================
+                 *
+                 * Always preserve the original SQL.
+                 */
+
+                diagnostics.ResultStatus =
+                    "UNEXPECTED_ERROR";
+
+                diagnostics.OutputLength =
+                    input.Length;
+
+
+                diagnostics.Add(
+                    "EXCEPTION",
+                    exception.ToString());
+
+
+                diagnostics.Complete();
+
+
+                WriteLog(
+                    diagnostics);
+
+
+                return new SqlFormatterResult
+                {
+                    Sql =
+                        input,
+
+                    WasFormatted =
+                        false,
+
+                    ValidationPassed =
+                        false,
+
+                    /*
+                     * Keep full exception temporarily while
+                     * formatter integration is being tested.
+                     * We can restore the user-friendly message
+                     * after V1 is stable.
+                     */
+                    Message =
+                        "Unexpected formatter error. Original SQL preserved." +
+                        Environment.NewLine +
+                        exception.ToString(),
+
+                    ExecutionId =
+                        diagnostics.ExecutionId,
+
+                    PdfReportPath =
+                        pdfReportPath,
+
+                    Diagnostics =
+                        diagnostics
+                };
+            }
+        }
+
+
+        /*
+         * ==========================================================
+         * LOGGING
+         * ==========================================================
+         */
+
+        private void WriteLog(
+            FormatterDiagnostics diagnostics)
+        {
+            if (!_options.EnableLogFile ||
+                _logger == null)
+            {
+                return;
+            }
+
+
+            try
+            {
+                _logger.Write(
+                    diagnostics);
+            }
+            catch
+            {
+                /*
+                 * Logging must never break formatting.
+                 */
+            }
+        }
+
+
+        /*
+         * ==========================================================
+         * TOKEN COUNT
+         * ==========================================================
+         */
+
+        private static int CountMeaningfulTokens(
+            IList<TSqlParserToken> tokens)
+        {
+            if (tokens == null)
+            {
+                return 0;
+            }
+
+
+            int count =
+                0;
+
+
+            foreach (
+                TSqlParserToken token
+                in tokens)
+            {
+                if (token.TokenType ==
+                        TSqlTokenType.WhiteSpace ||
+                    token.TokenType ==
+                        TSqlTokenType.EndOfFile)
+                {
+                    continue;
+                }
+
+
+                count++;
+            }
+
+
+            return count;
+        }
+    }
 }
