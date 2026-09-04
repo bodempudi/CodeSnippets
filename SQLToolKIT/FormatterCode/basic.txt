@@ -50,6 +50,12 @@ namespace NotepadPlusPlusPlugin.Formatting.Emission
 
                 LayoutInstruction instruction;
 
+                /*
+                 * ==================================================
+                 * APPLY EXPLICIT LAYOUT FIRST
+                 * ==================================================
+                 */
+
                 if (instructions.TryGetValue(
                         i,
                         out instruction))
@@ -58,6 +64,12 @@ namespace NotepadPlusPlusPlugin.Formatting.Emission
                         output,
                         instruction);
                 }
+
+                /*
+                 * ==================================================
+                 * EOF
+                 * ==================================================
+                 */
 
                 if (token.TokenType ==
                     TSqlTokenType.EndOfFile)
@@ -69,12 +81,8 @@ namespace NotepadPlusPlusPlugin.Formatting.Emission
                  * ==================================================
                  * WHITESPACE
                  * ==================================================
-                 *
-                 * Layout instructions have priority.
-                 *
-                 * If the upcoming real token owns a layout
-                 * instruction, discard the original whitespace.
                  */
+
                 if (token.TokenType ==
                     TSqlTokenType.WhiteSpace)
                 {
@@ -83,6 +91,17 @@ namespace NotepadPlusPlusPlugin.Formatting.Emission
                             tokens,
                             i + 1);
 
+                    /*
+                     * The upcoming token owns its whitespace.
+                     *
+                     * Example:
+                     *
+                     * old whitespace
+                     * SELECT
+                     *
+                     * If SELECT has a NewLine instruction,
+                     * discard the old whitespace completely.
+                     */
                     if (next >= 0 &&
                         instructions.ContainsKey(
                             next))
@@ -91,49 +110,108 @@ namespace NotepadPlusPlusPlugin.Formatting.Emission
                     }
 
                     /*
-                     * Preserve physical line breaks that are not
-                     * controlled by a layout instruction.
+                     * ------------------------------------------------
+                     * EXISTING PHYSICAL NEWLINE
+                     * ------------------------------------------------
                      *
-                     * Horizontal normalization applies ONLY when
-                     * the tokens remain on the same output line.
+                     * Normally preserve an original newline.
+                     *
+                     * However, when the PREVIOUS token was explicitly
+                     * positioned by the layout engine, the old source
+                     * newline must not undo that formatter decision.
+                     *
+                     * Example:
+                     *
+                     * FROM
+                     *     dbo.Customer
+                     *
+                     * where FROM already received its layout position.
+                     *
+                     * We want:
+                     *
+                     * FROM dbo.Customer
                      */
                     if (ContainsNewLine(
                             token.Text))
                     {
+                        int previous =
+                            FindPreviousNonWhitespaceToken(
+                                tokens,
+                                i - 1);
+
+                        if (previous >= 0 &&
+                            instructions.ContainsKey(
+                                previous))
+                        {
+                            TSqlParserToken previousToken =
+                                tokens[previous];
+
+                            TSqlParserToken nextToken =
+                                next >= 0
+                                    ? tokens[next]
+                                    : null;
+
+                            if (ShouldInsertSpace(
+                                    previousToken,
+                                    nextToken))
+                            {
+                                RemoveTrailingWhitespace(
+                                    output);
+
+                                if (output.Length > 0)
+                                {
+                                    output.Append(
+                                        ' ');
+                                }
+                            }
+                            else
+                            {
+                                RemoveTrailingWhitespace(
+                                    output);
+                            }
+
+                            continue;
+                        }
+
+                        /*
+                         * No formatter instruction owns this boundary.
+                         * Preserve the developer/source newline.
+                         */
                         output.Append(
                             token.Text);
 
                         continue;
                     }
 
-                    int previous =
+                    /*
+                     * ------------------------------------------------
+                     * HORIZONTAL WHITESPACE ONLY
+                     * ------------------------------------------------
+                     */
+
+                    int previousSameLine =
                         FindPreviousNonWhitespaceToken(
                             tokens,
                             i - 1);
 
-                    if (previous < 0 ||
+                    if (previousSameLine < 0 ||
                         next < 0)
                     {
-                        /*
-                         * Leading/trailing horizontal whitespace is
-                         * not useful formatter content.
-                         */
                         continue;
                     }
 
-                    TSqlParserToken previousToken =
-                        tokens[previous];
+                    TSqlParserToken previousTokenSameLine =
+                        tokens[previousSameLine];
 
-                    TSqlParserToken nextToken =
+                    TSqlParserToken nextTokenSameLine =
                         tokens[next];
 
                     if (ShouldInsertSpace(
-                            previousToken,
-                            nextToken))
+                            previousTokenSameLine,
+                            nextTokenSameLine))
                     {
                         /*
-                         * Normalize any amount of horizontal
-                         * whitespace to exactly one space.
+                         * Multiple spaces/tabs become one space.
                          */
                         RemoveTrailingWhitespace(
                             output);
@@ -147,15 +225,17 @@ namespace NotepadPlusPlusPlugin.Formatting.Emission
                     else
                     {
                         /*
-                         * Punctuation-sensitive pair.
-                         *
-                         * Example:
+                         * Punctuation-sensitive pair:
                          *
                          * dbo . Customer
+                         * COUNT ( *
+                         * a ,
                          *
                          * becomes:
                          *
                          * dbo.Customer
+                         * COUNT(*
+                         * a,
                          */
                         RemoveTrailingWhitespace(
                             output);
@@ -165,12 +245,22 @@ namespace NotepadPlusPlusPlugin.Formatting.Emission
                 }
 
                 /*
-                 * Token text itself is always preserved.
+                 * ==================================================
+                 * TOKEN TEXT
+                 * ==================================================
                  *
-                 * Literals, comments, identifiers, quoted
-                 * identifiers, operators etc. are never rewritten
-                 * here.
+                 * Never reconstruct or modify SQL token text.
+                 *
+                 * This protects:
+                 *
+                 * - string literals
+                 * - comments
+                 * - identifiers
+                 * - quoted identifiers
+                 * - numbers
+                 * - operators
                  */
+
                 output.Append(
                     token.Text);
             }
@@ -269,8 +359,6 @@ namespace NotepadPlusPlusPlugin.Formatting.Emission
          * ==========================================================
          * BLANK LINE
          * ==========================================================
-         *
-         * Normalize to exactly one empty line before the token.
          */
 
         private static void ApplyBlankLine(
@@ -296,7 +384,7 @@ namespace NotepadPlusPlusPlugin.Formatting.Emission
          * SECTION SEPARATOR
          * ==========================================================
          *
-         * Formatter separator always ends at absolute column 135.
+         * Generated separator ends at absolute column 135.
          */
 
         private static void ApplySectionSeparator(
@@ -306,6 +394,10 @@ namespace NotepadPlusPlusPlugin.Formatting.Emission
             RemoveTrailingWhitespaceIncludingNewLines(
                 output);
 
+            /*
+             * Avoid duplicate adjacent formatter-generated
+             * separators when two structural boundaries meet.
+             */
             RemoveTrailingGeneratedSectionSeparator(
                 output);
 
@@ -329,10 +421,7 @@ namespace NotepadPlusPlusPlugin.Formatting.Emission
                 indent.Length;
 
             /*
-             * A generated separator must remain a valid SQL
-             * single-line comment.
-             *
-             * At least "--" is required.
+             * Must remain a valid SQL single-line comment.
              */
             if (hyphenCount < 2)
             {
@@ -415,8 +504,7 @@ namespace NotepadPlusPlusPlugin.Formatting.Emission
                     '\n');
 
             /*
-             * Physical line width must finish exactly at
-             * absolute column 135.
+             * Full physical width must end at column 135.
              */
             if (normalized.Length !=
                 SectionSeparatorEndColumn)
@@ -428,7 +516,7 @@ namespace NotepadPlusPlusPlugin.Formatting.Emission
                 0;
 
             /*
-             * Formatter indentation uses spaces.
+             * Formatter indentation consists of spaces.
              */
             while (index <
                        normalized.Length &&
@@ -441,9 +529,6 @@ namespace NotepadPlusPlusPlugin.Formatting.Emission
                 normalized.Length -
                 index;
 
-            /*
-             * Need at least "--" for a SQL single-line comment.
-             */
             if (hyphenCount < 2)
             {
                 return false;
@@ -466,14 +551,6 @@ namespace NotepadPlusPlusPlugin.Formatting.Emission
          * ==========================================================
          * TIGHT
          * ==========================================================
-         *
-         * Examples:
-         *
-         * END;
-         *
-         * dbo.Customer
-         *
-         * COUNT(*)
          */
 
         private static void ApplyTight(
@@ -487,9 +564,6 @@ namespace NotepadPlusPlusPlugin.Formatting.Emission
          * ==========================================================
          * SPACE
          * ==========================================================
-         *
-         * Remove existing spaces/newlines immediately before
-         * the token and place exactly one normal space.
          */
 
         private static void ApplySpace(
@@ -507,20 +581,15 @@ namespace NotepadPlusPlusPlugin.Formatting.Emission
 
         /*
          * ==========================================================
-         * SAME-LINE HORIZONTAL WHITESPACE
+         * SAME-LINE SPACING DECISION
          * ==========================================================
          *
-         * Called only for an existing horizontal whitespace token.
+         * Called only when an actual whitespace boundary existed.
          *
-         * We are NOT creating arbitrary new spaces between tokens.
+         * Result:
          *
-         * We decide whether the existing gap should become:
-         *
-         *     one space
-         *
-         * or:
-         *
-         *     no space
+         * true  -> normalize to exactly one space
+         * false -> normalize to no space
          */
 
         private static bool ShouldInsertSpace(
@@ -543,7 +612,7 @@ namespace NotepadPlusPlusPlugin.Formatting.Emission
 
             /*
              * ------------------------------------------------------
-             * NO SPACE BEFORE
+             * NO SPACE BEFORE THESE
              * ------------------------------------------------------
              *
              * dbo.Customer
@@ -562,11 +631,10 @@ namespace NotepadPlusPlusPlugin.Formatting.Emission
 
             /*
              * ------------------------------------------------------
-             * NO SPACE AFTER
+             * NO SPACE AFTER THESE
              * ------------------------------------------------------
              *
              * dbo.Customer
-             * COUNT(*)
              * (CustomerID
              */
 
@@ -578,24 +646,10 @@ namespace NotepadPlusPlusPlugin.Formatting.Emission
 
             /*
              * ------------------------------------------------------
-             * DEFAULT
+             * NORMAL TOKEN BOUNDARY
              * ------------------------------------------------------
              *
-             * Existing horizontal gap becomes one space.
-             *
-             * FROM     dbo.Customer
-             * WHERE        CustomerID = 10
-             * INNER        JOIN
-             * ORDER       BY
-             * SET       @A = 10
-             *
-             * become:
-             *
-             * FROM dbo.Customer
-             * WHERE CustomerID = 10
-             * INNER JOIN
-             * ORDER BY
-             * SET @A = 10
+             * Existing horizontal whitespace becomes one space.
              */
 
             return true;
@@ -603,7 +657,7 @@ namespace NotepadPlusPlusPlugin.Formatting.Emission
 
         /*
          * ==========================================================
-         * NEWLINE INSIDE WHITESPACE TOKEN
+         * DOES WHITESPACE CONTAIN A PHYSICAL NEWLINE?
          * ==========================================================
          */
 
