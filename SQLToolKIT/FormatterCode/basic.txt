@@ -1,297 +1,410 @@
 using Microsoft.SqlServer.TransactSql.ScriptDom;
+using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 
-namespace NotepadPlusPlusPlugin.Formatting.Policies
+namespace NotepadPlusPlusPlugin.Formatting.Emission
 {
-    public sealed class StatementSpacingPolicy :
-        ILayoutPolicy
+    public sealed class TokenPreservingEmitter
     {
-        public void Apply(
-            AstNodeContext context,
-            LayoutContext layoutContext)
+        private const string IndentText =
+            "    ";
+
+        private const int SectionSeparatorEndColumn =
+            135;
+
+        public string Emit(
+            IList<TSqlParserToken> tokens,
+            LayoutPlan plan)
         {
-            if (context == null ||
-                context.Node == null ||
-                context.Parent == null ||
-                layoutContext == null)
+            if (tokens == null)
             {
-                return;
+                throw new ArgumentNullException(
+                    "tokens");
             }
 
-            /*
-             * Only direct children of a StatementList participate
-             * in logical section separation.
-             *
-             * JOIN, WHERE, CASE, CTE, subqueries, expressions, etc.
-             * do not create separators here.
-             */
-            if (!(context.Parent is StatementList) ||
-                !TokenNavigator.IsIndexedRelationship(
-                    context.Relationship,
-                    "Statements"))
+            if (plan == null)
             {
-                return;
+                throw new ArgumentNullException(
+                    "plan");
             }
 
-            int statementIndex =
-                TokenNavigator.GetRelationshipIndex(
-                    context.Relationship);
+            Dictionary<int, LayoutInstruction> instructions =
+                plan.Instructions
+                    .GroupBy(
+                        x => x.TokenIndex)
+                    .ToDictionary(
+                        x => x.Key,
+                        x => x.Last());
 
-            if (statementIndex < 0)
+            StringBuilder output =
+                new StringBuilder();
+
+            for (int i = 0;
+                 i < tokens.Count;
+                 i++)
             {
-                return;
-            }
+                TSqlParserToken token =
+                    tokens[i];
 
-            IList<AstNodeContext> statements =
-                GetStatements(
-                    context.Parent,
-                    layoutContext);
+                LayoutInstruction instruction;
 
-            if (statements.Count == 0 ||
-                statementIndex >= statements.Count)
-            {
-                return;
-            }
-
-            /*
-             * Determine whether the current statement starts
-             * a new logical group.
-             *
-             * Only consecutive DECLARE statements and consecutive
-             * SET statements are allowed to share a group.
-             */
-            bool startsGroup =
-                IsGroupStart(
-                    statements,
-                    statementIndex);
-
-            if (!startsGroup)
-            {
-                return;
-            }
-
-            int groupCount =
-                CountGroups(
-                    statements);
-
-            bool isNestedStatementList =
-                IsNestedStatementList(
-                    context.Parent,
-                    layoutContext);
-
-            /*
-             * Container rule:
-             *
-             * A nested StatementList containing only one logical
-             * group does not receive internal separators.
-             *
-             * Example:
-             *
-             * WHILE ...
-             * BEGIN
-             *     SET @A = @A + 1;
-             * END
-             */
-            if (isNestedStatementList &&
-                groupCount <= 1)
-            {
-                return;
-            }
-
-            int indent =
-                StatementIndentResolver
-                    .GetStatementIndent(
-                        context.Node,
-                        layoutContext);
-
-            /*
-             * Every logical group receives a separator before it.
-             *
-             * This naturally creates:
-             *
-             *     opening boundary
-             *     group 1
-             *
-             *     boundary
-             *     group 2
-             *
-             *     boundary
-             *     group 3
-             */
-            layoutContext.AddSectionSeparatorInstruction(
-                context.Node.FirstTokenIndex,
-                indent,
-                "StatementSpacingPolicy.GroupStart",
-                context);
-
-            /*
-             * Nested containers containing 2+ logical groups also
-             * receive a closing boundary.
-             *
-             * Only the LAST group owns this instruction.
-             */
-            if (isNestedStatementList &&
-                IsLastGroup(
-                    statements,
-                    statementIndex))
-            {
-                int nextToken =
-                    layoutContext.TokenNavigator
-                        .FindNextMeaningfulToken(
-                            context.Node.LastTokenIndex + 1,
-                            layoutContext.Tokens.Count - 1);
-
-                if (nextToken >= 0)
+                if (instructions.TryGetValue(
+                        i,
+                        out instruction))
                 {
-                    layoutContext.AddSectionSeparatorInstruction(
-                        nextToken,
-                        indent,
-                        "StatementSpacingPolicy.ContainerEnd",
-                        context);
+                    ApplyInstruction(
+                        output,
+                        instruction);
                 }
+
+                if (token.TokenType ==
+                    TSqlTokenType.EndOfFile)
+                {
+                    continue;
+                }
+
+                /*
+                 * If upcoming token owns its whitespace through
+                 * NewLine / Space / Tight / Separator etc.,
+                 * ignore the existing whitespace.
+                 */
+                if (token.TokenType ==
+                    TSqlTokenType.WhiteSpace)
+                {
+                    int next =
+                        FindNextNonWhitespaceToken(
+                            tokens,
+                            i + 1);
+
+                    if (next >= 0 &&
+                        instructions.ContainsKey(
+                            next))
+                    {
+                        continue;
+                    }
+                }
+
+                output.Append(
+                    token.Text);
             }
-        }
 
-        /*
-         * ==========================================================
-         * GET DIRECT STATEMENTS
-         * ==========================================================
-         */
-
-        private static IList<AstNodeContext> GetStatements(
-            TSqlFragment statementList,
-            LayoutContext layoutContext)
-        {
             return
-                layoutContext.Walker
-                    .GetChildren(
-                        statementList)
-                    .Where(
-                        x =>
-                            x != null &&
-                            x.Node != null &&
-                            TokenNavigator.IsIndexedRelationship(
-                                x.Relationship,
-                                "Statements"))
-                    .OrderBy(
-                        x =>
-                            TokenNavigator.GetRelationshipIndex(
-                                x.Relationship))
-                    .ToList();
+                output.ToString();
         }
 
         /*
          * ==========================================================
-         * GROUP START
+         * APPLY LAYOUT ACTION
          * ==========================================================
          */
 
-        private static bool IsGroupStart(
-            IList<AstNodeContext> statements,
-            int index)
+        private static void ApplyInstruction(
+            StringBuilder output,
+            LayoutInstruction instruction)
         {
-            if (statements == null ||
-                index < 0 ||
-                index >= statements.Count)
+            if (instruction == null)
             {
-                return false;
+                return;
             }
 
-            /*
-             * First statement always starts a group.
-             */
-            if (index == 0)
+            if (instruction.Action ==
+                LayoutAction.Tight)
             {
-                return true;
+                ApplyTight(
+                    output);
+
+                return;
             }
 
-            TSqlFragment current =
-                statements[index].Node;
-
-            TSqlFragment previous =
-                statements[index - 1].Node;
-
-            /*
-             * Consecutive DECLARE statements belong together.
-             */
-            if (IsDeclare(current) &&
-                IsDeclare(previous))
+            if (instruction.Action ==
+                LayoutAction.Space)
             {
-                return false;
+                ApplySpace(
+                    output);
+
+                return;
             }
 
-            /*
-             * Consecutive SET statements belong together.
-             */
-            if (IsSet(current) &&
-                IsSet(previous))
+            if (instruction.Action ==
+                LayoutAction.BlankLine)
             {
-                return false;
+                ApplyBlankLine(
+                    output,
+                    instruction.IndentLevel);
+
+                return;
             }
 
-            /*
-             * Everything else starts a new group.
-             */
-            return true;
+            if (instruction.Action ==
+                LayoutAction.SectionSeparator)
+            {
+                ApplySectionSeparator(
+                    output,
+                    instruction.IndentLevel);
+
+                return;
+            }
+
+            if (instruction.Action ==
+                LayoutAction.NewLine)
+            {
+                ApplyNewLine(
+                    output,
+                    instruction.IndentLevel);
+            }
         }
 
         /*
          * ==========================================================
-         * COUNT LOGICAL GROUPS
+         * NEW LINE
          * ==========================================================
          */
 
-        private static int CountGroups(
-            IList<AstNodeContext> statements)
+        private static void ApplyNewLine(
+            StringBuilder output,
+            int indentLevel)
         {
-            if (statements == null ||
-                statements.Count == 0)
+            RemoveTrailingWhitespace(
+                output);
+
+            if (!EndsWithNewLine(
+                    output))
             {
-                return 0;
+                output.AppendLine();
             }
 
-            int count = 0;
-
-            for (int index = 0;
-                 index < statements.Count;
-                 index++)
-            {
-                if (IsGroupStart(
-                        statements,
-                        index))
-                {
-                    count++;
-                }
-            }
-
-            return count;
+            output.Append(
+                RepeatIndent(
+                    indentLevel));
         }
 
         /*
          * ==========================================================
-         * LAST GROUP
+         * BLANK LINE
+         * ==========================================================
+         *
+         * Normalize to exactly one empty line before the token.
+         */
+
+        private static void ApplyBlankLine(
+            StringBuilder output,
+            int indentLevel)
+        {
+            RemoveTrailingWhitespaceIncludingNewLines(
+                output);
+
+            if (output.Length > 0)
+            {
+                output.AppendLine();
+                output.AppendLine();
+            }
+
+            output.Append(
+                RepeatIndent(
+                    indentLevel));
+        }
+
+        /*
+         * ==========================================================
+         * SECTION SEPARATOR
+         * ==========================================================
+         *
+         * Formatter separator always ends at absolute column 135.
+         *
+         * Examples:
+         *
+         * indent level 0:
+         *
+         *     0 spaces + 135 hyphens
+         *
+         * indent level 1:
+         *
+         *     4 spaces + 131 hyphens
+         *
+         * indent level 2:
+         *
+         *     8 spaces + 127 hyphens
+         *
+         * This creates one common right edge regardless of nesting.
+         *
+         * On a second formatting pass, an already-generated separator
+         * immediately before the target token is removed and rewritten
+         * in normalized form, preserving idempotency.
+         */
+
+        private static void ApplySectionSeparator(
+            StringBuilder output,
+            int indentLevel)
+        {
+            RemoveTrailingWhitespaceIncludingNewLines(
+                output);
+
+            RemoveTrailingGeneratedSectionSeparator(
+                output);
+
+            RemoveTrailingWhitespaceIncludingNewLines(
+                output);
+
+            if (output.Length > 0)
+            {
+                output.AppendLine();
+            }
+
+            string indent =
+                RepeatIndent(
+                    indentLevel);
+
+            output.Append(
+                indent);
+
+            int hyphenCount =
+                SectionSeparatorEndColumn -
+                indent.Length;
+
+            /*
+             * A generated separator must remain a valid SQL
+             * single-line comment.
+             *
+             * At least "--" is required.
+             */
+            if (hyphenCount < 2)
+            {
+                hyphenCount = 2;
+            }
+
+            output.Append(
+                new string(
+                    '-',
+                    hyphenCount));
+
+            output.AppendLine();
+
+            output.Append(
+                indent);
+        }
+
+        /*
+         * ==========================================================
+         * REMOVE PREVIOUS GENERATED SECTION SEPARATOR
+         * ==========================================================
+         *
+         * Used for idempotency.
+         *
+         * A formatter-generated separator:
+         *
+         *     - contains optional leading indentation spaces
+         *     - contains only hyphens after indentation
+         *     - has at least two hyphens
+         *     - ends at absolute column 135
+         *
+         * Examples recognized:
+         *
+         * ----------------------------------------------------------------...
+         *
+         *     ------------------------------------------------------------...
+         *
+         *         --------------------------------------------------------...
+         */
+
+        private static void RemoveTrailingGeneratedSectionSeparator(
+            StringBuilder output)
+        {
+            if (output == null ||
+                output.Length == 0)
+            {
+                return;
+            }
+
+            int lineStart =
+                output.Length - 1;
+
+            while (lineStart >= 0 &&
+                   output[lineStart] != '\r' &&
+                   output[lineStart] != '\n')
+            {
+                lineStart--;
+            }
+
+            lineStart++;
+
+            string lastLine =
+                output.ToString(
+                    lineStart,
+                    output.Length - lineStart);
+
+            if (!IsGeneratedSectionSeparatorLine(
+                    lastLine))
+            {
+                return;
+            }
+
+            output.Length =
+                lineStart;
+        }
+
+        /*
+         * ==========================================================
+         * GENERATED SECTION SEPARATOR CHECK
          * ==========================================================
          */
 
-        private static bool IsLastGroup(
-            IList<AstNodeContext> statements,
-            int currentIndex)
+        private static bool IsGeneratedSectionSeparatorLine(
+            string line)
         {
-            if (statements == null ||
-                currentIndex < 0 ||
-                currentIndex >= statements.Count)
+            if (string.IsNullOrEmpty(
+                    line))
             {
                 return false;
             }
 
-            for (int index = currentIndex + 1;
-                 index < statements.Count;
-                 index++)
+            string normalized =
+                line.TrimEnd(
+                    ' ',
+                    '\t',
+                    '\r',
+                    '\n');
+
+            /*
+             * Physical line width must finish exactly at
+             * absolute column 135.
+             */
+            if (normalized.Length !=
+                SectionSeparatorEndColumn)
             {
-                if (IsGroupStart(
-                        statements,
-                        index))
+                return false;
+            }
+
+            int index =
+                0;
+
+            /*
+             * Formatter indentation uses spaces.
+             */
+            while (index < normalized.Length &&
+                   normalized[index] == ' ')
+            {
+                index++;
+            }
+
+            int hyphenCount =
+                normalized.Length -
+                index;
+
+            /*
+             * Need at least "--" for a SQL single-line comment.
+             */
+            if (hyphenCount < 2)
+            {
+                return false;
+            }
+
+            for (int i = index;
+                 i < normalized.Length;
+                 i++)
+            {
+                if (normalized[i] != '-')
                 {
                     return false;
                 }
@@ -302,109 +415,167 @@ namespace NotepadPlusPlusPlugin.Formatting.Policies
 
         /*
          * ==========================================================
-         * DECLARE GROUP
+         * TIGHT
          * ==========================================================
+         *
+         * Remove all existing whitespace immediately before
+         * the token and insert nothing.
+         *
+         * Examples:
+         *
+         *     ,NextColumn
+         *     ;WITH
+         *     END;
          */
 
-        private static bool IsDeclare(
-            TSqlFragment node)
+        private static void ApplyTight(
+            StringBuilder output)
         {
-            if (node == null)
-            {
-                return false;
-            }
-
-            string typeName =
-                node.GetType().Name;
-
-            return
-                typeName == "DeclareVariableStatement" ||
-                typeName == "DeclareTableVariableStatement";
+            RemoveTrailingWhitespaceIncludingNewLines(
+                output);
         }
 
         /*
          * ==========================================================
-         * SET GROUP
+         * SPACE
          * ==========================================================
+         *
+         * Remove existing spaces/newlines immediately before
+         * the token and place exactly one normal space.
          */
 
-        private static bool IsSet(
-            TSqlFragment node)
+        private static void ApplySpace(
+            StringBuilder output)
         {
-            if (node == null)
+            RemoveTrailingWhitespaceIncludingNewLines(
+                output);
+
+            if (output.Length > 0)
             {
-                return false;
+                output.Append(
+                    ' ');
             }
-
-            string typeName =
-                node.GetType().Name;
-
-            return
-                typeName == "SetVariableStatement" ||
-                typeName == "PredicateSetStatement";
         }
 
         /*
          * ==========================================================
-         * NESTED STATEMENT LIST
+         * NEXT NON-WHITESPACE TOKEN
          * ==========================================================
-         *
-         * Top-level procedure/batch StatementList:
-         *
-         *     separator
-         *     statement
-         *
-         * Nested container StatementList:
-         *
-         *     IF ...
-         *     BEGIN
-         *         ...
-         *     END
-         *
-         * Nested lists use the 0/1/2+ container rule.
          */
 
-        private static bool IsNestedStatementList(
-            TSqlFragment statementList,
-            LayoutContext layoutContext)
+        private static int FindNextNonWhitespaceToken(
+            IList<TSqlParserToken> tokens,
+            int start)
         {
-            if (statementList == null ||
-                layoutContext == null ||
-                layoutContext.Walker == null)
+            for (int i = start;
+                 i < tokens.Count;
+                 i++)
+            {
+                if (tokens[i].TokenType !=
+                    TSqlTokenType.WhiteSpace)
+                {
+                    return i;
+                }
+            }
+
+            return -1;
+        }
+
+        /*
+         * ==========================================================
+         * INDENT
+         * ==========================================================
+         */
+
+        private static string RepeatIndent(
+            int indentLevel)
+        {
+            if (indentLevel <= 0)
+            {
+                return
+                    string.Empty;
+            }
+
+            return
+                string.Concat(
+                    Enumerable.Repeat(
+                        IndentText,
+                        indentLevel));
+        }
+
+        /*
+         * ==========================================================
+         * REMOVE HORIZONTAL WHITESPACE
+         * ==========================================================
+         */
+
+        private static void RemoveTrailingWhitespace(
+            StringBuilder builder)
+        {
+            while (builder.Length > 0)
+            {
+                char value =
+                    builder[
+                        builder.Length - 1];
+
+                if (value != ' ' &&
+                    value != '\t')
+                {
+                    break;
+                }
+
+                builder.Length--;
+            }
+        }
+
+        /*
+         * ==========================================================
+         * REMOVE ALL TRAILING WHITESPACE
+         * ==========================================================
+         */
+
+        private static void RemoveTrailingWhitespaceIncludingNewLines(
+            StringBuilder builder)
+        {
+            while (builder.Length > 0)
+            {
+                char value =
+                    builder[
+                        builder.Length - 1];
+
+                if (value != ' ' &&
+                    value != '\t' &&
+                    value != '\r' &&
+                    value != '\n')
+                {
+                    break;
+                }
+
+                builder.Length--;
+            }
+        }
+
+        /*
+         * ==========================================================
+         * ENDS WITH NEW LINE
+         * ==========================================================
+         */
+
+        private static bool EndsWithNewLine(
+            StringBuilder builder)
+        {
+            if (builder.Length == 0)
             {
                 return false;
             }
 
-            TSqlFragment owner =
-                layoutContext.Walker
-                    .GetParent(
-                        statementList);
+            char last =
+                builder[
+                    builder.Length - 1];
 
-            if (owner == null)
-            {
-                return false;
-            }
-
-            /*
-             * A StatementList owned by BEGIN/END is an internal
-             * container statement list.
-             */
-            if (owner is BeginEndBlockStatement)
-            {
-                return true;
-            }
-
-            /*
-             * TRY/CATCH may expose statement lists differently
-             * between ScriptDom versions. Treat a StatementList
-             * underneath TryCatchStatement as nested as well.
-             */
-            if (owner is TryCatchStatement)
-            {
-                return true;
-            }
-
-            return false;
+            return
+                last == '\r' ||
+                last == '\n';
         }
     }
 }
