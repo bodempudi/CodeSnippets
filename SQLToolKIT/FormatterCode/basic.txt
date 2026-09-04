@@ -1,53 +1,410 @@
-private static void AddElse(
-    ScalarExpression elseExpression,
-    int caseIndent,
-    AstNodeContext context,
-    LayoutContext layoutContext)
+using Microsoft.SqlServer.TransactSql.ScriptDom;
+using System.Collections.Generic;
+using System.Linq;
+
+namespace NotepadPlusPlusPlugin.Formatting.Policies
 {
-    if (elseExpression == null)
+    public sealed class StatementSpacingPolicy :
+        ILayoutPolicy
     {
-        return;
+        public void Apply(
+            AstNodeContext context,
+            LayoutContext layoutContext)
+        {
+            if (context == null ||
+                context.Node == null ||
+                context.Parent == null ||
+                layoutContext == null)
+            {
+                return;
+            }
+
+            /*
+             * Only direct children of a StatementList participate
+             * in logical section separation.
+             *
+             * JOIN, WHERE, CASE, CTE, subqueries, expressions, etc.
+             * do not create separators here.
+             */
+            if (!(context.Parent is StatementList) ||
+                !TokenNavigator.IsIndexedRelationship(
+                    context.Relationship,
+                    "Statements"))
+            {
+                return;
+            }
+
+            int statementIndex =
+                TokenNavigator.GetRelationshipIndex(
+                    context.Relationship);
+
+            if (statementIndex < 0)
+            {
+                return;
+            }
+
+            IList<AstNodeContext> statements =
+                GetStatements(
+                    context.Parent,
+                    layoutContext);
+
+            if (statements.Count == 0 ||
+                statementIndex >= statements.Count)
+            {
+                return;
+            }
+
+            /*
+             * Determine whether the current statement starts
+             * a new logical group.
+             *
+             * Only consecutive DECLARE statements and consecutive
+             * SET statements are allowed to share a group.
+             */
+            bool startsGroup =
+                IsGroupStart(
+                    statements,
+                    statementIndex);
+
+            if (!startsGroup)
+            {
+                return;
+            }
+
+            int groupCount =
+                CountGroups(
+                    statements);
+
+            bool isNestedStatementList =
+                IsNestedStatementList(
+                    context.Parent,
+                    layoutContext);
+
+            /*
+             * Container rule:
+             *
+             * A nested StatementList containing only one logical
+             * group does not receive internal separators.
+             *
+             * Example:
+             *
+             * WHILE ...
+             * BEGIN
+             *     SET @A = @A + 1;
+             * END
+             */
+            if (isNestedStatementList &&
+                groupCount <= 1)
+            {
+                return;
+            }
+
+            int indent =
+                StatementIndentResolver
+                    .GetStatementIndent(
+                        context.Node,
+                        layoutContext);
+
+            /*
+             * Every logical group receives a separator before it.
+             *
+             * This naturally creates:
+             *
+             *     opening boundary
+             *     group 1
+             *
+             *     boundary
+             *     group 2
+             *
+             *     boundary
+             *     group 3
+             */
+            layoutContext.AddSectionSeparatorInstruction(
+                context.Node.FirstTokenIndex,
+                indent,
+                "StatementSpacingPolicy.GroupStart",
+                context);
+
+            /*
+             * Nested containers containing 2+ logical groups also
+             * receive a closing boundary.
+             *
+             * Only the LAST group owns this instruction.
+             */
+            if (isNestedStatementList &&
+                IsLastGroup(
+                    statements,
+                    statementIndex))
+            {
+                int nextToken =
+                    layoutContext.TokenNavigator
+                        .FindNextMeaningfulToken(
+                            context.Node.LastTokenIndex + 1,
+                            layoutContext.Tokens.Count - 1);
+
+                if (nextToken >= 0)
+                {
+                    layoutContext.AddSectionSeparatorInstruction(
+                        nextToken,
+                        indent,
+                        "StatementSpacingPolicy.ContainerEnd",
+                        context);
+                }
+            }
+        }
+
+        /*
+         * ==========================================================
+         * GET DIRECT STATEMENTS
+         * ==========================================================
+         */
+
+        private static IList<AstNodeContext> GetStatements(
+            TSqlFragment statementList,
+            LayoutContext layoutContext)
+        {
+            return
+                layoutContext.Walker
+                    .GetChildren(
+                        statementList)
+                    .Where(
+                        x =>
+                            x != null &&
+                            x.Node != null &&
+                            TokenNavigator.IsIndexedRelationship(
+                                x.Relationship,
+                                "Statements"))
+                    .OrderBy(
+                        x =>
+                            TokenNavigator.GetRelationshipIndex(
+                                x.Relationship))
+                    .ToList();
+        }
+
+        /*
+         * ==========================================================
+         * GROUP START
+         * ==========================================================
+         */
+
+        private static bool IsGroupStart(
+            IList<AstNodeContext> statements,
+            int index)
+        {
+            if (statements == null ||
+                index < 0 ||
+                index >= statements.Count)
+            {
+                return false;
+            }
+
+            /*
+             * First statement always starts a group.
+             */
+            if (index == 0)
+            {
+                return true;
+            }
+
+            TSqlFragment current =
+                statements[index].Node;
+
+            TSqlFragment previous =
+                statements[index - 1].Node;
+
+            /*
+             * Consecutive DECLARE statements belong together.
+             */
+            if (IsDeclare(current) &&
+                IsDeclare(previous))
+            {
+                return false;
+            }
+
+            /*
+             * Consecutive SET statements belong together.
+             */
+            if (IsSet(current) &&
+                IsSet(previous))
+            {
+                return false;
+            }
+
+            /*
+             * Everything else starts a new group.
+             */
+            return true;
+        }
+
+        /*
+         * ==========================================================
+         * COUNT LOGICAL GROUPS
+         * ==========================================================
+         */
+
+        private static int CountGroups(
+            IList<AstNodeContext> statements)
+        {
+            if (statements == null ||
+                statements.Count == 0)
+            {
+                return 0;
+            }
+
+            int count = 0;
+
+            for (int index = 0;
+                 index < statements.Count;
+                 index++)
+            {
+                if (IsGroupStart(
+                        statements,
+                        index))
+                {
+                    count++;
+                }
+            }
+
+            return count;
+        }
+
+        /*
+         * ==========================================================
+         * LAST GROUP
+         * ==========================================================
+         */
+
+        private static bool IsLastGroup(
+            IList<AstNodeContext> statements,
+            int currentIndex)
+        {
+            if (statements == null ||
+                currentIndex < 0 ||
+                currentIndex >= statements.Count)
+            {
+                return false;
+            }
+
+            for (int index = currentIndex + 1;
+                 index < statements.Count;
+                 index++)
+            {
+                if (IsGroupStart(
+                        statements,
+                        index))
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        /*
+         * ==========================================================
+         * DECLARE GROUP
+         * ==========================================================
+         */
+
+        private static bool IsDeclare(
+            TSqlFragment node)
+        {
+            if (node == null)
+            {
+                return false;
+            }
+
+            string typeName =
+                node.GetType().Name;
+
+            return
+                typeName == "DeclareVariableStatement" ||
+                typeName == "DeclareTableVariableStatement";
+        }
+
+        /*
+         * ==========================================================
+         * SET GROUP
+         * ==========================================================
+         */
+
+        private static bool IsSet(
+            TSqlFragment node)
+        {
+            if (node == null)
+            {
+                return false;
+            }
+
+            string typeName =
+                node.GetType().Name;
+
+            return
+                typeName == "SetVariableStatement" ||
+                typeName == "PredicateSetStatement";
+        }
+
+        /*
+         * ==========================================================
+         * NESTED STATEMENT LIST
+         * ==========================================================
+         *
+         * Top-level procedure/batch StatementList:
+         *
+         *     separator
+         *     statement
+         *
+         * Nested container StatementList:
+         *
+         *     IF ...
+         *     BEGIN
+         *         ...
+         *     END
+         *
+         * Nested lists use the 0/1/2+ container rule.
+         */
+
+        private static bool IsNestedStatementList(
+            TSqlFragment statementList,
+            LayoutContext layoutContext)
+        {
+            if (statementList == null ||
+                layoutContext == null ||
+                layoutContext.Walker == null)
+            {
+                return false;
+            }
+
+            TSqlFragment owner =
+                layoutContext.Walker
+                    .GetParent(
+                        statementList);
+
+            if (owner == null)
+            {
+                return false;
+            }
+
+            /*
+             * A StatementList owned by BEGIN/END is an internal
+             * container statement list.
+             */
+            if (owner is BeginEndBlockStatement)
+            {
+                return true;
+            }
+
+            /*
+             * TRY/CATCH may expose statement lists differently
+             * between ScriptDom versions. Treat a StatementList
+             * underneath TryCatchStatement as nested as well.
+             */
+            if (owner is TryCatchStatement)
+            {
+                return true;
+            }
+
+            return false;
+        }
     }
-
-    int elseIndex =
-        FindPreviousToken(
-            layoutContext,
-            elseExpression.FirstTokenIndex,
-            TSqlTokenType.Else);
-
-    if (elseIndex < 0)
-    {
-        return;
-    }
-
-    /*
-     * ELSE = CASE + 1
-     *
-     * Keep the ELSE expression on the same line.
-     *
-     * Example:
-     *
-     * CASE
-     *     WHEN Condition = 1
-     *         THEN Value
-     *     ELSE NULL
-     * END
-     */
-
-    layoutContext.AddInstruction(
-        elseIndex,
-        caseIndent + 1,
-        "CaseLayoutPolicy",
-        context);
-
-    /*
-     * Tighten the expression following ELSE so that
-     * simple values such as NULL, 0, '', column names,
-     * variables, etc. remain on the ELSE line.
-     */
-
-    layoutContext.AddTightenInstruction(
-        elseExpression.FirstTokenIndex,
-        "CaseLayoutPolicy",
-        context);
 }
