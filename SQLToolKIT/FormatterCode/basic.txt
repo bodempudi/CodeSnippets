@@ -1,5 +1,6 @@
 using Microsoft.SqlServer.TransactSql.ScriptDom;
-using NotepadPlusPlusPlugin.Formatting.Parsing;
+using NBK.SQL.CodingStandards.Core.Models;
+using NBK.SQL.CodingStandards.Core.Parse;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -8,11 +9,23 @@ namespace NotepadPlusPlusPlugin.Formatting.Validation
 {
     public sealed class FormatterValidationResult
     {
-        public bool TokensPreserved { get; set; }
+        public bool TokensPreserved
+        {
+            get;
+            set;
+        }
 
-        public bool OutputParses { get; set; }
+        public bool OutputParses
+        {
+            get;
+            set;
+        }
 
-        public string Message { get; set; }
+        public string Message
+        {
+            get;
+            set;
+        }
 
         public bool Success
         {
@@ -35,6 +48,12 @@ namespace NotepadPlusPlusPlugin.Formatting.Validation
         public FormatterSafetyValidator(
             SqlParserService parserService)
         {
+            if (parserService == null)
+            {
+                throw new ArgumentNullException(
+                    "parserService");
+            }
+
             _parserService =
                 parserService;
         }
@@ -47,181 +66,381 @@ namespace NotepadPlusPlusPlugin.Formatting.Validation
                 _parserService.Parse(
                     outputSql);
 
+            /*
+             * ======================================================
+             * OUTPUT SQL PARSE VALIDATION
+             * ======================================================
+             */
+
             bool outputParses =
-                outputParse.Success;
+                outputParse != null &&
+                outputParse.IsValid;
 
             if (!outputParses)
             {
                 return new FormatterValidationResult
                 {
-                    TokensPreserved = false,
-                    OutputParses = false,
+                    TokensPreserved =
+                        false,
+
+                    OutputParses =
+                        false,
+
                     Message =
-                        "Formatted SQL failed parsing validation."
+                        BuildParseFailureMessage(
+                            outputParse)
                 };
             }
 
-            string tokenFailureMessage;
+            /*
+             * ======================================================
+             * TOKEN PRESERVATION VALIDATION
+             * ======================================================
+             */
 
-            bool tokensPreserved =
-                EquivalentMeaningfulTokens(
+            TokenComparisonResult tokenComparison =
+                CompareMeaningfulTokens(
                     originalTokens,
-                    outputParse.Tokens,
-                    out tokenFailureMessage);
+                    outputParse.Tokens);
+
+            if (!tokenComparison.Success)
+            {
+                return new FormatterValidationResult
+                {
+                    TokensPreserved =
+                        false,
+
+                    OutputParses =
+                        true,
+
+                    Message =
+                        BuildTokenFailureMessage(
+                            tokenComparison)
+                };
+            }
+
+            /*
+             * ======================================================
+             * SUCCESS
+             * ======================================================
+             */
 
             return new FormatterValidationResult
             {
                 TokensPreserved =
-                    tokensPreserved,
+                    true,
 
                 OutputParses =
                     true,
 
                 Message =
-                    tokensPreserved
-                        ? "Token preservation and parsing passed."
-                        : tokenFailureMessage
+                    "Token preservation and parsing passed " +
+                    "(generated section separators excluded)."
             };
         }
 
-        private static bool EquivalentMeaningfulTokens(
-            IList<TSqlParserToken> left,
-            IList<TSqlParserToken> right,
-            out string failureMessage)
+        /*
+         * ==========================================================
+         * PARSE FAILURE MESSAGE
+         * ==========================================================
+         */
+
+        private static string BuildParseFailureMessage(
+            SqlParseResult parseResult)
         {
-            IList<ComparableToken> leftValues =
+            if (parseResult == null)
+            {
+                return
+                    "Safety validation failed." +
+                    Environment.NewLine +
+                    "Reason: Formatted SQL parser returned no result.";
+            }
+
+            if (parseResult.Errors == null ||
+                parseResult.Errors.Count == 0)
+            {
+                return
+                    "Safety validation failed." +
+                    Environment.NewLine +
+                    "Reason: Formatted SQL could not be parsed.";
+            }
+
+            SqlResultInfo firstError =
+                parseResult.Errors[0];
+
+            string message =
+                "Safety validation failed." +
+                Environment.NewLine +
+                "Reason: Formatted SQL could not be parsed." +
+                Environment.NewLine +
+                "Line: " +
+                firstError.Line +
+                Environment.NewLine +
+                "Column: " +
+                firstError.Column;
+
+            /*
+             * Number and Offset are included when available.
+             */
+
+            if (firstError.Number.HasValue)
+            {
+                message +=
+                    Environment.NewLine +
+                    "Error Number: " +
+                    firstError.Number.Value;
+            }
+
+            if (firstError.Offset.HasValue)
+            {
+                message +=
+                    Environment.NewLine +
+                    "Offset: " +
+                    firstError.Offset.Value;
+            }
+
+            message +=
+                Environment.NewLine +
+                "Message: " +
+                firstError.Message;
+
+            if (parseResult.Errors.Count > 1)
+            {
+                message +=
+                    Environment.NewLine +
+                    "Additional Parse Errors: " +
+                    (parseResult.Errors.Count - 1);
+            }
+
+            return message;
+        }
+
+        /*
+         * ==========================================================
+         * TOKEN FAILURE MESSAGE
+         * ==========================================================
+         */
+
+        private static string BuildTokenFailureMessage(
+            TokenComparisonResult comparison)
+        {
+            string message =
+                "Safety validation failed." +
+                Environment.NewLine +
+                "Reason: Token preservation check failed." +
+                Environment.NewLine +
+                "Original Meaningful Tokens: " +
+                comparison.LeftCount +
+                Environment.NewLine +
+                "Formatted Meaningful Tokens: " +
+                comparison.RightCount;
+
+            if (comparison.MismatchIndex >= 0)
+            {
+                message +=
+                    Environment.NewLine +
+                    "First Mismatch Token Index: " +
+                    comparison.MismatchIndex +
+                    Environment.NewLine +
+                    "Expected: " +
+                    comparison.Expected +
+                    Environment.NewLine +
+                    "Actual: " +
+                    comparison.Actual;
+            }
+
+            return message;
+        }
+
+        /*
+         * ==========================================================
+         * TOKEN COMPARISON
+         * ==========================================================
+         */
+
+        private static TokenComparisonResult CompareMeaningfulTokens(
+            IList<TSqlParserToken> left,
+            IList<TSqlParserToken> right)
+        {
+            IList<string> leftValues =
                 MeaningfulTokenValues(
                     left);
 
-            IList<ComparableToken> rightValues =
+            IList<string> rightValues =
                 MeaningfulTokenValues(
                     right);
 
+            int commonCount =
+                Math.Min(
+                    leftValues.Count,
+                    rightValues.Count);
+
+            /*
+             * Compare all tokens that exist on both sides.
+             *
+             * Ordinal comparison is deliberate.
+             *
+             * We are not performing semantic equivalence here.
+             */
+            for (int i = 0;
+                 i < commonCount;
+                 i++)
+            {
+                if (!string.Equals(
+                        leftValues[i],
+                        rightValues[i],
+                        StringComparison.Ordinal))
+                {
+                    return new TokenComparisonResult
+                    {
+                        Success =
+                            false,
+
+                        LeftCount =
+                            leftValues.Count,
+
+                        RightCount =
+                            rightValues.Count,
+
+                        MismatchIndex =
+                            i,
+
+                        Expected =
+                            leftValues[i],
+
+                        Actual =
+                            rightValues[i]
+                    };
+                }
+            }
+
+            /*
+             * Common portion matched, but one side contains
+             * additional meaningful tokens.
+             */
             if (leftValues.Count !=
                 rightValues.Count)
             {
-                failureMessage =
-                    "Safety validation failed. " +
-                    "Meaningful token count changed. " +
-                    "Original: " +
-                    leftValues.Count +
-                    ", Formatted: " +
-                    rightValues.Count +
-                    ".";
+                int mismatchIndex =
+                    commonCount;
 
-                return false;
+                return new TokenComparisonResult
+                {
+                    Success =
+                        false,
+
+                    LeftCount =
+                        leftValues.Count,
+
+                    RightCount =
+                        rightValues.Count,
+
+                    MismatchIndex =
+                        mismatchIndex,
+
+                    Expected =
+                        mismatchIndex <
+                        leftValues.Count
+                            ? leftValues[
+                                mismatchIndex]
+                            : "<missing>",
+
+                    Actual =
+                        mismatchIndex <
+                        rightValues.Count
+                            ? rightValues[
+                                mismatchIndex]
+                            : "<missing>"
+                };
             }
 
-            for (int i = 0;
-                 i < leftValues.Count;
-                 i++)
+            /*
+             * Exact meaningful-token stream matched.
+             */
+            return new TokenComparisonResult
             {
-                ComparableToken expected =
-                    leftValues[i];
+                Success =
+                    true,
 
-                ComparableToken actual =
-                    rightValues[i];
+                LeftCount =
+                    leftValues.Count,
 
-                if (expected.TokenType !=
-                    actual.TokenType)
-                {
-                    failureMessage =
-                        BuildFailureMessage(
-                            i,
-                            expected,
-                            actual,
-                            "Token type changed");
+                RightCount =
+                    rightValues.Count,
 
-                    return false;
-                }
+                MismatchIndex =
+                    -1,
 
-                if (!string.Equals(
-                        expected.ComparableText,
-                        actual.ComparableText,
-                        StringComparison.Ordinal))
-                {
-                    failureMessage =
-                        BuildFailureMessage(
-                            i,
-                            expected,
-                            actual,
-                            "Token text changed");
+                Expected =
+                    string.Empty,
 
-                    return false;
-                }
-            }
-
-            failureMessage =
-                string.Empty;
-
-            return true;
+                Actual =
+                    string.Empty
+            };
         }
 
-        private static IList<ComparableToken> MeaningfulTokenValues(
+        /*
+         * ==========================================================
+         * MEANINGFUL TOKEN VALUES
+         * ==========================================================
+         *
+         * Excluded:
+         *
+         *   1. Whitespace
+         *   2. EndOfFile
+         *   3. Formatter-generated section separators
+         *
+         * Developer comments remain part of the token stream.
+         */
+
+        private static IList<string> MeaningfulTokenValues(
             IList<TSqlParserToken> tokens)
         {
             if (tokens == null)
             {
-                return new List<ComparableToken>();
+                return new List<string>();
             }
 
-            List<ComparableToken> result =
-                new List<ComparableToken>();
-
-            for (int i = 0;
-                 i < tokens.Count;
-                 i++)
-            {
-                TSqlParserToken token =
-                    tokens[i];
-
-                if (token == null)
-                {
-                    continue;
-                }
-
-                if (token.TokenType ==
-                    TSqlTokenType.WhiteSpace)
-                {
-                    continue;
-                }
-
-                if (token.TokenType ==
-                    TSqlTokenType.EndOfFile)
-                {
-                    continue;
-                }
-
-                if (IsGeneratedSectionSeparator(
-                        token))
-                {
-                    continue;
-                }
-
-                result.Add(
-                    new ComparableToken
-                    {
-                        TokenType =
-                            token.TokenType,
-
-                        RawText =
-                            token.Text ??
-                            string.Empty,
-
-                        ComparableText =
-                            GetComparableTokenText(
-                                token),
-
-                        Line =
-                            token.Line,
-
-                        Column =
-                            token.Column
-                    });
-            }
-
-            return result;
+            return tokens
+                .Where(
+                    token =>
+                        token != null &&
+                        token.TokenType !=
+                            TSqlTokenType.WhiteSpace &&
+                        token.TokenType !=
+                            TSqlTokenType.EndOfFile &&
+                        !IsGeneratedSectionSeparator(
+                            token))
+                .Select(
+                    token =>
+                        ((int)token.TokenType)
+                            .ToString() +
+                        "|" +
+                        GetComparableTokenText(
+                            token))
+                .ToList();
         }
+
+        /*
+         * ==========================================================
+         * COMPARABLE TOKEN TEXT
+         * ==========================================================
+         *
+         * This is intentionally conservative.
+         *
+         * Everything is compared exactly except trailing
+         * whitespace attached to a SingleLineComment token.
+         *
+         * Examples of things that are NOT normalized:
+         *
+         *   CustomerID vs CustomerId
+         *   100 vs 100.0
+         *   'ABC ' vs 'ABC'
+         *   = vs <>
+         *   multiline comment text
+         *
+         * Those must fail safety validation.
+         */
 
         private static string GetComparableTokenText(
             TSqlParserToken token)
@@ -236,11 +455,13 @@ namespace NotepadPlusPlusPlugin.Formatting.Validation
                 string.Empty;
 
             /*
-             * ScriptDom can include trailing whitespace or
-             * line-ending characters inside a single-line
-             * comment token.
+             * ScriptDom can include the physical line ending
+             * or trailing horizontal whitespace as part of a
+             * SingleLineComment token.
              *
-             * We allow only those trailing characters to differ.
+             * The formatter is allowed to reposition that comment
+             * without treating CR/LF/trailing spaces as SQL-content
+             * modification.
              */
             if (token.TokenType ==
                 TSqlTokenType.SingleLineComment)
@@ -253,21 +474,34 @@ namespace NotepadPlusPlusPlugin.Formatting.Validation
                         '\n');
             }
 
-            /*
-             * Everything else remains exact.
-             *
-             * This protects:
-             *
-             * identifiers
-             * keywords
-             * operators
-             * numbers
-             * string literals
-             * quoted identifiers
-             * multiline comments
-             */
             return text;
         }
+
+        /*
+         * ==========================================================
+         * FORMATTER-GENERATED SECTION SEPARATOR
+         * ==========================================================
+         *
+         * Generated separator rules:
+         *
+         *   - Must be a SingleLineComment
+         *   - Must contain only '-'
+         *   - Must contain at least "--"
+         *   - Must end at absolute column 135
+         *
+         * Examples:
+         *
+         * indent 0:
+         * 135 hyphens
+         *
+         * indent 4:
+         * 131 hyphens
+         *
+         * indent 8:
+         * 127 hyphens
+         *
+         * All terminate at absolute column 135.
+         */
 
         private static bool IsGeneratedSectionSeparator(
             TSqlParserToken token)
@@ -292,9 +526,6 @@ namespace NotepadPlusPlusPlugin.Formatting.Validation
                 return false;
             }
 
-            /*
-             * Formatter-owned separator contains only hyphens.
-             */
             for (int i = 0;
                  i < text.Length;
                  i++)
@@ -305,17 +536,6 @@ namespace NotepadPlusPlusPlugin.Formatting.Validation
                 }
             }
 
-            /*
-             * ScriptDom Column is 1-based.
-             *
-             * Examples:
-             *
-             * column 1 + 135 hyphens
-             * column 5 + 131 hyphens
-             * column 9 + 127 hyphens
-             *
-             * All end at absolute column 135.
-             */
             int startColumn =
                 token.Column;
 
@@ -333,82 +553,45 @@ namespace NotepadPlusPlusPlugin.Formatting.Validation
                 SectionSeparatorEndColumn;
         }
 
-        private static string BuildFailureMessage(
-            int tokenIndex,
-            ComparableToken expected,
-            ComparableToken actual,
-            string reason)
+        /*
+         * ==========================================================
+         * INTERNAL TOKEN COMPARISON RESULT
+         * ==========================================================
+         */
+
+        private sealed class TokenComparisonResult
         {
-            return
-                "Safety validation failed. " +
-                reason +
-                " at meaningful token index " +
-                tokenIndex +
-                ". Expected: [" +
-                MakeDiagnosticText(
-                    expected.ComparableText) +
-                "] (" +
-                expected.TokenType +
-                "), Actual: [" +
-                MakeDiagnosticText(
-                    actual.ComparableText) +
-                "] (" +
-                actual.TokenType +
-                "), Formatted location: Line " +
-                actual.Line +
-                ", Column " +
-                actual.Column +
-                ".";
-        }
-
-        private static string MakeDiagnosticText(
-            string value)
-        {
-            if (value == null)
-            {
-                return string.Empty;
-            }
-
-            return
-                value
-                    .Replace(
-                        "\r",
-                        "\\r")
-                    .Replace(
-                        "\n",
-                        "\\n")
-                    .Replace(
-                        "\t",
-                        "\\t");
-        }
-
-        private sealed class ComparableToken
-        {
-            public TSqlTokenType TokenType
+            public bool Success
             {
                 get;
                 set;
             }
 
-            public string RawText
+            public int LeftCount
             {
                 get;
                 set;
             }
 
-            public string ComparableText
+            public int RightCount
             {
                 get;
                 set;
             }
 
-            public int Line
+            public int MismatchIndex
             {
                 get;
                 set;
             }
 
-            public int Column
+            public string Expected
+            {
+                get;
+                set;
+            }
+
+            public string Actual
             {
                 get;
                 set;
