@@ -1,47 +1,418 @@
-private static bool IsGeneratedSectionSeparator(
-    TSqlParserToken token)
+using Microsoft.SqlServer.TransactSql.ScriptDom;
+using NotepadPlusPlusPlugin.Formatting.Parsing;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+
+namespace NotepadPlusPlusPlugin.Formatting.Validation
 {
-    if (token == null ||
-        token.TokenType != TSqlTokenType.SingleLineComment)
+    public sealed class FormatterValidationResult
     {
-        return false;
-    }
+        public bool TokensPreserved { get; set; }
 
-    string text =
-        (token.Text ?? string.Empty)
-            .TrimEnd(
-                ' ',
-                '\t',
-                '\r',
-                '\n');
+        public bool OutputParses { get; set; }
 
-    if (text.Length < 2)
-    {
-        return false;
-    }
+        public string Message { get; set; }
 
-    for (int i = 0;
-         i < text.Length;
-         i++)
-    {
-        if (text[i] != '-')
+        public bool Success
         {
-            return false;
+            get
+            {
+                return
+                    TokensPreserved &&
+                    OutputParses;
+            }
         }
     }
 
-    int startColumn =
-        token.Column;
-
-    if (startColumn <= 0)
+    public sealed class FormatterSafetyValidator
     {
-        return false;
+        private const int SectionSeparatorEndColumn =
+            135;
+
+        private readonly SqlParserService _parserService;
+
+        public FormatterSafetyValidator(
+            SqlParserService parserService)
+        {
+            _parserService =
+                parserService;
+        }
+
+        public FormatterValidationResult Validate(
+            IList<TSqlParserToken> originalTokens,
+            string outputSql)
+        {
+            SqlParseResult outputParse =
+                _parserService.Parse(
+                    outputSql);
+
+            bool outputParses =
+                outputParse.Success;
+
+            if (!outputParses)
+            {
+                return new FormatterValidationResult
+                {
+                    TokensPreserved = false,
+                    OutputParses = false,
+                    Message =
+                        "Formatted SQL failed parsing validation."
+                };
+            }
+
+            string tokenFailureMessage;
+
+            bool tokensPreserved =
+                EquivalentMeaningfulTokens(
+                    originalTokens,
+                    outputParse.Tokens,
+                    out tokenFailureMessage);
+
+            return new FormatterValidationResult
+            {
+                TokensPreserved =
+                    tokensPreserved,
+
+                OutputParses =
+                    true,
+
+                Message =
+                    tokensPreserved
+                        ? "Token preservation and parsing passed."
+                        : tokenFailureMessage
+            };
+        }
+
+        private static bool EquivalentMeaningfulTokens(
+            IList<TSqlParserToken> left,
+            IList<TSqlParserToken> right,
+            out string failureMessage)
+        {
+            IList<ComparableToken> leftValues =
+                MeaningfulTokenValues(
+                    left);
+
+            IList<ComparableToken> rightValues =
+                MeaningfulTokenValues(
+                    right);
+
+            if (leftValues.Count !=
+                rightValues.Count)
+            {
+                failureMessage =
+                    "Safety validation failed. " +
+                    "Meaningful token count changed. " +
+                    "Original: " +
+                    leftValues.Count +
+                    ", Formatted: " +
+                    rightValues.Count +
+                    ".";
+
+                return false;
+            }
+
+            for (int i = 0;
+                 i < leftValues.Count;
+                 i++)
+            {
+                ComparableToken expected =
+                    leftValues[i];
+
+                ComparableToken actual =
+                    rightValues[i];
+
+                if (expected.TokenType !=
+                    actual.TokenType)
+                {
+                    failureMessage =
+                        BuildFailureMessage(
+                            i,
+                            expected,
+                            actual,
+                            "Token type changed");
+
+                    return false;
+                }
+
+                if (!string.Equals(
+                        expected.ComparableText,
+                        actual.ComparableText,
+                        StringComparison.Ordinal))
+                {
+                    failureMessage =
+                        BuildFailureMessage(
+                            i,
+                            expected,
+                            actual,
+                            "Token text changed");
+
+                    return false;
+                }
+            }
+
+            failureMessage =
+                string.Empty;
+
+            return true;
+        }
+
+        private static IList<ComparableToken> MeaningfulTokenValues(
+            IList<TSqlParserToken> tokens)
+        {
+            if (tokens == null)
+            {
+                return new List<ComparableToken>();
+            }
+
+            List<ComparableToken> result =
+                new List<ComparableToken>();
+
+            for (int i = 0;
+                 i < tokens.Count;
+                 i++)
+            {
+                TSqlParserToken token =
+                    tokens[i];
+
+                if (token == null)
+                {
+                    continue;
+                }
+
+                if (token.TokenType ==
+                    TSqlTokenType.WhiteSpace)
+                {
+                    continue;
+                }
+
+                if (token.TokenType ==
+                    TSqlTokenType.EndOfFile)
+                {
+                    continue;
+                }
+
+                if (IsGeneratedSectionSeparator(
+                        token))
+                {
+                    continue;
+                }
+
+                result.Add(
+                    new ComparableToken
+                    {
+                        TokenType =
+                            token.TokenType,
+
+                        RawText =
+                            token.Text ??
+                            string.Empty,
+
+                        ComparableText =
+                            GetComparableTokenText(
+                                token),
+
+                        Line =
+                            token.Line,
+
+                        Column =
+                            token.Column
+                    });
+            }
+
+            return result;
+        }
+
+        private static string GetComparableTokenText(
+            TSqlParserToken token)
+        {
+            if (token == null)
+            {
+                return string.Empty;
+            }
+
+            string text =
+                token.Text ??
+                string.Empty;
+
+            /*
+             * ScriptDom can include trailing whitespace or
+             * line-ending characters inside a single-line
+             * comment token.
+             *
+             * We allow only those trailing characters to differ.
+             */
+            if (token.TokenType ==
+                TSqlTokenType.SingleLineComment)
+            {
+                return
+                    text.TrimEnd(
+                        ' ',
+                        '\t',
+                        '\r',
+                        '\n');
+            }
+
+            /*
+             * Everything else remains exact.
+             *
+             * This protects:
+             *
+             * identifiers
+             * keywords
+             * operators
+             * numbers
+             * string literals
+             * quoted identifiers
+             * multiline comments
+             */
+            return text;
+        }
+
+        private static bool IsGeneratedSectionSeparator(
+            TSqlParserToken token)
+        {
+            if (token == null ||
+                token.TokenType !=
+                    TSqlTokenType.SingleLineComment)
+            {
+                return false;
+            }
+
+            string text =
+                (token.Text ?? string.Empty)
+                    .TrimEnd(
+                        ' ',
+                        '\t',
+                        '\r',
+                        '\n');
+
+            if (text.Length < 2)
+            {
+                return false;
+            }
+
+            /*
+             * Formatter-owned separator contains only hyphens.
+             */
+            for (int i = 0;
+                 i < text.Length;
+                 i++)
+            {
+                if (text[i] != '-')
+                {
+                    return false;
+                }
+            }
+
+            /*
+             * ScriptDom Column is 1-based.
+             *
+             * Examples:
+             *
+             * column 1 + 135 hyphens
+             * column 5 + 131 hyphens
+             * column 9 + 127 hyphens
+             *
+             * All end at absolute column 135.
+             */
+            int startColumn =
+                token.Column;
+
+            if (startColumn <= 0)
+            {
+                return false;
+            }
+
+            int endColumn =
+                (startColumn - 1) +
+                text.Length;
+
+            return
+                endColumn ==
+                SectionSeparatorEndColumn;
+        }
+
+        private static string BuildFailureMessage(
+            int tokenIndex,
+            ComparableToken expected,
+            ComparableToken actual,
+            string reason)
+        {
+            return
+                "Safety validation failed. " +
+                reason +
+                " at meaningful token index " +
+                tokenIndex +
+                ". Expected: [" +
+                MakeDiagnosticText(
+                    expected.ComparableText) +
+                "] (" +
+                expected.TokenType +
+                "), Actual: [" +
+                MakeDiagnosticText(
+                    actual.ComparableText) +
+                "] (" +
+                actual.TokenType +
+                "), Formatted location: Line " +
+                actual.Line +
+                ", Column " +
+                actual.Column +
+                ".";
+        }
+
+        private static string MakeDiagnosticText(
+            string value)
+        {
+            if (value == null)
+            {
+                return string.Empty;
+            }
+
+            return
+                value
+                    .Replace(
+                        "\r",
+                        "\\r")
+                    .Replace(
+                        "\n",
+                        "\\n")
+                    .Replace(
+                        "\t",
+                        "\\t");
+        }
+
+        private sealed class ComparableToken
+        {
+            public TSqlTokenType TokenType
+            {
+                get;
+                set;
+            }
+
+            public string RawText
+            {
+                get;
+                set;
+            }
+
+            public string ComparableText
+            {
+                get;
+                set;
+            }
+
+            public int Line
+            {
+                get;
+                set;
+            }
+
+            public int Column
+            {
+                get;
+                set;
+            }
+        }
     }
-
-    int endColumn =
-        (startColumn - 1) +
-        text.Length;
-
-    return
-        endColumn == 135;
 }
