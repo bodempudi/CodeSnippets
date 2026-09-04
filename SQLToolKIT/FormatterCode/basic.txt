@@ -1,601 +1,769 @@
 using Microsoft.SqlServer.TransactSql.ScriptDom;
-using NBK.SQL.CodingStandards.Core.Models;
-using NBK.SQL.CodingStandards.Core.Parse;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 
-namespace NotepadPlusPlusPlugin.Formatting.Validation
+namespace NotepadPlusPlusPlugin.Formatting.Emission
 {
-    public sealed class FormatterValidationResult
+    public sealed class TokenPreservingEmitter
     {
-        public bool TokensPreserved
-        {
-            get;
-            set;
-        }
+        private const string IndentText =
+            "    ";
 
-        public bool OutputParses
-        {
-            get;
-            set;
-        }
-
-        public string Message
-        {
-            get;
-            set;
-        }
-
-        public bool Success
-        {
-            get
-            {
-                return
-                    TokensPreserved &&
-                    OutputParses;
-            }
-        }
-    }
-
-    public sealed class FormatterSafetyValidator
-    {
         private const int SectionSeparatorEndColumn =
             135;
 
-        private readonly SqlParserService _parserService;
-
-        public FormatterSafetyValidator(
-            SqlParserService parserService)
-        {
-            if (parserService == null)
-            {
-                throw new ArgumentNullException(
-                    "parserService");
-            }
-
-            _parserService =
-                parserService;
-        }
-
-        public FormatterValidationResult Validate(
-            IList<TSqlParserToken> originalTokens,
-            string outputSql)
-        {
-            SqlParseResult outputParse =
-                _parserService.Parse(
-                    outputSql);
-
-            /*
-             * ======================================================
-             * OUTPUT SQL PARSE VALIDATION
-             * ======================================================
-             */
-
-            bool outputParses =
-                outputParse != null &&
-                outputParse.IsValid;
-
-            if (!outputParses)
-            {
-                return new FormatterValidationResult
-                {
-                    TokensPreserved =
-                        false,
-
-                    OutputParses =
-                        false,
-
-                    Message =
-                        BuildParseFailureMessage(
-                            outputParse)
-                };
-            }
-
-            /*
-             * ======================================================
-             * TOKEN PRESERVATION VALIDATION
-             * ======================================================
-             */
-
-            TokenComparisonResult tokenComparison =
-                CompareMeaningfulTokens(
-                    originalTokens,
-                    outputParse.Tokens);
-
-            if (!tokenComparison.Success)
-            {
-                return new FormatterValidationResult
-                {
-                    TokensPreserved =
-                        false,
-
-                    OutputParses =
-                        true,
-
-                    Message =
-                        BuildTokenFailureMessage(
-                            tokenComparison)
-                };
-            }
-
-            /*
-             * ======================================================
-             * SUCCESS
-             * ======================================================
-             */
-
-            return new FormatterValidationResult
-            {
-                TokensPreserved =
-                    true,
-
-                OutputParses =
-                    true,
-
-                Message =
-                    "Token preservation and parsing passed " +
-                    "(generated section separators excluded)."
-            };
-        }
-
-        /*
-         * ==========================================================
-         * PARSE FAILURE MESSAGE
-         * ==========================================================
-         */
-
-        private static string BuildParseFailureMessage(
-            SqlParseResult parseResult)
-        {
-            if (parseResult == null)
-            {
-                return
-                    "Safety validation failed." +
-                    Environment.NewLine +
-                    "Reason: Formatted SQL parser returned no result.";
-            }
-
-            if (parseResult.Errors == null ||
-                parseResult.Errors.Count == 0)
-            {
-                return
-                    "Safety validation failed." +
-                    Environment.NewLine +
-                    "Reason: Formatted SQL could not be parsed.";
-            }
-
-            SqlResultInfo firstError =
-                parseResult.Errors[0];
-
-            string message =
-                "Safety validation failed." +
-                Environment.NewLine +
-                "Reason: Formatted SQL could not be parsed." +
-                Environment.NewLine +
-                "Line: " +
-                firstError.Line +
-                Environment.NewLine +
-                "Column: " +
-                firstError.Column;
-
-            /*
-             * Number and Offset are included when available.
-             */
-
-            if (firstError.Number.HasValue)
-            {
-                message +=
-                    Environment.NewLine +
-                    "Error Number: " +
-                    firstError.Number.Value;
-            }
-
-            if (firstError.Offset.HasValue)
-            {
-                message +=
-                    Environment.NewLine +
-                    "Offset: " +
-                    firstError.Offset.Value;
-            }
-
-            message +=
-                Environment.NewLine +
-                "Message: " +
-                firstError.Message;
-
-            if (parseResult.Errors.Count > 1)
-            {
-                message +=
-                    Environment.NewLine +
-                    "Additional Parse Errors: " +
-                    (parseResult.Errors.Count - 1);
-            }
-
-            return message;
-        }
-
-        /*
-         * ==========================================================
-         * TOKEN FAILURE MESSAGE
-         * ==========================================================
-         */
-
-        private static string BuildTokenFailureMessage(
-            TokenComparisonResult comparison)
-        {
-            string message =
-                "Safety validation failed." +
-                Environment.NewLine +
-                "Reason: Token preservation check failed." +
-                Environment.NewLine +
-                "Original Meaningful Tokens: " +
-                comparison.LeftCount +
-                Environment.NewLine +
-                "Formatted Meaningful Tokens: " +
-                comparison.RightCount;
-
-            if (comparison.MismatchIndex >= 0)
-            {
-                message +=
-                    Environment.NewLine +
-                    "First Mismatch Token Index: " +
-                    comparison.MismatchIndex +
-                    Environment.NewLine +
-                    "Expected: " +
-                    comparison.Expected +
-                    Environment.NewLine +
-                    "Actual: " +
-                    comparison.Actual;
-            }
-
-            return message;
-        }
-
-        /*
-         * ==========================================================
-         * TOKEN COMPARISON
-         * ==========================================================
-         */
-
-        private static TokenComparisonResult CompareMeaningfulTokens(
-            IList<TSqlParserToken> left,
-            IList<TSqlParserToken> right)
-        {
-            IList<string> leftValues =
-                MeaningfulTokenValues(
-                    left);
-
-            IList<string> rightValues =
-                MeaningfulTokenValues(
-                    right);
-
-            int commonCount =
-                Math.Min(
-                    leftValues.Count,
-                    rightValues.Count);
-
-            /*
-             * Compare all tokens that exist on both sides.
-             *
-             * Ordinal comparison is deliberate.
-             *
-             * We are not performing semantic equivalence here.
-             */
-            for (int i = 0;
-                 i < commonCount;
-                 i++)
-            {
-                if (!string.Equals(
-                        leftValues[i],
-                        rightValues[i],
-                        StringComparison.Ordinal))
-                {
-                    return new TokenComparisonResult
-                    {
-                        Success =
-                            false,
-
-                        LeftCount =
-                            leftValues.Count,
-
-                        RightCount =
-                            rightValues.Count,
-
-                        MismatchIndex =
-                            i,
-
-                        Expected =
-                            leftValues[i],
-
-                        Actual =
-                            rightValues[i]
-                    };
-                }
-            }
-
-            /*
-             * Common portion matched, but one side contains
-             * additional meaningful tokens.
-             */
-            if (leftValues.Count !=
-                rightValues.Count)
-            {
-                int mismatchIndex =
-                    commonCount;
-
-                return new TokenComparisonResult
-                {
-                    Success =
-                        false,
-
-                    LeftCount =
-                        leftValues.Count,
-
-                    RightCount =
-                        rightValues.Count,
-
-                    MismatchIndex =
-                        mismatchIndex,
-
-                    Expected =
-                        mismatchIndex <
-                        leftValues.Count
-                            ? leftValues[
-                                mismatchIndex]
-                            : "<missing>",
-
-                    Actual =
-                        mismatchIndex <
-                        rightValues.Count
-                            ? rightValues[
-                                mismatchIndex]
-                            : "<missing>"
-                };
-            }
-
-            /*
-             * Exact meaningful-token stream matched.
-             */
-            return new TokenComparisonResult
-            {
-                Success =
-                    true,
-
-                LeftCount =
-                    leftValues.Count,
-
-                RightCount =
-                    rightValues.Count,
-
-                MismatchIndex =
-                    -1,
-
-                Expected =
-                    string.Empty,
-
-                Actual =
-                    string.Empty
-            };
-        }
-
-        /*
-         * ==========================================================
-         * MEANINGFUL TOKEN VALUES
-         * ==========================================================
-         *
-         * Excluded:
-         *
-         *   1. Whitespace
-         *   2. EndOfFile
-         *   3. Formatter-generated section separators
-         *
-         * Developer comments remain part of the token stream.
-         */
-
-        private static IList<string> MeaningfulTokenValues(
-            IList<TSqlParserToken> tokens)
+        public string Emit(
+            IList<TSqlParserToken> tokens,
+            LayoutPlan plan)
         {
             if (tokens == null)
             {
-                return new List<string>();
+                throw new ArgumentNullException(
+                    "tokens");
             }
 
-            return tokens
-                .Where(
-                    token =>
-                        token != null &&
-                        token.TokenType !=
-                            TSqlTokenType.WhiteSpace &&
-                        token.TokenType !=
-                            TSqlTokenType.EndOfFile &&
-                        !IsGeneratedSectionSeparator(
-                            token))
-                .Select(
-                    token =>
-                        ((int)token.TokenType)
-                            .ToString() +
-                        "|" +
-                        GetComparableTokenText(
-                            token))
-                .ToList();
-        }
-
-        /*
-         * ==========================================================
-         * COMPARABLE TOKEN TEXT
-         * ==========================================================
-         *
-         * This is intentionally conservative.
-         *
-         * Everything is compared exactly except trailing
-         * whitespace attached to a SingleLineComment token.
-         *
-         * Examples of things that are NOT normalized:
-         *
-         *   CustomerID vs CustomerId
-         *   100 vs 100.0
-         *   'ABC ' vs 'ABC'
-         *   = vs <>
-         *   multiline comment text
-         *
-         * Those must fail safety validation.
-         */
-
-        private static string GetComparableTokenText(
-            TSqlParserToken token)
-        {
-            if (token == null)
+            if (plan == null)
             {
-                return string.Empty;
+                throw new ArgumentNullException(
+                    "plan");
             }
 
-            string text =
-                token.Text ??
-                string.Empty;
+            Dictionary<int, LayoutInstruction> instructions =
+                plan.Instructions
+                    .GroupBy(
+                        x => x.TokenIndex)
+                    .ToDictionary(
+                        x => x.Key,
+                        x => x.Last());
 
-            /*
-             * ScriptDom can include the physical line ending
-             * or trailing horizontal whitespace as part of a
-             * SingleLineComment token.
-             *
-             * The formatter is allowed to reposition that comment
-             * without treating CR/LF/trailing spaces as SQL-content
-             * modification.
-             */
-            if (token.TokenType ==
-                TSqlTokenType.SingleLineComment)
-            {
-                return
-                    text.TrimEnd(
-                        ' ',
-                        '\t',
-                        '\r',
-                        '\n');
-            }
-
-            return text;
-        }
-
-        /*
-         * ==========================================================
-         * FORMATTER-GENERATED SECTION SEPARATOR
-         * ==========================================================
-         *
-         * Generated separator rules:
-         *
-         *   - Must be a SingleLineComment
-         *   - Must contain only '-'
-         *   - Must contain at least "--"
-         *   - Must end at absolute column 135
-         *
-         * Examples:
-         *
-         * indent 0:
-         * 135 hyphens
-         *
-         * indent 4:
-         * 131 hyphens
-         *
-         * indent 8:
-         * 127 hyphens
-         *
-         * All terminate at absolute column 135.
-         */
-
-        private static bool IsGeneratedSectionSeparator(
-            TSqlParserToken token)
-        {
-            if (token == null ||
-                token.TokenType !=
-                    TSqlTokenType.SingleLineComment)
-            {
-                return false;
-            }
-
-            string text =
-                (token.Text ?? string.Empty)
-                    .TrimEnd(
-                        ' ',
-                        '\t',
-                        '\r',
-                        '\n');
-
-            if (text.Length < 2)
-            {
-                return false;
-            }
+            StringBuilder output =
+                new StringBuilder();
 
             for (int i = 0;
-                 i < text.Length;
+                 i < tokens.Count;
                  i++)
             {
-                if (text[i] != '-')
+                TSqlParserToken token =
+                    tokens[i];
+
+                LayoutInstruction instruction;
+
+                if (instructions.TryGetValue(
+                        i,
+                        out instruction))
+                {
+                    ApplyInstruction(
+                        output,
+                        instruction);
+                }
+
+                if (token.TokenType ==
+                    TSqlTokenType.EndOfFile)
+                {
+                    continue;
+                }
+
+                /*
+                 * ==================================================
+                 * WHITESPACE
+                 * ==================================================
+                 *
+                 * Layout instructions have priority.
+                 *
+                 * If the upcoming real token owns a layout
+                 * instruction, discard the original whitespace.
+                 */
+                if (token.TokenType ==
+                    TSqlTokenType.WhiteSpace)
+                {
+                    int next =
+                        FindNextNonWhitespaceToken(
+                            tokens,
+                            i + 1);
+
+                    if (next >= 0 &&
+                        instructions.ContainsKey(
+                            next))
+                    {
+                        continue;
+                    }
+
+                    /*
+                     * Preserve physical line breaks that are not
+                     * controlled by a layout instruction.
+                     *
+                     * Horizontal normalization applies ONLY when
+                     * the tokens remain on the same output line.
+                     */
+                    if (ContainsNewLine(
+                            token.Text))
+                    {
+                        output.Append(
+                            token.Text);
+
+                        continue;
+                    }
+
+                    int previous =
+                        FindPreviousNonWhitespaceToken(
+                            tokens,
+                            i - 1);
+
+                    if (previous < 0 ||
+                        next < 0)
+                    {
+                        /*
+                         * Leading/trailing horizontal whitespace is
+                         * not useful formatter content.
+                         */
+                        continue;
+                    }
+
+                    TSqlParserToken previousToken =
+                        tokens[previous];
+
+                    TSqlParserToken nextToken =
+                        tokens[next];
+
+                    if (ShouldInsertSpace(
+                            previousToken,
+                            nextToken))
+                    {
+                        /*
+                         * Normalize any amount of horizontal
+                         * whitespace to exactly one space.
+                         */
+                        RemoveTrailingWhitespace(
+                            output);
+
+                        if (output.Length > 0)
+                        {
+                            output.Append(
+                                ' ');
+                        }
+                    }
+                    else
+                    {
+                        /*
+                         * Punctuation-sensitive pair.
+                         *
+                         * Example:
+                         *
+                         * dbo . Customer
+                         *
+                         * becomes:
+                         *
+                         * dbo.Customer
+                         */
+                        RemoveTrailingWhitespace(
+                            output);
+                    }
+
+                    continue;
+                }
+
+                /*
+                 * Token text itself is always preserved.
+                 *
+                 * Literals, comments, identifiers, quoted
+                 * identifiers, operators etc. are never rewritten
+                 * here.
+                 */
+                output.Append(
+                    token.Text);
+            }
+
+            return
+                output.ToString();
+        }
+
+        /*
+         * ==========================================================
+         * APPLY LAYOUT ACTION
+         * ==========================================================
+         */
+
+        private static void ApplyInstruction(
+            StringBuilder output,
+            LayoutInstruction instruction)
+        {
+            if (instruction == null)
+            {
+                return;
+            }
+
+            if (instruction.Action ==
+                LayoutAction.Tight)
+            {
+                ApplyTight(
+                    output);
+
+                return;
+            }
+
+            if (instruction.Action ==
+                LayoutAction.Space)
+            {
+                ApplySpace(
+                    output);
+
+                return;
+            }
+
+            if (instruction.Action ==
+                LayoutAction.BlankLine)
+            {
+                ApplyBlankLine(
+                    output,
+                    instruction.IndentLevel);
+
+                return;
+            }
+
+            if (instruction.Action ==
+                LayoutAction.SectionSeparator)
+            {
+                ApplySectionSeparator(
+                    output,
+                    instruction.IndentLevel);
+
+                return;
+            }
+
+            if (instruction.Action ==
+                LayoutAction.NewLine)
+            {
+                ApplyNewLine(
+                    output,
+                    instruction.IndentLevel);
+            }
+        }
+
+        /*
+         * ==========================================================
+         * NEW LINE
+         * ==========================================================
+         */
+
+        private static void ApplyNewLine(
+            StringBuilder output,
+            int indentLevel)
+        {
+            RemoveTrailingWhitespace(
+                output);
+
+            if (!EndsWithNewLine(
+                    output))
+            {
+                output.AppendLine();
+            }
+
+            output.Append(
+                RepeatIndent(
+                    indentLevel));
+        }
+
+        /*
+         * ==========================================================
+         * BLANK LINE
+         * ==========================================================
+         *
+         * Normalize to exactly one empty line before the token.
+         */
+
+        private static void ApplyBlankLine(
+            StringBuilder output,
+            int indentLevel)
+        {
+            RemoveTrailingWhitespaceIncludingNewLines(
+                output);
+
+            if (output.Length > 0)
+            {
+                output.AppendLine();
+                output.AppendLine();
+            }
+
+            output.Append(
+                RepeatIndent(
+                    indentLevel));
+        }
+
+        /*
+         * ==========================================================
+         * SECTION SEPARATOR
+         * ==========================================================
+         *
+         * Formatter separator always ends at absolute column 135.
+         */
+
+        private static void ApplySectionSeparator(
+            StringBuilder output,
+            int indentLevel)
+        {
+            RemoveTrailingWhitespaceIncludingNewLines(
+                output);
+
+            RemoveTrailingGeneratedSectionSeparator(
+                output);
+
+            RemoveTrailingWhitespaceIncludingNewLines(
+                output);
+
+            if (output.Length > 0)
+            {
+                output.AppendLine();
+            }
+
+            string indent =
+                RepeatIndent(
+                    indentLevel);
+
+            output.Append(
+                indent);
+
+            int hyphenCount =
+                SectionSeparatorEndColumn -
+                indent.Length;
+
+            /*
+             * A generated separator must remain a valid SQL
+             * single-line comment.
+             *
+             * At least "--" is required.
+             */
+            if (hyphenCount < 2)
+            {
+                hyphenCount = 2;
+            }
+
+            output.Append(
+                new string(
+                    '-',
+                    hyphenCount));
+
+            output.AppendLine();
+
+            output.Append(
+                indent);
+        }
+
+        /*
+         * ==========================================================
+         * REMOVE TRAILING GENERATED SECTION SEPARATOR
+         * ==========================================================
+         */
+
+        private static void RemoveTrailingGeneratedSectionSeparator(
+            StringBuilder output)
+        {
+            if (output == null ||
+                output.Length == 0)
+            {
+                return;
+            }
+
+            int lineStart =
+                output.Length - 1;
+
+            while (lineStart >= 0 &&
+                   output[lineStart] != '\r' &&
+                   output[lineStart] != '\n')
+            {
+                lineStart--;
+            }
+
+            lineStart++;
+
+            string lastLine =
+                output.ToString(
+                    lineStart,
+                    output.Length - lineStart);
+
+            if (!IsGeneratedSectionSeparatorLine(
+                    lastLine))
+            {
+                return;
+            }
+
+            output.Length =
+                lineStart;
+        }
+
+        /*
+         * ==========================================================
+         * GENERATED SECTION SEPARATOR LINE
+         * ==========================================================
+         */
+
+        private static bool IsGeneratedSectionSeparatorLine(
+            string line)
+        {
+            if (string.IsNullOrEmpty(
+                    line))
+            {
+                return false;
+            }
+
+            string normalized =
+                line.TrimEnd(
+                    ' ',
+                    '\t',
+                    '\r',
+                    '\n');
+
+            /*
+             * Physical line width must finish exactly at
+             * absolute column 135.
+             */
+            if (normalized.Length !=
+                SectionSeparatorEndColumn)
+            {
+                return false;
+            }
+
+            int index =
+                0;
+
+            /*
+             * Formatter indentation uses spaces.
+             */
+            while (index <
+                       normalized.Length &&
+                   normalized[index] == ' ')
+            {
+                index++;
+            }
+
+            int hyphenCount =
+                normalized.Length -
+                index;
+
+            /*
+             * Need at least "--" for a SQL single-line comment.
+             */
+            if (hyphenCount < 2)
+            {
+                return false;
+            }
+
+            for (int i = index;
+                 i < normalized.Length;
+                 i++)
+            {
+                if (normalized[i] != '-')
                 {
                     return false;
                 }
             }
 
-            int startColumn =
-                token.Column;
-
-            if (startColumn <= 0)
-            {
-                return false;
-            }
-
-            int endColumn =
-                (startColumn - 1) +
-                text.Length;
-
-            return
-                endColumn ==
-                SectionSeparatorEndColumn;
+            return true;
         }
 
         /*
          * ==========================================================
-         * INTERNAL TOKEN COMPARISON RESULT
+         * TIGHT
+         * ==========================================================
+         *
+         * Examples:
+         *
+         * END;
+         *
+         * dbo.Customer
+         *
+         * COUNT(*)
+         */
+
+        private static void ApplyTight(
+            StringBuilder output)
+        {
+            RemoveTrailingWhitespaceIncludingNewLines(
+                output);
+        }
+
+        /*
+         * ==========================================================
+         * SPACE
+         * ==========================================================
+         *
+         * Remove existing spaces/newlines immediately before
+         * the token and place exactly one normal space.
+         */
+
+        private static void ApplySpace(
+            StringBuilder output)
+        {
+            RemoveTrailingWhitespaceIncludingNewLines(
+                output);
+
+            if (output.Length > 0)
+            {
+                output.Append(
+                    ' ');
+            }
+        }
+
+        /*
+         * ==========================================================
+         * SAME-LINE HORIZONTAL WHITESPACE
+         * ==========================================================
+         *
+         * Called only for an existing horizontal whitespace token.
+         *
+         * We are NOT creating arbitrary new spaces between tokens.
+         *
+         * We decide whether the existing gap should become:
+         *
+         *     one space
+         *
+         * or:
+         *
+         *     no space
+         */
+
+        private static bool ShouldInsertSpace(
+            TSqlParserToken previous,
+            TSqlParserToken current)
+        {
+            if (previous == null ||
+                current == null)
+            {
+                return false;
+            }
+
+            string previousText =
+                previous.Text ??
+                string.Empty;
+
+            string currentText =
+                current.Text ??
+                string.Empty;
+
+            /*
+             * ------------------------------------------------------
+             * NO SPACE BEFORE
+             * ------------------------------------------------------
+             *
+             * dbo.Customer
+             * a,b
+             * COUNT(*)
+             * END;
+             */
+
+            if (currentText == "." ||
+                currentText == "," ||
+                currentText == ")" ||
+                currentText == ";")
+            {
+                return false;
+            }
+
+            /*
+             * ------------------------------------------------------
+             * NO SPACE AFTER
+             * ------------------------------------------------------
+             *
+             * dbo.Customer
+             * COUNT(*)
+             * (CustomerID
+             */
+
+            if (previousText == "." ||
+                previousText == "(")
+            {
+                return false;
+            }
+
+            /*
+             * ------------------------------------------------------
+             * DEFAULT
+             * ------------------------------------------------------
+             *
+             * Existing horizontal gap becomes one space.
+             *
+             * FROM     dbo.Customer
+             * WHERE        CustomerID = 10
+             * INNER        JOIN
+             * ORDER       BY
+             * SET       @A = 10
+             *
+             * become:
+             *
+             * FROM dbo.Customer
+             * WHERE CustomerID = 10
+             * INNER JOIN
+             * ORDER BY
+             * SET @A = 10
+             */
+
+            return true;
+        }
+
+        /*
+         * ==========================================================
+         * NEWLINE INSIDE WHITESPACE TOKEN
          * ==========================================================
          */
 
-        private sealed class TokenComparisonResult
+        private static bool ContainsNewLine(
+            string text)
         {
-            public bool Success
+            if (string.IsNullOrEmpty(
+                    text))
             {
-                get;
-                set;
+                return false;
             }
 
-            public int LeftCount
+            return
+                text.IndexOf('\r') >= 0 ||
+                text.IndexOf('\n') >= 0;
+        }
+
+        /*
+         * ==========================================================
+         * NEXT NON-WHITESPACE TOKEN
+         * ==========================================================
+         */
+
+        private static int FindNextNonWhitespaceToken(
+            IList<TSqlParserToken> tokens,
+            int start)
+        {
+            for (int i = start;
+                 i < tokens.Count;
+                 i++)
             {
-                get;
-                set;
+                if (tokens[i].TokenType !=
+                    TSqlTokenType.WhiteSpace)
+                {
+                    return i;
+                }
             }
 
-            public int RightCount
+            return -1;
+        }
+
+        /*
+         * ==========================================================
+         * PREVIOUS NON-WHITESPACE TOKEN
+         * ==========================================================
+         */
+
+        private static int FindPreviousNonWhitespaceToken(
+            IList<TSqlParserToken> tokens,
+            int start)
+        {
+            for (int i = start;
+                 i >= 0;
+                 i--)
             {
-                get;
-                set;
+                if (tokens[i].TokenType !=
+                    TSqlTokenType.WhiteSpace)
+                {
+                    return i;
+                }
             }
 
-            public int MismatchIndex
+            return -1;
+        }
+
+        /*
+         * ==========================================================
+         * INDENT
+         * ==========================================================
+         */
+
+        private static string RepeatIndent(
+            int indentLevel)
+        {
+            if (indentLevel <= 0)
             {
-                get;
-                set;
+                return
+                    string.Empty;
             }
 
-            public string Expected
+            return
+                string.Concat(
+                    Enumerable.Repeat(
+                        IndentText,
+                        indentLevel));
+        }
+
+        /*
+         * ==========================================================
+         * REMOVE HORIZONTAL WHITESPACE
+         * ==========================================================
+         */
+
+        private static void RemoveTrailingWhitespace(
+            StringBuilder builder)
+        {
+            while (builder.Length > 0)
             {
-                get;
-                set;
+                char value =
+                    builder[
+                        builder.Length - 1];
+
+                if (value != ' ' &&
+                    value != '\t')
+                {
+                    break;
+                }
+
+                builder.Length--;
+            }
+        }
+
+        /*
+         * ==========================================================
+         * REMOVE ALL TRAILING WHITESPACE
+         * ==========================================================
+         */
+
+        private static void RemoveTrailingWhitespaceIncludingNewLines(
+            StringBuilder builder)
+        {
+            while (builder.Length > 0)
+            {
+                char value =
+                    builder[
+                        builder.Length - 1];
+
+                if (value != ' ' &&
+                    value != '\t' &&
+                    value != '\r' &&
+                    value != '\n')
+                {
+                    break;
+                }
+
+                builder.Length--;
+            }
+        }
+
+        /*
+         * ==========================================================
+         * ENDS WITH NEW LINE
+         * ==========================================================
+         */
+
+        private static bool EndsWithNewLine(
+            StringBuilder builder)
+        {
+            if (builder.Length == 0)
+            {
+                return false;
             }
 
-            public string Actual
-            {
-                get;
-                set;
-            }
+            char last =
+                builder[
+                    builder.Length - 1];
+
+            return
+                last == '\r' ||
+                last == '\n';
         }
     }
 }
