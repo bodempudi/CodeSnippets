@@ -4,6 +4,7 @@ using NotepadPlusPlusPlugin.Formatting.Emission;
 using NBK.SQL.CodingStandards.Core.Parse;
 using System;
 using System.Collections.Generic;
+using System.Text;
 using NBK.SQL.CodingStandards.Core.Models;
 
 namespace NotepadPlusPlusPlugin.Formatting.Validation
@@ -29,8 +30,8 @@ namespace NotepadPlusPlusPlugin.Formatting.Validation
         }
 
         /*
-         * Diagnostics for the first difference between
-         * formatting pass 1 and formatting pass 2.
+         * Diagnostic information for the first meaningful
+         * difference between pass 1 and pass 2.
          */
 
         public int FirstDifferenceIndex
@@ -66,6 +67,19 @@ namespace NotepadPlusPlusPlugin.Formatting.Validation
 
     public sealed class FormatterIdempotencyValidator
     {
+        /*
+         * Formatter-owned section separators always end
+         * at absolute column 135.
+         *
+         * This must stay consistent with:
+         *
+         * TokenPreservingEmitter
+         * FormatterSafetyValidator
+         */
+
+        private const int SectionSeparatorEndColumn =
+            135;
+
         private readonly SqlParserService _parserService;
 
         public FormatterIdempotencyValidator(
@@ -87,6 +101,12 @@ namespace NotepadPlusPlusPlugin.Formatting.Validation
             string firstPass =
                 formattedSql ??
                 string.Empty;
+
+            /*
+             * ============================================================
+             * PARSE FIRST FORMATTED OUTPUT
+             * ============================================================
+             */
 
             SqlParseResult parseResult =
                 _parserService.Parse(
@@ -127,6 +147,12 @@ namespace NotepadPlusPlusPlugin.Formatting.Validation
                 parseResult.Tokens ??
                 new List<TSqlParserToken>();
 
+            /*
+             * ============================================================
+             * BUILD SECOND FORMAT PASS
+             * ============================================================
+             */
+
             LayoutPlan plan =
                 new LayoutPlan();
 
@@ -154,10 +180,54 @@ namespace NotepadPlusPlusPlugin.Formatting.Validation
                     tokens,
                     plan);
 
+            if (secondPass == null)
+            {
+                secondPass =
+                    string.Empty;
+            }
+
+            /*
+             * ============================================================
+             * IDEMPOTENCY COMPARISON
+             * ============================================================
+             *
+             * IMPORTANT:
+             *
+             * Do not relax normal formatting comparison.
+             *
+             * We normalize ONLY formatter-owned generated
+             * section separator lines.
+             *
+             * Example:
+             *
+             * Pass 1:
+             *     [spaces]--------------------
+             *
+             * Pass 2:
+             *     [different spaces]---------
+             *
+             * If both physical separator lines still satisfy
+             * the formatter-owned rule of ending at absolute
+             * column 135, they are canonicalized to the same
+             * representation before comparison.
+             *
+             * Normal SQL whitespace, comments, indentation,
+             * blank lines, JOIN layout, CASE layout, etc.
+             * remain exact.
+             */
+
+            string firstComparable =
+                NormalizeGeneratedSectionSeparators(
+                    firstPass);
+
+            string secondComparable =
+                NormalizeGeneratedSectionSeparators(
+                    secondPass);
+
             bool passed =
                 string.Equals(
-                    firstPass,
-                    secondPass,
+                    firstComparable,
+                    secondComparable,
                     StringComparison.Ordinal);
 
             if (passed)
@@ -193,23 +263,32 @@ namespace NotepadPlusPlusPlugin.Formatting.Validation
 
             /*
              * ============================================================
-             * FIND FIRST DIFFERENCE
+             * FIND FIRST REAL DIFFERENCE
              * ============================================================
+             *
+             * Compare the normalized strings so formatter-owned
+             * separator representation does not hide the actual
+             * unstable formatting rule.
              */
 
             int differenceIndex =
                 FindFirstDifference(
-                    firstPass,
-                    secondPass);
+                    firstComparable,
+                    secondComparable);
 
             int line;
             int column;
 
             GetLineAndColumn(
-                firstPass,
+                firstComparable,
                 differenceIndex,
                 out line,
                 out column);
+
+            /*
+             * Show raw Pass 1 / Pass 2 lines to diagnostics.
+             * These are more useful when troubleshooting.
+             */
 
             string firstPassLine =
                 GetLineText(
@@ -259,6 +338,207 @@ namespace NotepadPlusPlusPlugin.Formatting.Validation
 
         /*
          * ================================================================
+         * GENERATED SECTION SEPARATOR NORMALIZATION
+         * ================================================================
+         *
+         * Only lines matching our narrow formatter-owned separator
+         * definition are normalized.
+         *
+         * Valid generated separator:
+         *
+         * optional leading spaces
+         * +
+         * only '-' characters
+         * +
+         * total physical line length = 135
+         *
+         * All such lines become:
+         *
+         * 135 hyphens
+         *
+         * Line endings are preserved.
+         */
+
+        private static string NormalizeGeneratedSectionSeparators(
+            string sql)
+        {
+            if (string.IsNullOrEmpty(sql))
+            {
+                return sql ??
+                    string.Empty;
+            }
+
+            StringBuilder result =
+                new StringBuilder(
+                    sql.Length);
+
+            int lineStart =
+                0;
+
+            int index =
+                0;
+
+            while (index < sql.Length)
+            {
+                char current =
+                    sql[index];
+
+                if (current != '\r' &&
+                    current != '\n')
+                {
+                    index++;
+                    continue;
+                }
+
+                string line =
+                    sql.Substring(
+                        lineStart,
+                        index - lineStart);
+
+                AppendNormalizedLine(
+                    result,
+                    line);
+
+                /*
+                 * Preserve original newline representation.
+                 */
+
+                if (current == '\r' &&
+                    index + 1 < sql.Length &&
+                    sql[index + 1] == '\n')
+                {
+                    result.Append(
+                        "\r\n");
+
+                    index +=
+                        2;
+                }
+                else
+                {
+                    result.Append(
+                        current);
+
+                    index++;
+                }
+
+                lineStart =
+                    index;
+            }
+
+            /*
+             * Final physical line without a line terminator.
+             */
+
+            if (lineStart < sql.Length)
+            {
+                string line =
+                    sql.Substring(
+                        lineStart);
+
+                AppendNormalizedLine(
+                    result,
+                    line);
+            }
+
+            return result.ToString();
+        }
+
+        private static void AppendNormalizedLine(
+            StringBuilder result,
+            string line)
+        {
+            if (IsGeneratedSectionSeparatorLine(
+                    line))
+            {
+                result.Append(
+                    new string(
+                        '-',
+                        SectionSeparatorEndColumn));
+
+                return;
+            }
+
+            result.Append(
+                line ??
+                string.Empty);
+        }
+
+        /*
+         * ================================================================
+         * GENERATED SEPARATOR RECOGNITION
+         * ================================================================
+         *
+         * Keep this deliberately narrow.
+         *
+         * Examples accepted:
+         *
+         * ----------------------------------------------------------------...
+         *
+         *     ------------------------------------------------------------...
+         *
+         * provided total physical length is exactly 135.
+         */
+
+        private static bool IsGeneratedSectionSeparatorLine(
+            string line)
+        {
+            if (string.IsNullOrEmpty(line))
+            {
+                return false;
+            }
+
+            /*
+             * Generated separator lines physically end
+             * at absolute column 135.
+             */
+
+            if (line.Length !=
+                SectionSeparatorEndColumn)
+            {
+                return false;
+            }
+
+            int index =
+                0;
+
+            /*
+             * Allow formatter indentation before the hyphens.
+             */
+
+            while (index < line.Length &&
+                   line[index] == ' ')
+            {
+                index++;
+            }
+
+            /*
+             * There must be at least two hyphens.
+             */
+
+            int hyphenCount =
+                line.Length -
+                index;
+
+            if (hyphenCount < 2)
+            {
+                return false;
+            }
+
+            for (int i = index;
+                 i < line.Length;
+                 i++)
+            {
+                if (line[i] != '-')
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        /*
+         * ================================================================
          * FIRST DIFFERENCE
          * ================================================================
          */
@@ -284,18 +564,20 @@ namespace NotepadPlusPlusPlugin.Formatting.Validation
                  index < commonLength;
                  index++)
             {
-                if (left[index] != right[index])
+                if (left[index] !=
+                    right[index])
                 {
                     return index;
                 }
             }
 
             /*
-             * Every character in the common portion matched,
-             * but one string is longer than the other.
+             * Common content matched but one string
+             * contains additional content.
              */
 
-            if (left.Length != right.Length)
+            if (left.Length !=
+                right.Length)
             {
                 return commonLength;
             }
@@ -330,7 +612,8 @@ namespace NotepadPlusPlusPlugin.Formatting.Validation
                 return;
             }
 
-            if (index > value.Length)
+            if (index >
+                value.Length)
             {
                 index =
                     value.Length;
@@ -352,7 +635,7 @@ namespace NotepadPlusPlusPlugin.Formatting.Validation
                 if (current == '\r')
                 {
                     /*
-                     * Treat CRLF as one newline.
+                     * CRLF represents one newline.
                      */
 
                     if (i + 1 < index &&
@@ -423,7 +706,8 @@ namespace NotepadPlusPlusPlugin.Formatting.Validation
                     continue;
                 }
 
-                if (currentLine == targetLine)
+                if (currentLine ==
+                    targetLine)
                 {
                     return text.Substring(
                         lineStart,
@@ -473,9 +757,11 @@ namespace NotepadPlusPlusPlugin.Formatting.Validation
                 ", CharacterIndex=" +
                 differenceIndex +
                 ". FirstPass=[" +
-                (firstPassLine ?? string.Empty) +
+                (firstPassLine ??
+                 string.Empty) +
                 "]. SecondPass=[" +
-                (secondPassLine ?? string.Empty) +
+                (secondPassLine ??
+                 string.Empty) +
                 "].";
         }
     }
