@@ -1,109 +1,290 @@
-private static void ApplyTrailingCommaItem(
-    AstNodeContext context,
-    LayoutContext layoutContext,
-    int indent,
-    string policyName)
+public string Emit(
+    IList<TSqlParserToken> tokens,
+    LayoutPlan plan)
 {
-    int index =
-        TokenNavigator.GetRelationshipIndex(
-            context.Relationship);
-
-    if (index <= 0)
+    if (tokens == null)
     {
-        layoutContext.AddInstruction(
-            context.Node.FirstTokenIndex,
-            indent,
-            policyName,
-            context);
-
-        return;
+        throw new ArgumentNullException(
+            "tokens");
     }
 
-    int commaIndex =
-        layoutContext.TokenNavigator.FindPreviousToken(
-            context.Node.FirstTokenIndex,
-            TSqlTokenType.Comma);
-
-    if (commaIndex < 0)
+    if (plan == null)
     {
-        return;
+        throw new ArgumentNullException(
+            "plan");
     }
 
-    AstNodeContext previousItem = null;
+    Dictionary<int, LayoutInstruction> instructions =
+        plan.Instructions
+            .GroupBy(
+                x => x.TokenIndex)
+            .ToDictionary(
+                x => x.Key,
+                x => x.Last());
 
-    foreach (AstNodeContext sibling in
-             layoutContext.Walker.GetChildren(
-                 context.Parent))
+    StringBuilder output =
+        new StringBuilder();
+
+    for (int i = 0;
+         i < tokens.Count;
+         i++)
     {
-        if (sibling == null ||
-            sibling.Node == null)
+        TSqlParserToken token =
+            tokens[i];
+
+        LayoutInstruction instruction;
+
+        /*
+         * ============================================================
+         * APPLY EXPLICIT LAYOUT FIRST
+         * ============================================================
+         */
+        if (instructions.TryGetValue(
+                i,
+                out instruction))
+        {
+            ApplyInstruction(
+                output,
+                instruction);
+        }
+
+        /*
+         * ============================================================
+         * EOF
+         * ============================================================
+         */
+        if (token.TokenType ==
+            TSqlTokenType.EndOfFile)
         {
             continue;
         }
 
-        int siblingIndex =
-            TokenNavigator.GetRelationshipIndex(
-                sibling.Relationship);
-
-        if (siblingIndex == index - 1)
+        /*
+         * ============================================================
+         * WHITESPACE
+         * ============================================================
+         */
+        if (token.TokenType ==
+            TSqlTokenType.WhiteSpace)
         {
-            previousItem = sibling;
-            break;
+            int next =
+                FindNextNonWhitespaceToken(
+                    tokens,
+                    i + 1);
+
+            /*
+             * The upcoming token owns its whitespace.
+             *
+             * Example:
+             *
+             * old whitespace
+             * SELECT
+             *
+             * If SELECT has a NewLine instruction,
+             * discard the old whitespace completely.
+             */
+            if (next >= 0 &&
+                instructions.ContainsKey(
+                    next))
+            {
+                continue;
+            }
+
+            /*
+             * ========================================================
+             * EXISTING PHYSICAL NEWLINE
+             * ========================================================
+             */
+            if (ContainsNewline(
+                    token.Text))
+            {
+                int previous =
+                    FindPreviousNonWhitespaceToken(
+                        tokens,
+                        i - 1);
+
+                TSqlParserToken previousToken =
+                    previous >= 0
+                        ? tokens[previous]
+                        : null;
+
+                TSqlParserToken nextToken =
+                    next >= 0
+                        ? tokens[next]
+                        : null;
+
+                /*
+                 * ====================================================
+                 * COMMENT NEWLINE PROTECTION
+                 * ====================================================
+                 *
+                 * Developer comment boundaries are source-owned.
+                 *
+                 * Never collapse an existing physical newline when
+                 * either side is a comment.
+                 *
+                 * Examples:
+                 *
+                 * AS
+                 * <multiline history comment>
+                 *
+                 * END
+                 * ----------------------------------------------------
+                 *
+                 * -- Developer comment
+                 * SELECT ...
+                 *
+                 * A line containing only hyphens is parsed by
+                 * ScriptDom as a SingleLineComment, so it is
+                 * protected by this rule as well.
+                 */
+                bool previousIsComment =
+                    IsCommentToken(
+                        previousToken);
+
+                bool nextIsComment =
+                    IsCommentToken(
+                        nextToken);
+
+                if (previousIsComment ||
+                    nextIsComment)
+                {
+                    output.Append(
+                        token.Text);
+
+                    continue;
+                }
+
+                /*
+                 * Normally preserve an original newline.
+                 *
+                 * However, when the PREVIOUS token was explicitly
+                 * positioned by the layout engine, this old source
+                 * newline must not undo that formatter decision.
+                 *
+                 * Example:
+                 *
+                 * FROM
+                 *     dbo.Customer
+                 *
+                 * where FROM already received its layout position.
+                 *
+                 * We want:
+                 *
+                 * FROM dbo.Customer
+                 */
+                if (previous >= 0 &&
+                    instructions.ContainsKey(
+                        previous))
+                {
+                    if (ShouldInsertSpace(
+                            previousToken,
+                            nextToken))
+                    {
+                        RemoveTrailingWhitespace(
+                            output);
+
+                        if (output.Length > 0)
+                        {
+                            output.Append(
+                                ' ');
+                        }
+                    }
+                    else
+                    {
+                        RemoveTrailingWhitespace(
+                            output);
+                    }
+
+                    continue;
+                }
+
+                /*
+                 * No formatter instruction owns this boundary.
+                 * Preserve the developer/source newline.
+                 */
+                output.Append(
+                    token.Text);
+
+                continue;
+            }
+
+            /*
+             * ========================================================
+             * HORIZONTAL WHITESPACE ONLY
+             * ========================================================
+             */
+            int previousSameLine =
+                FindPreviousNonWhitespaceToken(
+                    tokens,
+                    i - 1);
+
+            if (previousSameLine < 0 ||
+                next < 0)
+            {
+                continue;
+            }
+
+            TSqlParserToken previousTokenSameLine =
+                tokens[previousSameLine];
+
+            TSqlParserToken nextTokenSameLine =
+                tokens[next];
+
+            if (ShouldInsertSpace(
+                    previousTokenSameLine,
+                    nextTokenSameLine))
+            {
+                /*
+                 * Multiple spaces/tabs become one space.
+                 */
+                RemoveTrailingWhitespace(
+                    output);
+
+                if (output.Length > 0)
+                {
+                    output.Append(
+                        ' ');
+                }
+            }
+            else
+            {
+                /*
+                 * Punctuation-sensitive boundary.
+                 *
+                 * Examples:
+                 *
+                 * dbo.Customer
+                 * COUNT(*)
+                 * a,
+                 */
+                RemoveTrailingWhitespace(
+                    output);
+            }
+
+            continue;
         }
+
+        /*
+         * ============================================================
+         * TOKEN TEXT
+         * ============================================================
+         *
+         * Never reconstruct or modify SQL token text.
+         *
+         * This protects:
+         *
+         * - string literals
+         * - comments
+         * - identifiers
+         * - quoted identifiers
+         * - numbers
+         * - operators
+         */
+        output.Append(
+            token.Text);
     }
 
-    /*
-     * Special safety case:
-     *
-     * @A INT -- comment
-     * ,@B INT
-     *
-     * We must NOT move the comma to the end of the
-     * previous line, because it would become part of
-     * the single-line comment:
-     *
-     * @A INT -- comment,
-     * @B INT
-     *
-     * That changes the SQL and may make it invalid.
-     *
-     * Therefore, if any comment exists between the
-     * previous item and this comma, keep the comma
-     * with the current item.
-     */
-    if (previousItem != null &&
-        layoutContext.TokenNavigator.HasCommentBetween(
-            previousItem.Node.LastTokenIndex,
-            commaIndex))
-    {
-        layoutContext.AddInstruction(
-            commaIndex,
-            indent,
-            policyName,
-            context);
-
-        return;
-    }
-
-    /*
-     * Normal case:
-     *
-     * @A INT
-     * ,@B INT
-     *
-     * becomes:
-     *
-     * @A INT,
-     * @B INT
-     */
-    layoutContext.AddTightInstruction(
-        commaIndex,
-        policyName,
-        context);
-
-    layoutContext.AddInstruction(
-        context.Node.FirstTokenIndex,
-        indent,
-        policyName,
-        context);
+    return
+        output.ToString();
 }
