@@ -1,823 +1,824 @@
 using Microsoft.SqlServer.TransactSql.ScriptDom;
+using NBK.SQL.CodingStandards.Core.Models;
+using NBK.SQL.CodingStandards.Core.Parse;
+using NotepadPlusPlusPlugin.Formatting.Diagnostics;
+using NotepadPlusPlusPlugin.Formatting.Emission;
+using NotepadPlusPlusPlugin.Formatting.Reporting;
+using NotepadPlusPlusPlugin.Formatting.Validation;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Text;
 
-namespace NotepadPlusPlusPlugin.Formatting.Emission
+namespace NotepadPlusPlusPlugin.Formatting
 {
-    public sealed class TokenPreservingEmitter
+    public sealed class SqlFormatterResult
     {
-        private const string IndentText =
-            "    ";
+        public string Sql
+        {
+            get;
+            set;
+        }
 
-        private const int SectionSeparatorEndColumn =
-            135;
+        public bool WasFormatted
+        {
+            get;
+            set;
+        }
 
-        public string Emit(
-            IList<TSqlParserToken> tokens,
-            LayoutPlan plan)
+        public bool ValidationPassed
+        {
+            get;
+            set;
+        }
+
+        public string Message
+        {
+            get;
+            set;
+        }
+
+        public string ExecutionId
+        {
+            get;
+            set;
+        }
+
+        public string PdfReportPath
+        {
+            get;
+            set;
+        }
+
+        public FormatterDiagnostics Diagnostics
+        {
+            get;
+            set;
+        }
+    }
+
+    public sealed class SqlFormatterService
+    {
+        private readonly SqlParserService _parserService;
+
+        private readonly IFormatterLogger _logger;
+
+        private readonly SqlFormatterOptions _options;
+
+        public SqlFormatterService()
+            : this(
+                new SqlFormatterOptions(),
+                new FileFormatterLogger())
+        {
+        }
+
+        public SqlFormatterService(
+            SqlFormatterOptions options)
+            : this(
+                options,
+                new FileFormatterLogger())
+        {
+        }
+
+        public SqlFormatterService(
+            IFormatterLogger logger)
+            : this(
+                new SqlFormatterOptions(),
+                logger)
+        {
+        }
+
+        public SqlFormatterService(
+            SqlFormatterOptions options,
+            IFormatterLogger logger)
+        {
+            _parserService =
+                new SqlParserService();
+
+            _options =
+                options ??
+                new SqlFormatterOptions();
+
+            _logger =
+                logger;
+        }
+
+        public SqlFormatterResult Format(
+            string sql)
+        {
+            FormatterDiagnostics diagnostics =
+                new FormatterDiagnostics();
+
+            string input =
+                sql ?? string.Empty;
+
+            string pdfReportPath =
+                null;
+
+            diagnostics.InputLength =
+                input.Length;
+
+            diagnostics.Add(
+                "START",
+                "Formatter execution started.");
+
+            try
+            {
+                /*
+                 * ============================================================
+                 * EMPTY INPUT
+                 * ============================================================
+                 */
+
+                if (string.IsNullOrEmpty(input))
+                {
+                    diagnostics.OutputLength =
+                        0;
+
+                    diagnostics.InputTokenCount =
+                        0;
+
+                    diagnostics.OutputTokenCount =
+                        0;
+
+                    diagnostics.LayoutInstructionCount =
+                        0;
+
+                    diagnostics.ParseErrorCount =
+                        0;
+
+                    diagnostics.TokenPreservationPassed =
+                        true;
+
+                    diagnostics.OutputParsePassed =
+                        true;
+
+                    diagnostics.ResultStatus =
+                        "EMPTY";
+
+                    diagnostics.Add(
+                        "RESULT",
+                        "EMPTY");
+
+                    diagnostics.Complete();
+
+                    WriteLog(
+                        diagnostics);
+
+                    return new SqlFormatterResult
+                    {
+                        Sql =
+                            input,
+
+                        WasFormatted =
+                            false,
+
+                        ValidationPassed =
+                            true,
+
+                        Message =
+                            "SQL is empty.",
+
+                        ExecutionId =
+                            diagnostics.ExecutionId,
+
+                        PdfReportPath =
+                            null,
+
+                        Diagnostics =
+                            diagnostics
+                    };
+                }
+
+                /*
+                 * ============================================================
+                 * PARSE INPUT
+                 * ============================================================
+                 */
+
+                diagnostics.Add(
+                    "PARSE",
+                    "Parsing input SQL.");
+
+                SqlParseResult parseResult =
+                    _parserService.Parse(
+                        input);
+
+                diagnostics.ParseErrorCount =
+                    parseResult.Errors == null
+                        ? 0
+                        : parseResult.Errors.Count;
+
+                if (!parseResult.IsValid)
+                {
+                    diagnostics.ResultStatus =
+                        "INPUT_PARSE_FAILED";
+
+                    diagnostics.OutputLength =
+                        input.Length;
+
+                    /*
+                     * Input SQL itself is invalid.
+                     *
+                     * This is not a formatter safety failure.
+                     * Formatting does not start.
+                     */
+
+                    diagnostics.TokenPreservationPassed =
+                        true;
+
+                    diagnostics.OutputParsePassed =
+                        false;
+
+                    diagnostics.Add(
+                        "PARSE",
+                        "Input SQL parse failed.");
+
+                    if (parseResult.Errors != null)
+                    {
+                        foreach (
+                            SqlResultInfo error
+                            in parseResult.Errors)
+                        {
+                            diagnostics.Add(
+                                "PARSE_ERROR",
+                                "Line=" +
+                                error.Line +
+                                ", Column=" +
+                                error.Column +
+                                ", Message=" +
+                                error.Message);
+                        }
+                    }
+
+                    diagnostics.Complete();
+
+                    WriteLog(
+                        diagnostics);
+
+                    return new SqlFormatterResult
+                    {
+                        Sql =
+                            input,
+
+                        WasFormatted =
+                            false,
+
+                        ValidationPassed =
+                            false,
+
+                        /*
+                         * Developer-facing message contains only
+                         * the syntax errors.
+                         */
+                        Message =
+                            BuildSyntaxErrorMessage(
+                                parseResult.Errors),
+
+                        ExecutionId =
+                            diagnostics.ExecutionId,
+
+                        PdfReportPath =
+                            null,
+
+                        Diagnostics =
+                            diagnostics
+                    };
+                }
+
+                diagnostics.Add(
+                    "PARSE",
+                    "Input SQL parsed successfully.");
+
+                /*
+                 * ============================================================
+                 * TOKEN STREAM
+                 * ============================================================
+                 */
+
+                IList<TSqlParserToken> tokens =
+                    parseResult.Tokens;
+
+                if (tokens == null)
+                {
+                    tokens =
+                        new List<TSqlParserToken>();
+                }
+
+                diagnostics.Add(
+                    "TOKENS",
+                    "Original token stream loaded. Count=" +
+                    tokens.Count +
+                    ".");
+
+                diagnostics.InputTokenCount =
+                    CountMeaningfulTokens(
+                        tokens);
+
+                /*
+                 * ============================================================
+                 * AST + LAYOUT
+                 * ============================================================
+                 */
+
+                LayoutPlan plan =
+                    new LayoutPlan();
+
+                GenericAstWalker walker =
+                    new GenericAstWalker();
+
+                LayoutPolicyEngine policyEngine =
+                    new LayoutPolicyEngine(
+                        tokens,
+                        walker,
+                        plan,
+                        diagnostics);
+
+                diagnostics.Add(
+                    "AST",
+                    "Generic AST analysis started.");
+
+                policyEngine.Analyze(
+                    parseResult.Fragment);
+
+                diagnostics.LayoutInstructionCount =
+                    plan.Count;
+
+                diagnostics.Add(
+                    "LAYOUT",
+                    "Layout plan created. Instructions=" +
+                    plan.Count +
+                    ".");
+
+                /*
+                 * ============================================================
+                 * TOKEN-PRESERVING EMISSION
+                 * ============================================================
+                 */
+
+                diagnostics.Add(
+                    "EMIT",
+                    "Token-preserving emission started.");
+
+                TokenPreservingEmitter emitter =
+                    new TokenPreservingEmitter();
+
+                string candidate =
+                    emitter.Emit(
+                        tokens,
+                        plan);
+
+                diagnostics.OutputLength =
+                    candidate == null
+                        ? 0
+                        : candidate.Length;
+
+                diagnostics.Add(
+                    "EMIT",
+                    "Token-preserving emission completed.");
+
+                /*
+                 * ============================================================
+                 * SAFETY VALIDATION
+                 * ============================================================
+                 */
+
+                diagnostics.Add(
+                    "VALIDATE",
+                    "Safety validation started.");
+
+                FormatterSafetyValidator validator =
+                    new FormatterSafetyValidator(
+                        _parserService);
+
+                FormatterValidationResult validation =
+                    validator.Validate(
+                        tokens,
+                        candidate);
+
+                diagnostics.TokenPreservationPassed =
+                    validation.TokensPreserved;
+
+                diagnostics.OutputParsePassed =
+                    validation.OutputParses;
+
+                diagnostics.Add(
+                    "VALIDATE",
+                    validation.Message);
+
+                /*
+                 * ============================================================
+                 * IDEMPOTENCY VALIDATION
+                 * ============================================================
+                 *
+                 * IMPORTANT:
+                 *
+                 * Previously idempotency was checked and logged,
+                 * but it was not part of the final acceptance gate.
+                 *
+                 * V1 rule:
+                 *
+                 *     Format(Output1) == Output1
+                 *
+                 * must be true before candidate SQL can reach
+                 * the developer's editor.
+                 */
+
+                bool idempotencyPassed =
+                    false;
+
+                if (validation.Success)
+                {
+                    FormatterIdempotencyValidator
+                        idempotencyValidator =
+                            new FormatterIdempotencyValidator(
+                                _parserService);
+
+                    FormatterIdempotencyResult
+                        idempotencyResult =
+                            idempotencyValidator.Validate(
+                                candidate);
+
+                    idempotencyPassed =
+                        idempotencyResult.Passed;
+
+                    diagnostics.Add(
+                        "IDEMPOTENCY",
+                        "Passed=" +
+                        idempotencyResult.Passed +
+                        ". " +
+                        idempotencyResult.Message);
+                }
+                else
+                {
+                    diagnostics.Add(
+                        "IDEMPOTENCY",
+                        "Skipped because safety validation failed.");
+                }
+
+                /*
+                 * ============================================================
+                 * OUTPUT TOKEN COUNT
+                 * ============================================================
+                 */
+
+                SqlParseResult candidateParse =
+                    _parserService.Parse(
+                        candidate);
+
+                diagnostics.OutputTokenCount =
+                    candidateParse.Tokens == null
+                        ? 0
+                        : CountMeaningfulTokens(
+                            candidateParse.Tokens);
+
+                /*
+                 * ============================================================
+                 * DETERMINE FINAL SQL
+                 * ============================================================
+                 */
+
+                string output;
+
+                bool wasFormatted;
+
+                bool validationPassed;
+
+                string message;
+
+                /*
+                 * Candidate is allowed to leave the formatter only when:
+                 *
+                 * 1. Safety validation passed.
+                 * 2. Formatted output parses.
+                 * 3. Meaningful SQL content is preserved.
+                 * 4. Formatting is idempotent.
+                 *
+                 * Otherwise always return the original SQL.
+                 */
+
+                if (!validation.Success ||
+                    !idempotencyPassed)
+                {
+                    /*
+                     * Never return an unsafe or unstable candidate.
+                     */
+
+                    output =
+                        input;
+
+                    wasFormatted =
+                        false;
+
+                    validationPassed =
+                        false;
+
+                    message =
+                        "Formatting couldn't be completed safely. " +
+                        "Your SQL remains unchanged.";
+
+                    diagnostics.ResultStatus =
+                        validation.Success
+                            ? "IDEMPOTENCY_FAILED"
+                            : "VALIDATION_FAILED";
+                }
+                else
+                {
+                    output =
+                        candidate;
+
+                    validationPassed =
+                        true;
+
+                    wasFormatted =
+                        !string.Equals(
+                            input,
+                            candidate,
+                            StringComparison.Ordinal);
+
+                    /*
+                     * Developer-facing success experience stays
+                     * deliberately simple.
+                     */
+                    message =
+                        "Formatted Successfully.";
+
+                    diagnostics.ResultStatus =
+                        wasFormatted
+                            ? "FORMATTED"
+                            : "UNCHANGED";
+                }
+
+                diagnostics.Add(
+                    "RESULT",
+                    diagnostics.ResultStatus);
+
+                /*
+                 * ============================================================
+                 * PDF REPORT
+                 * ============================================================
+                 */
+
+                if (_options.EnablePdfReport)
+                {
+                    try
+                    {
+                        diagnostics.Add(
+                            "PDF",
+                            "PDF report generation started.");
+
+                        FormatterReportBuilder reportBuilder =
+                            new FormatterReportBuilder();
+
+                        FormatterReport report =
+                            reportBuilder.Build(
+                                input,
+                                output,
+                                tokens,
+                                plan,
+                                diagnostics,
+                                validationPassed);
+
+                        IFormatterReportWriter reportWriter =
+                            new PdfFormatterReportWriter();
+
+                        pdfReportPath =
+                            reportWriter.Write(
+                                report);
+
+                        diagnostics.Add(
+                            "PDF",
+                            "PDF formatting report created: " +
+                            pdfReportPath);
+                    }
+                    catch (Exception pdfException)
+                    {
+                        diagnostics.Add(
+                            "PDF_ERROR",
+                            pdfException.ToString());
+
+                        /*
+                         * Reporting is best effort only.
+                         * Never fail formatting because PDF failed.
+                         */
+                    }
+                }
+
+                /*
+                 * ============================================================
+                 * COMPLETE DIAGNOSTICS
+                 * ============================================================
+                 */
+
+                diagnostics.Complete();
+
+                /*
+                 * ============================================================
+                 * WRITE LOG
+                 * ============================================================
+                 */
+
+                WriteLog(
+                    diagnostics);
+
+                /*
+                 * ============================================================
+                 * RETURN
+                 * ============================================================
+                 */
+
+                return new SqlFormatterResult
+                {
+                    Sql =
+                        output,
+
+                    WasFormatted =
+                        wasFormatted,
+
+                    ValidationPassed =
+                        validationPassed,
+
+                    Message =
+                        message,
+
+                    ExecutionId =
+                        diagnostics.ExecutionId,
+
+                    PdfReportPath =
+                        pdfReportPath,
+
+                    Diagnostics =
+                        diagnostics
+                };
+            }
+            catch (Exception exception)
+            {
+                /*
+                 * ============================================================
+                 * UNEXPECTED FORMATTER ERROR
+                 * ============================================================
+                 *
+                 * Always preserve the original SQL.
+                 */
+
+                diagnostics.ResultStatus =
+                    "UNEXPECTED_ERROR";
+
+                diagnostics.OutputLength =
+                    input.Length;
+
+                /*
+                 * Full exception remains available internally.
+                 * Do not expose implementation details to developer.
+                 */
+
+                diagnostics.Add(
+                    "EXCEPTION",
+                    exception.ToString());
+
+                diagnostics.Complete();
+
+                WriteLog(
+                    diagnostics);
+
+                return new SqlFormatterResult
+                {
+                    Sql =
+                        input,
+
+                    WasFormatted =
+                        false,
+
+                    ValidationPassed =
+                        false,
+
+                    Message =
+                        "Formatting couldn't be completed safely. " +
+                        "Your SQL remains unchanged.",
+
+                    ExecutionId =
+                        diagnostics.ExecutionId,
+
+                    PdfReportPath =
+                        pdfReportPath,
+
+                    Diagnostics =
+                        diagnostics
+                };
+            }
+        }
+
+        /*
+         * ================================================================
+         * LOGGING
+         * ================================================================
+         */
+
+        private void WriteLog(
+            FormatterDiagnostics diagnostics)
+        {
+            if (!_options.EnableLogFile ||
+                _logger == null)
+            {
+                return;
+            }
+
+            try
+            {
+                _logger.Write(
+                    diagnostics);
+            }
+            catch
+            {
+                /*
+                 * Logging must never break formatting.
+                 */
+            }
+        }
+
+        /*
+         * ================================================================
+         * SYNTAX ERROR MESSAGE
+         * ================================================================
+         *
+         * Input syntax errors are different from formatter safety failures.
+         *
+         * Developer sees only the actual syntax errors.
+         */
+
+        private static string BuildSyntaxErrorMessage(
+            IList<SqlResultInfo> errors)
+        {
+            if (errors == null ||
+                errors.Count == 0)
+            {
+                return "SQL syntax error.";
+            }
+
+            StringBuilder builder =
+                new StringBuilder();
+
+            foreach (SqlResultInfo error in errors)
+            {
+                if (builder.Length > 0)
+                {
+                    builder.AppendLine();
+                }
+
+                builder.Append(
+                    "Line ");
+
+                builder.Append(
+                    error.Line);
+
+                builder.Append(
+                    ", Column ");
+
+                builder.Append(
+                    error.Column);
+
+                builder.Append(
+                    ": ");
+
+                builder.Append(
+                    error.Message);
+            }
+
+            return builder.ToString();
+        }
+
+        /*
+         * ================================================================
+         * TOKEN COUNT
+         * ================================================================
+         */
+
+        private static int CountMeaningfulTokens(
+            IList<TSqlParserToken> tokens)
         {
             if (tokens == null)
             {
-                throw new ArgumentNullException(
-                    "tokens");
+                return 0;
             }
 
-            if (plan == null)
-            {
-                throw new ArgumentNullException(
-                    "plan");
-            }
-
-            Dictionary<int, LayoutInstruction> instructions =
-                plan.Instructions
-                    .GroupBy(
-                        x => x.TokenIndex)
-                    .ToDictionary(
-                        x => x.Key,
-                        x => x.Last());
-
-            StringBuilder output =
-                new StringBuilder();
-
-            for (int i = 0;
-                 i < tokens.Count;
-                 i++)
-            {
-                TSqlParserToken token =
-                    tokens[i];
-
-                LayoutInstruction instruction;
-
-                /*
-                 * ==================================================
-                 * APPLY EXPLICIT LAYOUT FIRST
-                 * ==================================================
-                 */
-
-                if (instructions.TryGetValue(
-                        i,
-                        out instruction))
-                {
-                    ApplyInstruction(
-                        output,
-                        instruction);
-                }
-
-                /*
-                 * ==================================================
-                 * EOF
-                 * ==================================================
-                 */
-
-                if (token.TokenType ==
-                    TSqlTokenType.EndOfFile)
-                {
-                    continue;
-                }
-
-                /*
-                 * ==================================================
-                 * WHITESPACE
-                 * ==================================================
-                 */
-
-                if (token.TokenType ==
-                    TSqlTokenType.WhiteSpace)
-                {
-                    int next =
-                        FindNextNonWhitespaceToken(
-                            tokens,
-                            i + 1);
-
-                    /*
-                     * The upcoming token owns its whitespace.
-                     *
-                     * Example:
-                     *
-                     * old whitespace
-                     * SELECT
-                     *
-                     * If SELECT has a NewLine instruction,
-                     * discard the old whitespace completely.
-                     */
-                    if (next >= 0 &&
-                        instructions.ContainsKey(
-                            next))
-                    {
-                        continue;
-                    }
-
-                    /*
-                     * ------------------------------------------------
-                     * EXISTING PHYSICAL NEWLINE
-                     * ------------------------------------------------
-                     *
-                     * Normally preserve an original newline.
-                     *
-                     * However, when the PREVIOUS token was explicitly
-                     * positioned by the layout engine, the old source
-                     * newline must not undo that formatter decision.
-                     *
-                     * Example:
-                     *
-                     * FROM
-                     *     dbo.Customer
-                     *
-                     * where FROM already received its layout position.
-                     *
-                     * We want:
-                     *
-                     * FROM dbo.Customer
-                     */
-                    if (ContainsNewLine(
-                            token.Text))
-                    {
-                        int previous =
-                            FindPreviousNonWhitespaceToken(
-                                tokens,
-                                i - 1);
-
-                        if (previous >= 0 &&
-                            instructions.ContainsKey(
-                                previous))
-                        {
-                            TSqlParserToken previousToken =
-                                tokens[previous];
-
-                            TSqlParserToken nextToken =
-                                next >= 0
-                                    ? tokens[next]
-                                    : null;
-
-                            if (ShouldInsertSpace(
-                                    previousToken,
-                                    nextToken))
-                            {
-                                RemoveTrailingWhitespace(
-                                    output);
-
-                                if (output.Length > 0)
-                                {
-                                    output.Append(
-                                        ' ');
-                                }
-                            }
-                            else
-                            {
-                                RemoveTrailingWhitespace(
-                                    output);
-                            }
-
-                            continue;
-                        }
-
-                        /*
-                         * No formatter instruction owns this boundary.
-                         * Preserve the developer/source newline.
-                         */
-                        output.Append(
-                            token.Text);
-
-                        continue;
-                    }
-
-                    /*
-                     * ------------------------------------------------
-                     * HORIZONTAL WHITESPACE ONLY
-                     * ------------------------------------------------
-                     */
-
-                    int previousSameLine =
-                        FindPreviousNonWhitespaceToken(
-                            tokens,
-                            i - 1);
-
-                    if (previousSameLine < 0 ||
-                        next < 0)
-                    {
-                        continue;
-                    }
-
-                    TSqlParserToken previousTokenSameLine =
-                        tokens[previousSameLine];
-
-                    TSqlParserToken nextTokenSameLine =
-                        tokens[next];
-
-                    if (ShouldInsertSpace(
-                            previousTokenSameLine,
-                            nextTokenSameLine))
-                    {
-                        /*
-                         * Multiple spaces/tabs become one space.
-                         */
-                        RemoveTrailingWhitespace(
-                            output);
-
-                        if (output.Length > 0)
-                        {
-                            output.Append(
-                                ' ');
-                        }
-                    }
-                    else
-                    {
-                        /*
-                         * Punctuation-sensitive pair:
-                         *
-                         * dbo . Customer
-                         * COUNT ( *
-                         * a ,
-                         *
-                         * becomes:
-                         *
-                         * dbo.Customer
-                         * COUNT(*
-                         * a,
-                         */
-                        RemoveTrailingWhitespace(
-                            output);
-                    }
-
-                    continue;
-                }
-
-                /*
-                 * ==================================================
-                 * TOKEN TEXT
-                 * ==================================================
-                 *
-                 * Never reconstruct or modify SQL token text.
-                 *
-                 * This protects:
-                 *
-                 * - string literals
-                 * - comments
-                 * - identifiers
-                 * - quoted identifiers
-                 * - numbers
-                 * - operators
-                 */
-
-                output.Append(
-                    token.Text);
-            }
-
-            return
-                output.ToString();
-        }
-
-        /*
-         * ==========================================================
-         * APPLY LAYOUT ACTION
-         * ==========================================================
-         */
-
-        private static void ApplyInstruction(
-            StringBuilder output,
-            LayoutInstruction instruction)
-        {
-            if (instruction == null)
-            {
-                return;
-            }
-
-            if (instruction.Action ==
-                LayoutAction.Tight)
-            {
-                ApplyTight(
-                    output);
-
-                return;
-            }
-
-            if (instruction.Action ==
-                LayoutAction.Space)
-            {
-                ApplySpace(
-                    output);
-
-                return;
-            }
-
-            if (instruction.Action ==
-                LayoutAction.BlankLine)
-            {
-                ApplyBlankLine(
-                    output,
-                    instruction.IndentLevel);
-
-                return;
-            }
-
-            if (instruction.Action ==
-                LayoutAction.SectionSeparator)
-            {
-                ApplySectionSeparator(
-                    output,
-                    instruction.IndentLevel);
-
-                return;
-            }
-
-            if (instruction.Action ==
-                LayoutAction.NewLine)
-            {
-                ApplyNewLine(
-                    output,
-                    instruction.IndentLevel);
-            }
-        }
-
-        /*
-         * ==========================================================
-         * NEW LINE
-         * ==========================================================
-         */
-
-        private static void ApplyNewLine(
-            StringBuilder output,
-            int indentLevel)
-        {
-            RemoveTrailingWhitespace(
-                output);
-
-            if (!EndsWithNewLine(
-                    output))
-            {
-                output.AppendLine();
-            }
-
-            output.Append(
-                RepeatIndent(
-                    indentLevel));
-        }
-
-        /*
-         * ==========================================================
-         * BLANK LINE
-         * ==========================================================
-         */
-
-        private static void ApplyBlankLine(
-            StringBuilder output,
-            int indentLevel)
-        {
-            RemoveTrailingWhitespaceIncludingNewLines(
-                output);
-
-            if (output.Length > 0)
-            {
-                output.AppendLine();
-                output.AppendLine();
-            }
-
-            output.Append(
-                RepeatIndent(
-                    indentLevel));
-        }
-
-        /*
-         * ==========================================================
-         * SECTION SEPARATOR
-         * ==========================================================
-         *
-         * Generated separator ends at absolute column 135.
-         */
-
-        private static void ApplySectionSeparator(
-            StringBuilder output,
-            int indentLevel)
-        {
-            RemoveTrailingWhitespaceIncludingNewLines(
-                output);
-
-            /*
-             * Avoid duplicate adjacent formatter-generated
-             * separators when two structural boundaries meet.
-             */
-            RemoveTrailingGeneratedSectionSeparator(
-                output);
-
-            RemoveTrailingWhitespaceIncludingNewLines(
-                output);
-
-            if (output.Length > 0)
-            {
-                output.AppendLine();
-            }
-
-            string indent =
-                RepeatIndent(
-                    indentLevel);
-
-            output.Append(
-                indent);
-
-            int hyphenCount =
-                SectionSeparatorEndColumn -
-                indent.Length;
-
-            /*
-             * Must remain a valid SQL single-line comment.
-             */
-            if (hyphenCount < 2)
-            {
-                hyphenCount = 2;
-            }
-
-            output.Append(
-                new string(
-                    '-',
-                    hyphenCount));
-
-            output.AppendLine();
-
-            output.Append(
-                indent);
-        }
-
-        /*
-         * ==========================================================
-         * REMOVE TRAILING GENERATED SECTION SEPARATOR
-         * ==========================================================
-         */
-
-        private static void RemoveTrailingGeneratedSectionSeparator(
-            StringBuilder output)
-        {
-            if (output == null ||
-                output.Length == 0)
-            {
-                return;
-            }
-
-            int lineStart =
-                output.Length - 1;
-
-            while (lineStart >= 0 &&
-                   output[lineStart] != '\r' &&
-                   output[lineStart] != '\n')
-            {
-                lineStart--;
-            }
-
-            lineStart++;
-
-            string lastLine =
-                output.ToString(
-                    lineStart,
-                    output.Length - lineStart);
-
-            if (!IsGeneratedSectionSeparatorLine(
-                    lastLine))
-            {
-                return;
-            }
-
-            output.Length =
-                lineStart;
-        }
-
-        /*
-         * ==========================================================
-         * GENERATED SECTION SEPARATOR LINE
-         * ==========================================================
-         */
-
-        private static bool IsGeneratedSectionSeparatorLine(
-            string line)
-        {
-            if (string.IsNullOrEmpty(
-                    line))
-            {
-                return false;
-            }
-
-            string normalized =
-                line.TrimEnd(
-                    ' ',
-                    '\t',
-                    '\r',
-                    '\n');
-
-            /*
-             * Full physical width must end at column 135.
-             */
-            if (normalized.Length !=
-                SectionSeparatorEndColumn)
-            {
-                return false;
-            }
-
-            int index =
+            int count =
                 0;
 
-            /*
-             * Formatter indentation consists of spaces.
-             */
-            while (index <
-                       normalized.Length &&
-                   normalized[index] == ' ')
+            foreach (
+                TSqlParserToken token
+                in tokens)
             {
-                index++;
-            }
-
-            int hyphenCount =
-                normalized.Length -
-                index;
-
-            if (hyphenCount < 2)
-            {
-                return false;
-            }
-
-            for (int i = index;
-                 i < normalized.Length;
-                 i++)
-            {
-                if (normalized[i] != '-')
+                if (token.TokenType ==
+                        TSqlTokenType.WhiteSpace ||
+                    token.TokenType ==
+                        TSqlTokenType.EndOfFile)
                 {
-                    return false;
-                }
-            }
-
-            return true;
-        }
-
-        /*
-         * ==========================================================
-         * TIGHT
-         * ==========================================================
-         */
-
-        private static void ApplyTight(
-            StringBuilder output)
-        {
-            RemoveTrailingWhitespaceIncludingNewLines(
-                output);
-        }
-
-        /*
-         * ==========================================================
-         * SPACE
-         * ==========================================================
-         */
-
-        private static void ApplySpace(
-            StringBuilder output)
-        {
-            RemoveTrailingWhitespaceIncludingNewLines(
-                output);
-
-            if (output.Length > 0)
-            {
-                output.Append(
-                    ' ');
-            }
-        }
-
-        /*
-         * ==========================================================
-         * SAME-LINE SPACING DECISION
-         * ==========================================================
-         *
-         * Called only when an actual whitespace boundary existed.
-         *
-         * Result:
-         *
-         * true  -> normalize to exactly one space
-         * false -> normalize to no space
-         */
-
-        private static bool ShouldInsertSpace(
-            TSqlParserToken previous,
-            TSqlParserToken current)
-        {
-            if (previous == null ||
-                current == null)
-            {
-                return false;
-            }
-
-            string previousText =
-                previous.Text ??
-                string.Empty;
-
-            string currentText =
-                current.Text ??
-                string.Empty;
-
-            /*
-             * ------------------------------------------------------
-             * NO SPACE BEFORE THESE
-             * ------------------------------------------------------
-             *
-             * dbo.Customer
-             * a,b
-             * COUNT(*)
-             * END;
-             */
-
-            if (currentText == "." ||
-                currentText == "," ||
-                currentText == ")" ||
-                currentText == ";")
-            {
-                return false;
-            }
-
-            /*
-             * ------------------------------------------------------
-             * NO SPACE AFTER THESE
-             * ------------------------------------------------------
-             *
-             * dbo.Customer
-             * (CustomerID
-             */
-
-            if (previousText == "." ||
-                previousText == "(")
-            {
-                return false;
-            }
-
-            /*
-             * ------------------------------------------------------
-             * NORMAL TOKEN BOUNDARY
-             * ------------------------------------------------------
-             *
-             * Existing horizontal whitespace becomes one space.
-             */
-
-            return true;
-        }
-
-        /*
-         * ==========================================================
-         * DOES WHITESPACE CONTAIN A PHYSICAL NEWLINE?
-         * ==========================================================
-         */
-
-        private static bool ContainsNewLine(
-            string text)
-        {
-            if (string.IsNullOrEmpty(
-                    text))
-            {
-                return false;
-            }
-
-            return
-                text.IndexOf('\r') >= 0 ||
-                text.IndexOf('\n') >= 0;
-        }
-
-        /*
-         * ==========================================================
-         * NEXT NON-WHITESPACE TOKEN
-         * ==========================================================
-         */
-
-        private static int FindNextNonWhitespaceToken(
-            IList<TSqlParserToken> tokens,
-            int start)
-        {
-            for (int i = start;
-                 i < tokens.Count;
-                 i++)
-            {
-                if (tokens[i].TokenType !=
-                    TSqlTokenType.WhiteSpace)
-                {
-                    return i;
-                }
-            }
-
-            return -1;
-        }
-
-        /*
-         * ==========================================================
-         * PREVIOUS NON-WHITESPACE TOKEN
-         * ==========================================================
-         */
-
-        private static int FindPreviousNonWhitespaceToken(
-            IList<TSqlParserToken> tokens,
-            int start)
-        {
-            for (int i = start;
-                 i >= 0;
-                 i--)
-            {
-                if (tokens[i].TokenType !=
-                    TSqlTokenType.WhiteSpace)
-                {
-                    return i;
-                }
-            }
-
-            return -1;
-        }
-
-        /*
-         * ==========================================================
-         * INDENT
-         * ==========================================================
-         */
-
-        private static string RepeatIndent(
-            int indentLevel)
-        {
-            if (indentLevel <= 0)
-            {
-                return
-                    string.Empty;
-            }
-
-            return
-                string.Concat(
-                    Enumerable.Repeat(
-                        IndentText,
-                        indentLevel));
-        }
-
-        /*
-         * ==========================================================
-         * REMOVE HORIZONTAL WHITESPACE
-         * ==========================================================
-         */
-
-        private static void RemoveTrailingWhitespace(
-            StringBuilder builder)
-        {
-            while (builder.Length > 0)
-            {
-                char value =
-                    builder[
-                        builder.Length - 1];
-
-                if (value != ' ' &&
-                    value != '\t')
-                {
-                    break;
+                    continue;
                 }
 
-                builder.Length--;
-            }
-        }
-
-        /*
-         * ==========================================================
-         * REMOVE ALL TRAILING WHITESPACE
-         * ==========================================================
-         */
-
-        private static void RemoveTrailingWhitespaceIncludingNewLines(
-            StringBuilder builder)
-        {
-            while (builder.Length > 0)
-            {
-                char value =
-                    builder[
-                        builder.Length - 1];
-
-                if (value != ' ' &&
-                    value != '\t' &&
-                    value != '\r' &&
-                    value != '\n')
-                {
-                    break;
-                }
-
-                builder.Length--;
-            }
-        }
-
-        /*
-         * ==========================================================
-         * ENDS WITH NEW LINE
-         * ==========================================================
-         */
-
-        private static bool EndsWithNewLine(
-            StringBuilder builder)
-        {
-            if (builder.Length == 0)
-            {
-                return false;
+                count++;
             }
 
-            char last =
-                builder[
-                    builder.Length - 1];
-
-            return
-                last == '\r' ||
-                last == '\n';
+            return count;
         }
     }
 }
