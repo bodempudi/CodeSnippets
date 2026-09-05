@@ -1,768 +1,109 @@
-using Microsoft.SqlServer.TransactSql.ScriptDom;
-using NotepadPlusPlusPlugin.Formatting.Diagnostics;
-using NotepadPlusPlusPlugin.Formatting.Emission;
-using NBK.SQL.CodingStandards.Core.Parse;
-using System;
-using System.Collections.Generic;
-using System.Text;
-using NBK.SQL.CodingStandards.Core.Models;
-
-namespace NotepadPlusPlusPlugin.Formatting.Validation
+private static void ApplyTrailingCommaItem(
+    AstNodeContext context,
+    LayoutContext layoutContext,
+    int indent,
+    string policyName)
 {
-    public sealed class FormatterIdempotencyResult
+    int index =
+        TokenNavigator.GetRelationshipIndex(
+            context.Relationship);
+
+    if (index <= 0)
     {
-        public bool Passed
+        layoutContext.AddInstruction(
+            context.Node.FirstTokenIndex,
+            indent,
+            policyName,
+            context);
+
+        return;
+    }
+
+    int commaIndex =
+        layoutContext.TokenNavigator.FindPreviousToken(
+            context.Node.FirstTokenIndex,
+            TSqlTokenType.Comma);
+
+    if (commaIndex < 0)
+    {
+        return;
+    }
+
+    AstNodeContext previousItem = null;
+
+    foreach (AstNodeContext sibling in
+             layoutContext.Walker.GetChildren(
+                 context.Parent))
+    {
+        if (sibling == null ||
+            sibling.Node == null)
         {
-            get;
-            set;
+            continue;
         }
 
-        public string SecondPassSql
-        {
-            get;
-            set;
-        }
+        int siblingIndex =
+            TokenNavigator.GetRelationshipIndex(
+                sibling.Relationship);
 
-        public string Message
+        if (siblingIndex == index - 1)
         {
-            get;
-            set;
-        }
-
-        /*
-         * Diagnostic information for the first meaningful
-         * difference between pass 1 and pass 2.
-         */
-
-        public int FirstDifferenceIndex
-        {
-            get;
-            set;
-        }
-
-        public int FirstDifferenceLine
-        {
-            get;
-            set;
-        }
-
-        public int FirstDifferenceColumn
-        {
-            get;
-            set;
-        }
-
-        public string FirstPassLine
-        {
-            get;
-            set;
-        }
-
-        public string SecondPassLine
-        {
-            get;
-            set;
+            previousItem = sibling;
+            break;
         }
     }
 
-    public sealed class FormatterIdempotencyValidator
+    /*
+     * Special safety case:
+     *
+     * @A INT -- comment
+     * ,@B INT
+     *
+     * We must NOT move the comma to the end of the
+     * previous line, because it would become part of
+     * the single-line comment:
+     *
+     * @A INT -- comment,
+     * @B INT
+     *
+     * That changes the SQL and may make it invalid.
+     *
+     * Therefore, if any comment exists between the
+     * previous item and this comma, keep the comma
+     * with the current item.
+     */
+    if (previousItem != null &&
+        layoutContext.TokenNavigator.HasCommentBetween(
+            previousItem.Node.LastTokenIndex,
+            commaIndex))
     {
-        /*
-         * Formatter-owned section separators always end
-         * at absolute column 135.
-         *
-         * This must stay consistent with:
-         *
-         * TokenPreservingEmitter
-         * FormatterSafetyValidator
-         */
-
-        private const int SectionSeparatorEndColumn =
-            135;
-
-        private readonly SqlParserService _parserService;
-
-        public FormatterIdempotencyValidator(
-            SqlParserService parserService)
-        {
-            if (parserService == null)
-            {
-                throw new ArgumentNullException(
-                    "parserService");
-            }
-
-            _parserService =
-                parserService;
-        }
-
-        public FormatterIdempotencyResult Validate(
-            string formattedSql)
-        {
-            string firstPass =
-                formattedSql ??
-                string.Empty;
-
-            /*
-             * ============================================================
-             * PARSE FIRST FORMATTED OUTPUT
-             * ============================================================
-             */
-
-            SqlParseResult parseResult =
-                _parserService.Parse(
-                    firstPass);
-
-            if (!parseResult.IsValid)
-            {
-                return new FormatterIdempotencyResult
-                {
-                    Passed =
-                        false,
-
-                    SecondPassSql =
-                        firstPass,
-
-                    FirstDifferenceIndex =
-                        -1,
-
-                    FirstDifferenceLine =
-                        0,
-
-                    FirstDifferenceColumn =
-                        0,
-
-                    FirstPassLine =
-                        string.Empty,
-
-                    SecondPassLine =
-                        string.Empty,
-
-                    Message =
-                        "Idempotency check could not parse " +
-                        "the first formatted output."
-                };
-            }
-
-            IList<TSqlParserToken> tokens =
-                parseResult.Tokens ??
-                new List<TSqlParserToken>();
-
-            /*
-             * ============================================================
-             * BUILD SECOND FORMAT PASS
-             * ============================================================
-             */
-
-            LayoutPlan plan =
-                new LayoutPlan();
-
-            GenericAstWalker walker =
-                new GenericAstWalker();
-
-            FormatterDiagnostics diagnostics =
-                new FormatterDiagnostics();
-
-            LayoutPolicyEngine engine =
-                new LayoutPolicyEngine(
-                    tokens,
-                    walker,
-                    plan,
-                    diagnostics);
-
-            engine.Analyze(
-                parseResult.Fragment);
-
-            TokenPreservingEmitter emitter =
-                new TokenPreservingEmitter();
-
-            string secondPass =
-                emitter.Emit(
-                    tokens,
-                    plan);
-
-            if (secondPass == null)
-            {
-                secondPass =
-                    string.Empty;
-            }
-
-            /*
-             * ============================================================
-             * IDEMPOTENCY COMPARISON
-             * ============================================================
-             *
-             * IMPORTANT:
-             *
-             * Do not relax normal formatting comparison.
-             *
-             * We normalize ONLY formatter-owned generated
-             * section separator lines.
-             *
-             * Example:
-             *
-             * Pass 1:
-             *     [spaces]--------------------
-             *
-             * Pass 2:
-             *     [different spaces]---------
-             *
-             * If both physical separator lines still satisfy
-             * the formatter-owned rule of ending at absolute
-             * column 135, they are canonicalized to the same
-             * representation before comparison.
-             *
-             * Normal SQL whitespace, comments, indentation,
-             * blank lines, JOIN layout, CASE layout, etc.
-             * remain exact.
-             */
-
-            string firstComparable =
-                NormalizeGeneratedSectionSeparators(
-                    firstPass);
-
-            string secondComparable =
-                NormalizeGeneratedSectionSeparators(
-                    secondPass);
-
-            bool passed =
-                string.Equals(
-                    firstComparable,
-                    secondComparable,
-                    StringComparison.Ordinal);
-
-            if (passed)
-            {
-                return new FormatterIdempotencyResult
-                {
-                    Passed =
-                        true,
-
-                    SecondPassSql =
-                        secondPass,
-
-                    FirstDifferenceIndex =
-                        -1,
-
-                    FirstDifferenceLine =
-                        0,
-
-                    FirstDifferenceColumn =
-                        0,
-
-                    FirstPassLine =
-                        string.Empty,
-
-                    SecondPassLine =
-                        string.Empty,
-
-                    Message =
-                        "Second formatting pass is identical " +
-                        "to the first output."
-                };
-            }
-
-            /*
-             * ============================================================
-             * FIND FIRST REAL DIFFERENCE
-             * ============================================================
-             *
-             * Compare the normalized strings so formatter-owned
-             * separator representation does not hide the actual
-             * unstable formatting rule.
-             */
-
-            int differenceIndex =
-                FindFirstDifference(
-                    firstComparable,
-                    secondComparable);
-
-            int line;
-            int column;
-
-            GetLineAndColumn(
-                firstComparable,
-                differenceIndex,
-                out line,
-                out column);
-
-            /*
-             * Show raw Pass 1 / Pass 2 lines to diagnostics.
-             * These are more useful when troubleshooting.
-             */
-
-            string firstPassLine =
-                GetLineText(
-                    firstPass,
-                    line);
-
-            string secondPassLine =
-                GetLineText(
-                    secondPass,
-                    line);
-
-            string message =
-                BuildFailureMessage(
-                    differenceIndex,
-                    line,
-                    column,
-                    firstPassLine,
-                    secondPassLine);
-
-            return new FormatterIdempotencyResult
-            {
-                Passed =
-                    false,
-
-                SecondPassSql =
-                    secondPass,
-
-                FirstDifferenceIndex =
-                    differenceIndex,
-
-                FirstDifferenceLine =
-                    line,
-
-                FirstDifferenceColumn =
-                    column,
-
-                FirstPassLine =
-                    firstPassLine,
-
-                SecondPassLine =
-                    secondPassLine,
-
-                Message =
-                    message
-            };
-        }
-
-        /*
-         * ================================================================
-         * GENERATED SECTION SEPARATOR NORMALIZATION
-         * ================================================================
-         *
-         * Only lines matching our narrow formatter-owned separator
-         * definition are normalized.
-         *
-         * Valid generated separator:
-         *
-         * optional leading spaces
-         * +
-         * only '-' characters
-         * +
-         * total physical line length = 135
-         *
-         * All such lines become:
-         *
-         * 135 hyphens
-         *
-         * Line endings are preserved.
-         */
-
-        private static string NormalizeGeneratedSectionSeparators(
-            string sql)
-        {
-            if (string.IsNullOrEmpty(sql))
-            {
-                return sql ??
-                    string.Empty;
-            }
-
-            StringBuilder result =
-                new StringBuilder(
-                    sql.Length);
-
-            int lineStart =
-                0;
-
-            int index =
-                0;
-
-            while (index < sql.Length)
-            {
-                char current =
-                    sql[index];
-
-                if (current != '\r' &&
-                    current != '\n')
-                {
-                    index++;
-                    continue;
-                }
-
-                string line =
-                    sql.Substring(
-                        lineStart,
-                        index - lineStart);
-
-                AppendNormalizedLine(
-                    result,
-                    line);
-
-                /*
-                 * Preserve original newline representation.
-                 */
-
-                if (current == '\r' &&
-                    index + 1 < sql.Length &&
-                    sql[index + 1] == '\n')
-                {
-                    result.Append(
-                        "\r\n");
-
-                    index +=
-                        2;
-                }
-                else
-                {
-                    result.Append(
-                        current);
-
-                    index++;
-                }
-
-                lineStart =
-                    index;
-            }
-
-            /*
-             * Final physical line without a line terminator.
-             */
-
-            if (lineStart < sql.Length)
-            {
-                string line =
-                    sql.Substring(
-                        lineStart);
-
-                AppendNormalizedLine(
-                    result,
-                    line);
-            }
-
-            return result.ToString();
-        }
-
-        private static void AppendNormalizedLine(
-            StringBuilder result,
-            string line)
-        {
-            if (IsGeneratedSectionSeparatorLine(
-                    line))
-            {
-                result.Append(
-                    new string(
-                        '-',
-                        SectionSeparatorEndColumn));
-
-                return;
-            }
-
-            result.Append(
-                line ??
-                string.Empty);
-        }
-
-        /*
-         * ================================================================
-         * GENERATED SEPARATOR RECOGNITION
-         * ================================================================
-         *
-         * Keep this deliberately narrow.
-         *
-         * Examples accepted:
-         *
-         * ----------------------------------------------------------------...
-         *
-         *     ------------------------------------------------------------...
-         *
-         * provided total physical length is exactly 135.
-         */
-
-        private static bool IsGeneratedSectionSeparatorLine(
-            string line)
-        {
-            if (string.IsNullOrEmpty(line))
-            {
-                return false;
-            }
-
-            /*
-             * Generated separator lines physically end
-             * at absolute column 135.
-             */
-
-            if (line.Length !=
-                SectionSeparatorEndColumn)
-            {
-                return false;
-            }
-
-            int index =
-                0;
-
-            /*
-             * Allow formatter indentation before the hyphens.
-             */
-
-            while (index < line.Length &&
-                   line[index] == ' ')
-            {
-                index++;
-            }
-
-            /*
-             * There must be at least two hyphens.
-             */
-
-            int hyphenCount =
-                line.Length -
-                index;
-
-            if (hyphenCount < 2)
-            {
-                return false;
-            }
-
-            for (int i = index;
-                 i < line.Length;
-                 i++)
-            {
-                if (line[i] != '-')
-                {
-                    return false;
-                }
-            }
-
-            return true;
-        }
-
-        /*
-         * ================================================================
-         * FIRST DIFFERENCE
-         * ================================================================
-         */
-
-        private static int FindFirstDifference(
-            string first,
-            string second)
-        {
-            string left =
-                first ??
-                string.Empty;
-
-            string right =
-                second ??
-                string.Empty;
-
-            int commonLength =
-                Math.Min(
-                    left.Length,
-                    right.Length);
-
-            for (int index = 0;
-                 index < commonLength;
-                 index++)
-            {
-                if (left[index] !=
-                    right[index])
-                {
-                    return index;
-                }
-            }
-
-            /*
-             * Common content matched but one string
-             * contains additional content.
-             */
-
-            if (left.Length !=
-                right.Length)
-            {
-                return commonLength;
-            }
-
-            return -1;
-        }
-
-        /*
-         * ================================================================
-         * LINE / COLUMN
-         * ================================================================
-         */
-
-        private static void GetLineAndColumn(
-            string text,
-            int index,
-            out int line,
-            out int column)
-        {
-            string value =
-                text ??
-                string.Empty;
-
-            if (index < 0)
-            {
-                line =
-                    0;
-
-                column =
-                    0;
-
-                return;
-            }
-
-            if (index >
-                value.Length)
-            {
-                index =
-                    value.Length;
-            }
-
-            line =
-                1;
-
-            column =
-                1;
-
-            for (int i = 0;
-                 i < index;
-                 i++)
-            {
-                char current =
-                    value[i];
-
-                if (current == '\r')
-                {
-                    /*
-                     * CRLF represents one newline.
-                     */
-
-                    if (i + 1 < index &&
-                        value[i + 1] == '\n')
-                    {
-                        i++;
-                    }
-
-                    line++;
-
-                    column =
-                        1;
-
-                    continue;
-                }
-
-                if (current == '\n')
-                {
-                    line++;
-
-                    column =
-                        1;
-
-                    continue;
-                }
-
-                column++;
-            }
-        }
-
-        /*
-         * ================================================================
-         * LINE TEXT
-         * ================================================================
-         */
-
-        private static string GetLineText(
-            string text,
-            int targetLine)
-        {
-            if (string.IsNullOrEmpty(text) ||
-                targetLine <= 0)
-            {
-                return string.Empty;
-            }
-
-            int currentLine =
-                1;
-
-            int lineStart =
-                0;
-
-            for (int i = 0;
-                 i <= text.Length;
-                 i++)
-            {
-                bool endOfText =
-                    i == text.Length;
-
-                bool lineBreak =
-                    !endOfText &&
-                    (text[i] == '\r' ||
-                     text[i] == '\n');
-
-                if (!endOfText &&
-                    !lineBreak)
-                {
-                    continue;
-                }
-
-                if (currentLine ==
-                    targetLine)
-                {
-                    return text.Substring(
-                        lineStart,
-                        i - lineStart);
-                }
-
-                if (endOfText)
-                {
-                    break;
-                }
-
-                if (text[i] == '\r' &&
-                    i + 1 < text.Length &&
-                    text[i + 1] == '\n')
-                {
-                    i++;
-                }
-
-                currentLine++;
-
-                lineStart =
-                    i + 1;
-            }
-
-            return string.Empty;
-        }
-
-        /*
-         * ================================================================
-         * FAILURE MESSAGE
-         * ================================================================
-         */
-
-        private static string BuildFailureMessage(
-            int differenceIndex,
-            int line,
-            int column,
-            string firstPassLine,
-            string secondPassLine)
-        {
-            return
-                "Second formatting pass differs from the first output. " +
-                "First difference at Line=" +
-                line +
-                ", Column=" +
-                column +
-                ", CharacterIndex=" +
-                differenceIndex +
-                ". FirstPass=[" +
-                (firstPassLine ??
-                 string.Empty) +
-                "]. SecondPass=[" +
-                (secondPassLine ??
-                 string.Empty) +
-                "].";
-        }
+        layoutContext.AddInstruction(
+            commaIndex,
+            indent,
+            policyName,
+            context);
+
+        return;
     }
+
+    /*
+     * Normal case:
+     *
+     * @A INT
+     * ,@B INT
+     *
+     * becomes:
+     *
+     * @A INT,
+     * @B INT
+     */
+    layoutContext.AddTightInstruction(
+        commaIndex,
+        policyName,
+        context);
+
+    layoutContext.AddInstruction(
+        context.Node.FirstTokenIndex,
+        indent,
+        policyName,
+        context);
 }
