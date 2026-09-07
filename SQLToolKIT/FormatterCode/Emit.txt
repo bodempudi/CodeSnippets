@@ -1,0 +1,284 @@
+public string Emit(
+    IList<TSqlParserToken> tokens,
+    LayoutPlan plan)
+{
+    if (tokens == null)
+    {
+        throw new ArgumentNullException("tokens");
+    }
+
+    if (plan == null)
+    {
+        throw new ArgumentNullException("plan");
+    }
+
+    Dictionary<int, LayoutInstruction> instructions =
+        plan.Instructions
+            .GroupBy(x => x.TokenIndex)
+            .ToDictionary(
+                x => x.Key,
+                x => x.Last());
+
+    StringBuilder output =
+        new StringBuilder();
+
+    for (int i = 0; i < tokens.Count; i++)
+    {
+        TSqlParserToken token =
+            tokens[i];
+
+        LayoutInstruction instruction;
+
+        /*
+         * ============================================================
+         * DEVELOPER COMMENT BOUNDARY
+         * ============================================================
+         *
+         * If the current SQL token immediately follows a developer
+         * comment, the original source boundary belongs to the
+         * developer.
+         *
+         * Do not allow a layout instruction on this token to remove
+         * or replace the whitespace preserved after that comment.
+         */
+        int previousMeaningful =
+            FindPreviousNonWhitespaceToken(
+                tokens,
+                i - 1);
+
+        bool followsDeveloperComment =
+            previousMeaningful >= 0 &&
+            IsCommentToken(
+                tokens[previousMeaningful]);
+
+        /*
+         * ============================================================
+         * APPLY EXPLICIT LAYOUT
+         * ============================================================
+         *
+         * Comments themselves are never repositioned.
+         *
+         * A SQL token immediately following a comment is also not
+         * repositioned here because its source boundary must remain
+         * intact.
+         */
+        if (instructions.TryGetValue(
+                i,
+                out instruction))
+        {
+            if (!IsCommentToken(token) &&
+                !followsDeveloperComment)
+            {
+                ApplyInstruction(
+                    output,
+                    instruction);
+            }
+        }
+
+        /*
+         * ============================================================
+         * EOF
+         * ============================================================
+         */
+        if (token.TokenType ==
+            TSqlTokenType.EndOfFile)
+        {
+            continue;
+        }
+
+        /*
+         * ============================================================
+         * WHITESPACE
+         * ============================================================
+         */
+        if (token.TokenType ==
+            TSqlTokenType.WhiteSpace)
+        {
+            int previous =
+                FindPreviousNonWhitespaceToken(
+                    tokens,
+                    i - 1);
+
+            int next =
+                FindNextNonWhitespaceToken(
+                    tokens,
+                    i + 1);
+
+            TSqlParserToken previousToken =
+                previous >= 0
+                    ? tokens[previous]
+                    : null;
+
+            TSqlParserToken nextToken =
+                next >= 0
+                    ? tokens[next]
+                    : null;
+
+            /*
+             * ========================================================
+             * DEVELOPER COMMENT WHITESPACE
+             * ========================================================
+             *
+             * This is the key September 2026 Point 1 rule.
+             *
+             * If this whitespace is immediately BEFORE or AFTER a
+             * developer comment, emit the ORIGINAL whitespace exactly.
+             *
+             * Do not reconstruct indentation.
+             * Do not use comment.Column.
+             * Do not normalize spaces.
+             * Do not collapse newlines.
+             *
+             * This preserves:
+             *
+             *     -- standalone comment
+             *
+             * SET @A = 1; -- inline comment
+             *
+             *     /* multiline comment */
+             *
+             *     ----------------------------------------------------
+             */
+            if (IsCommentToken(previousToken) ||
+                IsCommentToken(nextToken))
+            {
+                output.Append(
+                    token.Text);
+
+                continue;
+            }
+
+            /*
+             * ========================================================
+             * UPCOMING SQL TOKEN OWNS ITS WHITESPACE
+             * ========================================================
+             *
+             * If the upcoming SQL token has an explicit layout
+             * instruction, discard its old source whitespace.
+             *
+             * Comment boundaries never reach this branch because
+             * they were handled above.
+             */
+            if (next >= 0 &&
+                instructions.ContainsKey(next))
+            {
+                continue;
+            }
+
+            /*
+             * ========================================================
+             * EXISTING PHYSICAL NEWLINE
+             * ========================================================
+             */
+            if (ContainsNewLine(
+                    token.Text))
+            {
+                /*
+                 * If the previous SQL token has already received a
+                 * formatter layout instruction, the original newline
+                 * may conflict with that new layout.
+                 *
+                 * Example:
+                 *
+                 * FROM
+                 *     dbo.Customer
+                 *
+                 * becomes:
+                 *
+                 * FROM dbo.Customer
+                 *
+                 * Comment boundaries are excluded from this logic.
+                 */
+                if (previous >= 0 &&
+                    instructions.ContainsKey(
+                        previous))
+                {
+                    if (ShouldInsertSpace(
+                            previousToken,
+                            nextToken))
+                    {
+                        RemoveTrailingWhitespace(
+                            output);
+
+                        if (output.Length > 0)
+                        {
+                            output.Append(' ');
+                        }
+                    }
+                    else
+                    {
+                        RemoveTrailingWhitespace(
+                            output);
+                    }
+
+                    continue;
+                }
+
+                /*
+                 * No formatter instruction owns this boundary.
+                 * Preserve the developer/source newline.
+                 */
+                output.Append(
+                    token.Text);
+
+                continue;
+            }
+
+            /*
+             * ========================================================
+             * HORIZONTAL WHITESPACE ONLY
+             * ========================================================
+             */
+            if (previous < 0 ||
+                next < 0)
+            {
+                continue;
+            }
+
+            if (ShouldInsertSpace(
+                    previousToken,
+                    nextToken))
+            {
+                /*
+                 * Ordinary horizontal whitespace between SQL tokens
+                 * becomes one space.
+                 */
+                RemoveTrailingWhitespace(
+                    output);
+
+                if (output.Length > 0)
+                {
+                    output.Append(' ');
+                }
+            }
+            else
+            {
+                /*
+                 * Punctuation-sensitive boundary.
+                 *
+                 * Examples:
+                 *
+                 * dbo.Customer
+                 * COUNT(*)
+                 * a,
+                 */
+                RemoveTrailingWhitespace(
+                    output);
+            }
+
+            continue;
+        }
+
+        /*
+         * ============================================================
+         * TOKEN TEXT
+         * ============================================================
+         *
+         * Original token text is always emitted unchanged.
+         */
+        output.Append(
+            token.Text);
+    }
+
+    return output.ToString();
+}
