@@ -1,82 +1,3 @@
-public string Emit(
-    IList<TSqlParserToken> tokens,
-    LayoutPlan plan)
-{
-    if (tokens == null)
-    {
-        throw new ArgumentNullException(
-            "tokens");
-    }
-
-    if (plan == null)
-    {
-        throw new ArgumentNullException(
-            "plan");
-    }
-
-    Dictionary<int, LayoutInstruction> instructions =
-        plan.Instructions
-            .GroupBy(
-                x => x.TokenIndex)
-            .ToDictionary(
-                x => x.Key,
-                x => x.Last());
-
-    StringBuilder output =
-        new StringBuilder();
-
-    for (int i = 0;
-         i < tokens.Count;
-         i++)
-    {
-        TSqlParserToken token =
-            tokens[i];
-
-        LayoutInstruction instruction;
-
-        /*
-         * ============================================================
-         * APPLY EXPLICIT LAYOUT FIRST
-         * ============================================================
-         *
-         * Developer comments are source-owned.
-         *
-         * Do not directly reposition a comment token using a
-         * formatter layout instruction.
-         */
-        if (instructions.TryGetValue(
-                i,
-                out instruction))
-        {
-            if (!IsCommentToken(token))
-            {
-                ApplyInstruction(
-                    output,
-                    instruction);
-            }
-        }
-
-        /*
-         * ============================================================
-         * EOF
-         * ============================================================
-         */
-        if (token.TokenType ==
-            TSqlTokenType.EndOfFile)
-        {
-            continue;
-        }
-
-        /*
-         * ============================================================
-         * WHITESPACE
-         * ============================================================
-         */
-        if (token.TokenType ==
-            TSqlTokenType.WhiteSpace)
-        {
-            int next =
-                FindNextNonWhitespaceToken(
                     tokens,
                     i + 1);
 
@@ -360,12 +281,5 @@ public string Emit(
          * - identifiers
          * - quoted identifiers
          * - numbers
-         * - operators
-         */
-        output.Append(
-            token.Text);
-    }
-
-    return
-        output.ToString();
+         * - operator  output.ToString();
 }
