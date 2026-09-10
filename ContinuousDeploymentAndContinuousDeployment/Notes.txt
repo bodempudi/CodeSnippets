@@ -1,0 +1,26 @@
+ThreadID and BatchNumber Assignment Logic
+
+The purpose of this logic is to ensure that all transactions having the same TransactionHubDate are always assigned to the same thread.
+
+ThreadID:
+ThreadID is calculated directly from TransactionHubDate. The number of days between TransactionHubDate and a fixed base date (01-Jan-2000) is calculated. The modulo operation is then used to distribute the dates across the configured number of threads.
+
+Since ThreadID depends only on TransactionHubDate, the same TransactionHubDate will always get the same ThreadID, regardless of the order in which records are received.
+
+BatchNumber:
+BatchNumber is generated separately for each TransactionHubDate.
+
+A dictionary is used to maintain the number of records received for each TransactionHubDate. ContainsKey checks whether the TransactionHubDate has already been encountered. If it is a new date, the counter is initialized to 0. The counter is then incremented for every transaction belonging to that date.
+
+Based on the counter and configured BatchSize, BatchNumber is calculated.
+
+Example with BatchSize = 10,000:
+Records 1 - 10,000     -> Batch 1
+Records 10,001 - 20,000 -> Batch 2
+Records 20,001 - 30,000 -> Batch 3
+and so on.
+
+The source data does not need to be ordered by TransactionHubDate.
+
+Main rule:
+Same TransactionHubDate -> Same ThreadID
