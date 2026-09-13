@@ -1,0 +1,24 @@
+CREATE OR ALTER PROCEDURE dbo.TestWhileFormatting
+AS
+BEGIN
+BEGIN TRY
+BEGIN TRAN
+DECLARE @Counter INT = 1
+DECLARE @MaxCounter INT = 5
+WHILE @Counter <= @MaxCounter
+BEGIN
+UPDATE dbo.Customer
+SET Status = 'ACTIVE'
+WHERE CustomerId = @Counter
+SET @Counter = @Counter + 1
+END
+COMMIT TRAN
+END TRY
+BEGIN CATCH
+IF @@TRANCOUNT > 0
+BEGIN
+ROLLBACK TRAN
+END
+THROW
+END CATCH
+END
